@@ -1,8 +1,16 @@
 import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload, File, Trash2, CheckCircle, Plus } from 'lucide-react';
+import { Upload, FileText, Trash2, CheckCircle, Plus } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
 import { SlideFile } from '@/types/course';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface UploadStepProps {
   onContinue: () => void;
@@ -65,24 +73,23 @@ export function UploadStep({ onContinue }: UploadStepProps) {
   };
 
   const hasSlideFile = currentCourse.slideFiles.length > 0;
+  const hasSupplementFiles = currentCourse.supplementFiles.length > 0;
 
   return (
-    <div className="space-y-8">
-      <div className="text-center">
-        <h2 className="text-2xl font-semibold text-foreground">Upload Your Content</h2>
-        <p className="text-muted-foreground mt-2">Start by uploading your presentation slides</p>
-      </div>
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Main Slide File Section */}
+      <div className="bg-card rounded-2xl shadow-lg border overflow-hidden">
+        <div className="p-6 border-b bg-muted/30">
+          <h3 className="text-lg font-semibold text-foreground">Main Slide File</h3>
+          <p className="text-sm text-muted-foreground mt-1">Upload your presentation slides</p>
+        </div>
 
-      {/* Main Slide File Upload */}
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-foreground">
-          Presentation Slides <span className="text-destructive">*</span>
-        </label>
-        
         {!hasSlideFile ? (
           <div
-            className={`flex flex-col items-center justify-center h-48 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-200 ${
-              isDraggingSlide ? 'border-primary bg-primary/5' : 'border-border hover:border-primary hover:bg-muted/50'
+            className={`m-6 flex flex-col items-center justify-center h-48 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+              isDraggingSlide 
+                ? 'border-primary bg-primary/5 border-solid' 
+                : 'border-border border-solid hover:border-primary hover:bg-muted/30'
             }`}
             onDragOver={(e) => {
               e.preventDefault();
@@ -92,94 +99,168 @@ export function UploadStep({ onContinue }: UploadStepProps) {
             onDrop={(e) => handleDrop(e, true)}
             onClick={() => handleBrowse(true)}
           >
-            <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mb-3">
-              <Upload className="h-6 w-6 text-muted-foreground" />
+            <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+              <Upload className="h-7 w-7 text-primary" />
             </div>
-            <span className="text-sm font-medium text-foreground">Click to upload or drag & drop</span>
-            <span className="text-xs text-muted-foreground mt-1">PPTX, PPT, PDF, KEY</span>
+            <span className="text-base font-medium text-foreground">Drop Slide Files</span>
+            <span className="text-sm text-muted-foreground mt-1">Drag & Drop or Browse and Select Slide Files*</span>
+            <Button variant="outline" className="mt-4 rounded-xl">
+              Browse
+            </Button>
           </div>
         ) : (
-          <div className="bg-card rounded-xl border overflow-hidden">
-            {currentCourse.slideFiles.map((file) => (
-              <div key={file.id} className="flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <File className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">{file.name}</p>
-                  <p className="text-sm text-muted-foreground">{file.size} • {file.uploadedDate}</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">
-                    <CheckCircle className="h-3 w-3" />
-                    Indexed
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeFile(file.id, true)}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+          <div className="p-6">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent border-b">
+                  <TableHead className="text-muted-foreground font-medium">Document</TableHead>
+                  <TableHead className="text-muted-foreground font-medium">Type</TableHead>
+                  <TableHead className="text-muted-foreground font-medium">Size</TableHead>
+                  <TableHead className="text-muted-foreground font-medium">Uploaded</TableHead>
+                  <TableHead className="text-muted-foreground font-medium">Status</TableHead>
+                  <TableHead className="text-muted-foreground font-medium">Chunks</TableHead>
+                  <TableHead className="text-muted-foreground font-medium w-16">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentCourse.slideFiles.map((file) => (
+                  <TableRow key={file.id} className="hover:bg-muted/30">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <FileText className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="font-medium text-foreground truncate max-w-[200px]">{file.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{file.type}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{file.size}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{file.uploadedDate}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                        <CheckCircle className="h-3 w-3" />
+                        Indexed
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{file.chunks}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeFile(file.id, true)}
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>
 
-      {/* Supplement Files Upload */}
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-foreground">
-          Supplementary Materials
-          <span className="text-muted-foreground font-normal ml-2">(optional)</span>
-        </label>
-        
-        <div
-          className={`flex flex-col items-center justify-center h-24 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 ${
-            isDraggingSupp ? 'border-primary bg-primary/5' : 'border-border hover:border-primary hover:bg-muted/50'
-          }`}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDraggingSupp(true);
-          }}
-          onDragLeave={() => setIsDraggingSupp(false)}
-          onDrop={(e) => handleDrop(e, false)}
-          onClick={() => handleBrowse(false)}
-        >
-          <span className="text-sm text-muted-foreground">Add documents, images, or other resources</span>
+      {/* Supplement Files Section */}
+      <div className="bg-card rounded-2xl shadow-lg border overflow-hidden">
+        <div className="p-6 border-b bg-muted/30">
+          <h3 className="text-lg font-semibold text-foreground">Supplement Files</h3>
+          <p className="text-sm text-muted-foreground mt-1">Winston can refer to these files to better respond to user's questions</p>
         </div>
 
-        {currentCourse.supplementFiles.length > 0 && (
-          <div className="space-y-2 mt-4">
-            {currentCourse.supplementFiles.map((file) => (
-              <div
-                key={file.id}
-                className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl"
+        {!hasSupplementFiles ? (
+          <div
+            className={`m-6 flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 ${
+              isDraggingSupp 
+                ? 'border-primary bg-primary/5' 
+                : 'border-border hover:border-primary hover:bg-muted/30'
+            }`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDraggingSupp(true);
+            }}
+            onDragLeave={() => setIsDraggingSupp(false)}
+            onDrop={(e) => handleDrop(e, false)}
+            onClick={() => handleBrowse(false)}
+          >
+            <span className="text-base font-medium text-foreground">Upload Supplement Files</span>
+            <span className="text-sm text-muted-foreground mt-1">Add documents, images, or other resources</span>
+            <Button variant="outline" className="mt-3 rounded-xl">
+              Browse
+            </Button>
+          </div>
+        ) : (
+          <div className="p-6">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent border-b">
+                  <TableHead className="text-muted-foreground font-medium">Document</TableHead>
+                  <TableHead className="text-muted-foreground font-medium">Type</TableHead>
+                  <TableHead className="text-muted-foreground font-medium">Size</TableHead>
+                  <TableHead className="text-muted-foreground font-medium">Uploaded</TableHead>
+                  <TableHead className="text-muted-foreground font-medium">Status</TableHead>
+                  <TableHead className="text-muted-foreground font-medium">Chunks</TableHead>
+                  <TableHead className="text-muted-foreground font-medium w-16">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentCourse.supplementFiles.map((file) => (
+                  <TableRow key={file.id} className="hover:bg-muted/30">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-lg bg-secondary/50 flex items-center justify-center shrink-0">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <span className="font-medium text-foreground truncate max-w-[200px]">{file.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{file.type}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{file.size}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{file.uploadedDate}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                        <CheckCircle className="h-3 w-3" />
+                        Indexed
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{file.chunks}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeFile(file.id, false)}
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            
+            {/* Add More Button */}
+            <div className="flex justify-center mt-4">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handleBrowse(false)}
+                className="h-10 w-10 rounded-full border-dashed"
               >
-                <File className="h-5 w-5 text-muted-foreground shrink-0" />
-                <span className="text-sm text-foreground truncate flex-1">{file.name}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => removeFile(file.id, false)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+                <Plus className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         )}
       </div>
 
-      <div className="flex justify-end pt-4">
+      {/* Continue Button */}
+      <div className="flex justify-center pt-4">
         <Button
           onClick={onContinue}
           disabled={!hasSlideFile}
           size="lg"
-          className="rounded-xl px-8"
+          className="rounded-xl px-12"
         >
           Continue
         </Button>

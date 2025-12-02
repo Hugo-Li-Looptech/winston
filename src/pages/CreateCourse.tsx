@@ -41,6 +41,8 @@ export default function CreateCourse() {
     navigate('/dashboard');
   };
 
+  const isFullWidthStep = subStep === 'scripting' || subStep === 'assessment' || subStep === 'preview';
+
   const renderStep = () => {
     switch (subStep) {
       case 'upload':
@@ -81,27 +83,38 @@ export default function CreateCourse() {
   };
 
   return (
-    <div className="min-h-screen bg-muted">
-      {/* Step Indicator */}
-      <div className="pt-6">
-        <StepIndicator currentStep={getWizardStep()} />
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <div className="bg-card border-2 border-foreground shadow-md relative p-8">
+    <div className="min-h-screen bg-muted flex flex-col">
+      {/* Header with Step Indicator */}
+      <div className="bg-card border-b shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <StepIndicator currentStep={getWizardStep()} />
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-4 right-4"
+            className="rounded-full"
             onClick={handleClose}
           >
             <X className="h-5 w-5" />
           </Button>
-
-          {renderStep()}
         </div>
       </div>
+
+      {/* Main Content */}
+      {isFullWidthStep ? (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 bg-card border-t overflow-hidden">
+            {renderStep()}
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-6 py-8">
+            <div className="bg-card rounded-2xl shadow-lg border p-8">
+              {renderStep()}
+            </div>
+          </div>
+        </div>
+      )}
 
       <AIAssistant />
     </div>
