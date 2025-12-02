@@ -42,6 +42,7 @@ export default function CreateCourse() {
   };
 
   const isFullWidthStep = subStep === 'scripting' || subStep === 'assessment' || subStep === 'preview';
+  const hideMainHeader = subStep === 'scripting';
 
   const renderStep = () => {
     switch (subStep) {
@@ -84,20 +85,22 @@ export default function CreateCourse() {
 
   return (
     <div className="min-h-screen bg-muted flex flex-col">
-      {/* Header with Step Indicator */}
-      <div className="bg-card border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <StepIndicator currentStep={getWizardStep()} />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full"
-            onClick={handleClose}
-          >
-            <X className="h-5 w-5" />
-          </Button>
+      {/* Header with Step Indicator - hidden for scripting step */}
+      {!hideMainHeader && (
+        <div className="bg-card border-b shadow-sm">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <StepIndicator currentStep={getWizardStep()} />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
+              onClick={handleClose}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
       {isFullWidthStep ? (
