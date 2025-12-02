@@ -18,20 +18,21 @@ export function QuickEditsPanel({
   onAskWinston,
 }: QuickEditsPanelProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <h4 className="text-sm font-semibold text-foreground">Quick Edits</h4>
       
-      <Button 
-        onClick={onAskWinston}
-        className="w-full rounded-xl gap-2 justify-start"
-        variant="default"
-      >
-        <Sparkles className="h-4 w-4" />
-        Ask Winston
-      </Button>
+      <div className="flex items-center gap-4 flex-wrap">
+        <Button 
+          onClick={onAskWinston}
+          className="rounded-xl gap-2"
+          variant="default"
+          size="sm"
+        >
+          <Sparkles className="h-4 w-4" />
+          Ask Winston
+        </Button>
 
-      <div className="space-y-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Checkbox 
             id="verbose" 
             checked={isVerbose}
@@ -45,7 +46,7 @@ export function QuickEditsPanel({
           </label>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Checkbox 
             id="streamlined" 
             checked={isStreamlined}

@@ -35,6 +35,7 @@ export interface Slide {
   talkPoints: string;
   keywords: string[];
   summary: string;
+  imageUrl?: string;
 }
 
 export interface Assessment {
