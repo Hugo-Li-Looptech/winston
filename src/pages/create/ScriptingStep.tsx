@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { useCourse } from '@/contexts/CourseContext';
-import { ChevronLeft, ChevronRight, Plus, Star, Bold, Italic, Underline, List, ListOrdered, Link, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, Bold, Italic, List } from 'lucide-react';
 
 interface ScriptingStepProps {
   onContinue: () => void;
@@ -14,10 +13,7 @@ interface ScriptingStepProps {
 export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
   const { currentCourse, setSlides } = useCourse();
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const [showDetails, setShowDetails] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
-  const [moreVerbose, setMoreVerbose] = useState(false);
-  const [moreStreamlined, setMoreStreamlined] = useState(false);
 
   const slides = currentCourse.slides;
   const currentSlide = slides[currentSlideIndex];
@@ -28,13 +24,6 @@ export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
     setSlides(updatedSlides);
   };
 
-  const handleAskWinston = () => {
-    // Simulate AI response
-    if (aiPrompt.toLowerCase().includes('simpl') || aiPrompt.toLowerCase().includes('less complicated')) {
-      updateTalkPoints('Here is a simplified version of the talk points. The content has been streamlined for easier understanding.');
-    }
-  };
-
   const goToSlide = (index: number) => {
     if (index >= 0 && index < slides.length) {
       setCurrentSlideIndex(index);
@@ -42,194 +31,124 @@ export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 bg-secondary flex items-center justify-center">
-            <div className="h-4 w-4 bg-muted-foreground" />
-          </div>
-          <div>
-            <h1 className="font-bold">How to Make a PBJ Sand</h1>
-            <p className="text-sm text-muted-foreground">-Intro</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground bg-secondary px-3 py-1">
-            unsaved changes
-          </span>
-          <Button variant="outline" size="sm">Comments</Button>
-          <Button variant="outline" size="sm">Saved</Button>
-          <Button size="sm">Publish</Button>
-        </div>
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-2xl font-semibold text-foreground">Edit Talk Points</h2>
+        <p className="text-muted-foreground mt-2">
+          Review and customize the AI-generated narration for each slide
+        </p>
       </div>
 
-      <div className="flex gap-6">
-        {/* Left Panel - Talk Points */}
-        <div className="w-1/3 space-y-4">
-          <div className="border-2 border-foreground p-4">
-            <h2 className="text-lg font-bold border-b-2 border-foreground pb-2 mb-4">Talk Points</h2>
-            
-            <div className="space-y-3">
-              <p className="text-sm font-medium">Quick Edits</p>
-              <div className="flex items-center gap-3">
-                <Button size="sm" className="gap-1">
-                  <Star className="h-3 w-3" />
-                  Ask Winston
-                </Button>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="verbose"
-                    checked={moreVerbose}
-                    onCheckedChange={(checked) => setMoreVerbose(checked as boolean)}
-                  />
-                  <label htmlFor="verbose" className="text-sm">More Verbose</label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="streamlined"
-                    checked={moreStreamlined}
-                    onCheckedChange={(checked) => setMoreStreamlined(checked as boolean)}
-                  />
-                  <label htmlFor="streamlined" className="text-sm">More Streamlined</label>
-                </div>
-              </div>
+      {/* Slide Navigation */}
+      <div className="flex items-center justify-center gap-4">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => goToSlide(currentSlideIndex - 1)}
+          disabled={currentSlideIndex === 0}
+          className="rounded-full"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        
+        <div className="flex items-center gap-2">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => goToSlide(index)}
+              className={`h-2.5 rounded-full transition-all duration-200 ${
+                index === currentSlideIndex 
+                  ? 'bg-primary w-6' 
+                  : 'bg-muted hover:bg-muted-foreground/50 w-2.5'
+              }`}
+            />
+          ))}
+        </div>
 
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Make it less complicated please."
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  className="flex-1"
-                />
-                <Button size="icon" onClick={handleAskWinston}>
-                  <Play className="h-4 w-4" />
-                </Button>
-              </div>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => goToSlide(currentSlideIndex + 1)}
+          disabled={currentSlideIndex === slides.length - 1}
+          className="rounded-full"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
 
-              {/* Text Formatting Toolbar */}
-              <div className="flex items-center gap-1 border border-foreground p-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Bold className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Italic className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Underline className="h-4 w-4" />
-                </Button>
-                <div className="w-px h-6 bg-border mx-1" />
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <ListOrdered className="h-4 w-4" />
-                </Button>
-                <div className="w-px h-6 bg-border mx-1" />
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Link className="h-4 w-4" />
-                </Button>
-              </div>
+      <div className="text-center text-sm text-muted-foreground">
+        Slide {currentSlideIndex + 1} of {slides.length}
+      </div>
 
-              <Textarea
-                value={currentSlide?.talkPoints || ''}
-                onChange={(e) => updateTalkPoints(e.target.value)}
-                className="min-h-[250px]"
-                placeholder="Enter talk points for this slide..."
-              />
-
-              <div className="flex justify-center">
-                <Button variant="outline">Preview</Button>
-              </div>
-            </div>
+      {/* Main Content */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Slide Preview (Read-only) */}
+        <div className="bg-muted/30 rounded-xl p-6 space-y-4">
+          <h3 className="font-semibold text-foreground text-lg">{currentSlide?.title || 'Slide Title'}</h3>
+          <div className="space-y-2">
+            {currentSlide?.content.map((point, i) => (
+              <p key={i} className="text-muted-foreground flex items-start gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary mt-2 shrink-0" />
+                {point}
+              </p>
+            ))}
+          </div>
+          <div className="aspect-video bg-card rounded-lg border flex items-center justify-center mt-4">
+            <span className="text-muted-foreground text-sm">Slide Preview</span>
           </div>
         </div>
 
-        {/* Right Panel - Slide Preview */}
-        <div className="flex-1 space-y-4">
-          {/* Slide Thumbnails */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2">
-            <Button variant="ghost" size="icon" onClick={() => goToSlide(currentSlideIndex - 1)}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            {slides.map((slide, index) => (
-              <div
-                key={slide.id}
-                onClick={() => goToSlide(index)}
-                className={`h-12 w-16 bg-secondary border-2 cursor-pointer flex-shrink-0 ${
-                  index === currentSlideIndex ? 'border-foreground shadow-sm' : 'border-muted'
-                }`}
-              />
-            ))}
-            <Button variant="ghost" size="icon" onClick={() => goToSlide(currentSlideIndex + 1)}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Plus className="h-4 w-4" />
+        {/* Talk Points Editor */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-foreground">Talk Points</label>
+            <Button variant="secondary" size="sm" className="gap-2 rounded-lg">
+              <Sparkles className="h-4 w-4" />
+              Regenerate
             </Button>
           </div>
 
-          {/* Slide Content */}
-          <div className="bg-secondary border-2 border-foreground p-8 min-h-[400px]">
-            <div className="flex gap-8">
-              <div className="flex-1">
-                <h2 className="text-3xl font-bold mb-6">{currentSlide?.title || 'Title of Slide'}</h2>
-                <div className="space-y-2">
-                  <p className="font-semibold">talk points:</p>
-                  <ol className="list-decimal list-inside space-y-1">
-                    {currentSlide?.content.map((point, i) => (
-                      <li key={i}>{point}</li>
-                    ))}
-                  </ol>
-                </div>
-              </div>
-              <div className="w-1/3 h-48 bg-muted border-2 border-foreground" />
-            </div>
+          {/* AI Quick Edit */}
+          <div className="flex gap-2">
+            <Input
+              placeholder="Ask Winston to edit..."
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              className="flex-1 rounded-lg"
+            />
+            <Button size="icon" className="rounded-lg">
+              <Sparkles className="h-4 w-4" />
+            </Button>
           </div>
 
-          {/* Slide Info */}
-          <div className="border-2 border-foreground p-4">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-muted-foreground">
-                Slide {currentSlideIndex + 1} of {slides.length}
-              </span>
-              <Button
-                variant="ghost"
-                onClick={() => setShowDetails(!showDetails)}
-                className="font-semibold"
-              >
-                Details
-              </Button>
-            </div>
-
-            {showDetails && (
-              <div className="space-y-4">
-                <div className="bg-secondary p-3">
-                  <p className="font-semibold text-sm">Extracted Keywords</p>
-                  <div className="flex gap-2 mt-2">
-                    {currentSlide?.keywords.map((keyword) => (
-                      <span key={keyword} className="text-xs bg-background px-2 py-1 border border-foreground">
-                        {keyword}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className="bg-secondary p-3">
-                  <p className="font-semibold text-sm">Auto-Summary</p>
-                  <p className="text-sm mt-1">{currentSlide?.summary}</p>
-                </div>
-              </div>
-            )}
+          {/* Formatting Toolbar */}
+          <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg w-fit">
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Bold className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Italic className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <List className="h-4 w-4" />
+            </Button>
           </div>
+
+          <Textarea
+            value={currentSlide?.talkPoints || ''}
+            onChange={(e) => updateTalkPoints(e.target.value)}
+            className="min-h-[240px] rounded-xl resize-none"
+            placeholder="Enter the narration for this slide..."
+          />
         </div>
       </div>
 
       <div className="flex justify-between pt-4">
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={onBack} className="rounded-xl">
           Back
         </Button>
-        <Button onClick={onContinue}>
-          Next
+        <Button onClick={onContinue} size="lg" className="rounded-xl px-8">
+          Add Assessments
         </Button>
       </div>
     </div>

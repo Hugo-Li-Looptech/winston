@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { MessageCircle, X, Send, Sparkles } from 'lucide-react';
+import { X, Send, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Message {
   id: string;
-  role: 'user' | 'assistant';
   content: string;
+  sender: 'user' | 'ai';
+  timestamp: Date;
 }
 
 export function AIAssistant() {
@@ -15,47 +15,38 @@ export function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      role: 'assistant',
-      content: "Hi! I'm Winston, your AI course assistant. I can help you create engaging courses, suggest talk points, and answer questions about your content. How can I help you today?",
+      content: "Hi! I'm Winston, your AI course assistant. How can I help you today?",
+      sender: 'ai',
+      timestamp: new Date(),
     },
   ]);
   const [input, setInput] = useState('');
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const handleSend = () => {
     if (!input.trim()) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      role: 'user',
       content: input,
+      sender: 'user',
+      timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
+    setIsSpeaking(true);
 
-    // Simulate AI response
     setTimeout(() => {
-      const assistantMessage: Message = {
+      const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: getAIResponse(input),
+        content: "I'm here to help you create an engaging course. Feel free to ask me anything about content organization, assessment strategies, or best practices for online learning.",
+        sender: 'ai',
+        timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, assistantMessage]);
-    }, 1000);
-  };
-
-  const getAIResponse = (query: string): string => {
-    const lowerQuery = query.toLowerCase();
-    if (lowerQuery.includes('talk point') || lowerQuery.includes('talkpoint')) {
-      return "I'd recommend structuring your talk points with a clear opening hook, 2-3 key points with examples, and a summary. Would you like me to generate some suggestions based on your slide content?";
-    }
-    if (lowerQuery.includes('assessment') || lowerQuery.includes('quiz')) {
-      return "For effective assessments, mix question types: use multiple choice for factual recall, and open-ended questions for deeper understanding. I can help you create questions that align with your learning goals.";
-    }
-    if (lowerQuery.includes('voice') || lowerQuery.includes('tone')) {
-      return "Based on your audience settings, I'd recommend a professional yet approachable tone. The 'Professional Female US' voice tends to work well for corporate training content.";
-    }
-    return "I'm here to help you create an engaging course. You can ask me about talk points, assessments, voice selection, or any other aspect of course creation!";
+      setMessages((prev) => [...prev, aiMessage]);
+      setIsSpeaking(false);
+    }, 1500);
   };
 
   return (
@@ -63,68 +54,76 @@ export function AIAssistant() {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 z-50 h-14 w-14 border-2 border-foreground bg-primary text-primary-foreground shadow-md flex items-center justify-center hover:shadow-lg transition-all ${isOpen ? 'hidden' : ''}`}
+        className={`fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center hover:scale-105 active:scale-95 z-40 ${isOpen ? 'hidden' : ''}`}
       >
-        <Sparkles className="h-6 w-6" />
+        <Bot className="h-6 w-6" />
       </button>
 
-      {/* Chat Panel */}
+      {/* Side Panel */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-96 h-[500px] bg-card border-2 border-foreground shadow-lg flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b-2 border-foreground bg-secondary">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center">
-                <Sparkles className="h-4 w-4" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Winston</h3>
-                <p className="text-xs text-muted-foreground">AI Course Assistant</p>
-              </div>
-            </div>
-            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+        <>
+          <div
+            className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
+            onClick={() => setIsOpen(false)}
+          />
 
-          {/* Messages */}
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-4">
+          <div className="fixed right-0 top-0 h-full w-full max-w-md bg-card shadow-2xl z-50 flex flex-col animate-slide-in-right">
+            <div className="flex items-center justify-between p-4 border-b">
+              <div>
+                <h3 className="font-semibold text-foreground">Conversation</h3>
+                <p className="text-xs text-muted-foreground">All speech is transcribed to text</p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] p-3 ${
-                      message.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-secondary border border-foreground'
+                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                      message.sender === 'user'
+                        ? 'bg-primary text-primary-foreground rounded-br-md'
+                        : 'bg-muted text-foreground rounded-bl-md'
                     }`}
                   >
                     <p className="text-sm">{message.content}</p>
                   </div>
                 </div>
               ))}
+              
+              {isSpeaking && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    <span className="h-2 w-2 rounded-full bg-primary animate-pulse [animation-delay:0.2s]" />
+                    <span className="h-2 w-2 rounded-full bg-primary animate-pulse [animation-delay:0.4s]" />
+                  </div>
+                  <span className="text-sm">Winston is speaking...</span>
+                </div>
+              )}
             </div>
-          </ScrollArea>
 
-          {/* Input */}
-          <div className="p-4 border-t-2 border-foreground">
-            <div className="flex gap-2">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Ask Winston..."
-                className="flex-1"
-              />
-              <Button onClick={handleSend} size="icon">
-                <Send className="h-4 w-4" />
-              </Button>
+            <div className="p-4 border-t">
+              <div className="flex gap-2">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                  placeholder="Type a message..."
+                  className="flex-1 rounded-full"
+                />
+                <Button size="icon" onClick={handleSend} className="rounded-full">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );

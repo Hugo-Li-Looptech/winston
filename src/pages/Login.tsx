@@ -7,35 +7,35 @@ import { GraduationCap } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
-  const [id, setId] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // For demo, just navigate to dashboard
     navigate('/dashboard');
   };
 
   return (
-    <div className="min-h-screen bg-muted flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-card border-2 border-foreground shadow-lg p-8">
-        <div className="flex flex-col items-center mb-8">
-          <div className="h-16 w-16 bg-secondary border-2 border-foreground flex items-center justify-center mb-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-sm animate-fade-in">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground mb-4">
             <GraduationCap className="h-8 w-8" />
           </div>
-          <h1 className="text-3xl font-bold">Log In</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Welcome back</h1>
+          <p className="text-muted-foreground mt-1">Sign in to your account</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="id">ID</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
-              id="id"
-              type="text"
-              value={id}
-              onChange={(e) => setId(e.target.value)}
-              placeholder="Enter your ID"
-              className="h-12"
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="h-12 rounded-xl"
             />
           </div>
 
@@ -44,22 +44,24 @@ export default function Login() {
             <Input
               id="password"
               type="password"
+              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              className="h-12"
+              className="h-12 rounded-xl"
             />
           </div>
 
-          <div className="flex justify-center gap-4 pt-4">
-            <Button type="button" variant="outline" className="w-28">
-              Cancel
-            </Button>
-            <Button type="submit" className="w-28">
-              Log In
-            </Button>
-          </div>
+          <Button type="submit" className="w-full h-12 rounded-xl" size="lg">
+            Sign in
+          </Button>
         </form>
+
+        <p className="text-center text-sm text-muted-foreground mt-6">
+          Don't have an account?{' '}
+          <button className="text-primary hover:underline font-medium">
+            Sign up
+          </button>
+        </p>
       </div>
     </div>
   );
