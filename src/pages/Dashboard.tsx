@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { GraduationCap, Plus, Search, Grid, List, Filter, FolderOpen } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, GraduationCap, LogOut, FolderOpen } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
 import { AIAssistant } from '@/components/AIAssistant';
 import { Course } from '@/types/course';
@@ -11,7 +10,6 @@ import { Course } from '@/types/course';
 export default function Dashboard() {
   const navigate = useNavigate();
   const { courses, resetCurrentCourse } = useCourse();
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleCreateCourse = () => {
@@ -19,141 +17,117 @@ export default function Dashboard() {
     navigate('/create');
   };
 
+  const filteredCourses = courses.filter((course) =>
+    course.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const getStatusBadge = (status: Course['status']) => {
-    const variants: Record<Course['status'], string> = {
-      published: 'bg-primary text-primary-foreground',
-      pending: 'bg-secondary text-secondary-foreground border border-foreground',
-      in_progress: 'bg-accent text-accent-foreground border border-foreground',
+    const styles: Record<Course['status'], string> = {
+      published: 'bg-primary/10 text-primary',
+      pending: 'bg-muted text-muted-foreground',
+      in_progress: 'bg-accent text-accent-foreground',
     };
     const labels: Record<Course['status'], string> = {
       published: 'Published',
       pending: 'Pending',
       in_progress: 'In Progress',
     };
-    return <span className={`px-3 py-1 text-sm font-medium ${variants[status]}`}>{labels[status]}</span>;
+    return (
+      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
+        {labels[status]}
+      </span>
+    );
   };
-
-  const getProgressDisplay = (progress: Course['progress']) => {
-    const labels: Record<Course['progress'], string> = {
-      '100%': '100%',
-      '0%': '0%',
-      slides_uploaded: 'Slides Uploaded',
-      wizard_complete: 'Wizard Complete',
-      setting_talk_points: 'Setting Talk Points',
-      awaiting_preview: 'Awaiting Preview',
-    };
-    return <span className="text-sm text-muted-foreground bg-secondary px-3 py-1">{labels[progress]}</span>;
-  };
-
-  const filteredCourses = courses.filter((course) =>
-    course.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const isEmpty = courses.length === 0;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b-2 border-foreground px-6 py-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+      <header className="bg-card border-b sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-secondary border-2 border-foreground flex items-center justify-center">
+            <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center">
               <GraduationCap className="h-5 w-5" />
             </div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <span className="font-semibold text-foreground">CourseAI</span>
           </div>
-          <Button onClick={handleCreateCourse} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Create
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        {isEmpty ? (
-          /* Empty State */
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="border-2 border-foreground p-12 text-center">
-              <div className="h-24 w-24 bg-secondary rounded-full mx-auto mb-6 flex items-center justify-center">
-                <FolderOpen className="h-12 w-12 text-muted-foreground" />
-              </div>
-              <h2 className="text-2xl font-bold mb-4">No Course</h2>
-              <Button variant="outline" onClick={handleCreateCourse}>
-                How to Start a Course
-              </Button>
+      <main className="max-w-6xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">My Courses</h1>
+            <p className="text-muted-foreground mt-1">Create and manage your courses</p>
+          </div>
+          <Button onClick={handleCreateCourse} size="lg" className="rounded-xl gap-2">
+            <Plus className="h-5 w-5" />
+            New Course
+          </Button>
+        </div>
+
+        <div className="relative mb-6">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Input
+            placeholder="Search courses..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-12 h-12 rounded-xl"
+          />
+        </div>
+
+        {filteredCourses.length === 0 ? (
+          <div className="text-center py-16 animate-fade-in">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted mb-4">
+              <FolderOpen className="h-8 w-8 text-muted-foreground" />
             </div>
+            <h3 className="text-lg font-medium text-foreground mb-2">No courses yet</h3>
+            <p className="text-muted-foreground mb-6">Create your first course to get started</p>
+            <Button onClick={handleCreateCourse} className="rounded-xl">
+              Create Course
+            </Button>
           </div>
         ) : (
-          /* Course List */
-          <div className="space-y-6">
-            {/* Search and Controls */}
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search Bar"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <div className="flex items-center gap-2 ml-auto">
-                <Button variant="outline" size="icon">
-                  <Filter className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'outline'}
-                  size="icon"
-                  onClick={() => setViewMode('grid')}
-                >
-                  <Grid className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'outline'}
-                  size="icon"
-                  onClick={() => setViewMode('list')}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="border-2 border-foreground">
-              <table className="w-full">
-                <thead className="border-b-2 border-foreground">
-                  <tr>
-                    <th className="text-left p-4 font-semibold">Course Title</th>
-                    <th className="text-left p-4 font-semibold">Date</th>
-                    <th className="text-left p-4 font-semibold">Status</th>
-                    <th className="text-left p-4 font-semibold">Progress</th>
-                    <th className="text-left p-4 font-semibold">Actions</th>
+          <div className="bg-card rounded-2xl shadow-sm overflow-hidden animate-fade-in">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left py-4 px-6 text-sm font-medium text-muted-foreground">Course Name</th>
+                  <th className="text-left py-4 px-6 text-sm font-medium text-muted-foreground">Date</th>
+                  <th className="text-left py-4 px-6 text-sm font-medium text-muted-foreground">Status</th>
+                  <th className="text-left py-4 px-6 text-sm font-medium text-muted-foreground">Progress</th>
+                  <th className="py-4 px-6"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCourses.map((course) => (
+                  <tr key={course.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="py-4 px-6">
+                      <span className="font-medium text-foreground">{course.title}</span>
+                    </td>
+                    <td className="py-4 px-6 text-muted-foreground">{course.date}</td>
+                    <td className="py-4 px-6">{getStatusBadge(course.status)}</td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        <div className="h-2 w-24 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary rounded-full transition-all"
+                            style={{ width: course.progress === '100%' ? '100%' : course.progress === '0%' ? '0%' : '50%' }}
+                          />
+                        </div>
+                        <span className="text-sm text-muted-foreground">{course.progress}</span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-5 w-5" />
+                      </Button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {filteredCourses.map((course, index) => (
-                    <tr
-                      key={course.id}
-                      className={index !== filteredCourses.length - 1 ? 'border-b border-muted' : ''}
-                    >
-                      <td className="p-4 font-medium">{course.title}</td>
-                      <td className="p-4">{course.date}</td>
-                      <td className="p-4">{getStatusBadge(course.status)}</td>
-                      <td className="p-4">{getProgressDisplay(course.progress)}</td>
-                      <td className="p-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate('/create')}
-                        >
-                          Edit
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </main>

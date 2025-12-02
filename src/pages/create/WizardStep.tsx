@@ -4,7 +4,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCourse } from '@/contexts/CourseContext';
-import { ChevronRight } from 'lucide-react';
 
 interface WizardStepProps {
   onContinue: () => void;
@@ -60,33 +59,29 @@ export function WizardStep({ onContinue, onBack }: WizardStepProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="text-center">
-        <h2 className="text-2xl font-bold">Set-up Wizard</h2>
+        <h2 className="text-2xl font-semibold text-foreground">Course Setup</h2>
         <p className="text-muted-foreground mt-2">
-          Let Winston learn more about the Target Audience to enhance the user experience.
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Set up Learning level, Audience Type, and Learning Goals to tailor-made the delivery and tone of Winston.
+          Help Winston understand your target audience for better content delivery
         </p>
       </div>
 
       {/* Learning Level */}
-      <div className="border-2 border-foreground p-6 space-y-4">
-        <div className="flex items-start gap-4">
-          <span className="font-semibold">1.</span>
-          <div className="flex-1">
-            <h3 className="font-semibold">Choose Learning Level</h3>
-            <p className="text-sm text-muted-foreground">
-              Adjusts Winston's teaching depth and explanation style.
+      <div className="bg-muted/30 rounded-xl p-6 space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-medium text-foreground">Learning Level</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Adjusts Winston's teaching depth and explanation style
             </p>
           </div>
           <Select
             value={settings.learningLevel}
             onValueChange={(value) => setSettings({ ...settings, learningLevel: value })}
           >
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Select a Learning Level" />
+            <SelectTrigger className="w-48 rounded-lg">
+              <SelectValue placeholder="Select level" />
             </SelectTrigger>
             <SelectContent>
               {learningLevels.map((level) => (
@@ -100,25 +95,30 @@ export function WizardStep({ onContinue, onBack }: WizardStepProps) {
       </div>
 
       {/* Audience Type */}
-      <div className="border-2 border-foreground p-6 space-y-4">
-        <div className="flex items-start gap-4">
-          <span className="font-semibold">2.</span>
-          <div className="flex-1">
-            <h3 className="font-semibold">Intended Audience Type</h3>
-            <p className="text-sm text-muted-foreground">
-              Helps Winston choose the right tone and examples for your learners.
-            </p>
-          </div>
+      <div className="bg-muted/30 rounded-xl p-6 space-y-4">
+        <div>
+          <h3 className="font-medium text-foreground">Target Audience</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Helps Winston choose the right tone and examples
+          </p>
         </div>
-        <div className="grid grid-cols-3 gap-3 ml-8">
+        <div className="grid grid-cols-3 gap-3">
           {audienceTypes.map((type) => (
-            <div key={type} className="flex items-center gap-2">
+            <div
+              key={type}
+              onClick={() => toggleAudience(type)}
+              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
+                settings.audienceTypes.includes(type)
+                  ? 'bg-primary/10 border-2 border-primary'
+                  : 'bg-card border-2 border-transparent hover:border-muted-foreground/30'
+              }`}
+            >
               <Checkbox
                 id={`audience-${type}`}
                 checked={settings.audienceTypes.includes(type)}
-                onCheckedChange={() => toggleAudience(type)}
+                className="pointer-events-none"
               />
-              <Label htmlFor={`audience-${type}`} className="text-sm cursor-pointer">
+              <Label htmlFor={`audience-${type}`} className="text-sm cursor-pointer flex-1">
                 {type}
               </Label>
             </div>
@@ -127,25 +127,30 @@ export function WizardStep({ onContinue, onBack }: WizardStepProps) {
       </div>
 
       {/* Learning Goals */}
-      <div className="border-2 border-foreground p-6 space-y-4">
-        <div className="flex items-start gap-4">
-          <span className="font-semibold">3.</span>
-          <div className="flex-1">
-            <h3 className="font-semibold">Learning Goals</h3>
-            <p className="text-sm text-muted-foreground">
-              Ensures Winston focuses on the outcomes you care about most.
-            </p>
-          </div>
+      <div className="bg-muted/30 rounded-xl p-6 space-y-4">
+        <div>
+          <h3 className="font-medium text-foreground">Learning Goals</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Ensures Winston focuses on the outcomes you care about
+          </p>
         </div>
-        <div className="grid grid-cols-3 gap-3 ml-8">
+        <div className="grid grid-cols-3 gap-3">
           {learningGoals.map((goal) => (
-            <div key={goal} className="flex items-center gap-2">
+            <div
+              key={goal}
+              onClick={() => toggleGoal(goal)}
+              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
+                settings.learningGoals.includes(goal)
+                  ? 'bg-primary/10 border-2 border-primary'
+                  : 'bg-card border-2 border-transparent hover:border-muted-foreground/30'
+              }`}
+            >
               <Checkbox
                 id={`goal-${goal}`}
                 checked={settings.learningGoals.includes(goal)}
-                onCheckedChange={() => toggleGoal(goal)}
+                className="pointer-events-none"
               />
-              <Label htmlFor={`goal-${goal}`} className="text-sm cursor-pointer">
+              <Label htmlFor={`goal-${goal}`} className="text-sm cursor-pointer flex-1">
                 {goal}
               </Label>
             </div>
@@ -153,11 +158,11 @@ export function WizardStep({ onContinue, onBack }: WizardStepProps) {
         </div>
       </div>
 
-      <div className="flex justify-center gap-4">
-        <Button variant="outline" onClick={onBack} className="w-32">
+      <div className="flex justify-between pt-4">
+        <Button variant="outline" onClick={onBack} className="rounded-xl">
           Back
         </Button>
-        <Button onClick={handleContinue} className="w-32">
+        <Button onClick={handleContinue} size="lg" className="rounded-xl px-8">
           Continue
         </Button>
       </div>
