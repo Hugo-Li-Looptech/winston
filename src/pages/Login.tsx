@@ -1,18 +1,18 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { GraduationCap } from 'lucide-react';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { GraduationCap } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/dashboard');
+    navigate("/dashboard");
   };
 
   return (
@@ -22,7 +22,7 @@ export default function Login() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground mb-4">
             <GraduationCap className="h-8 w-8" />
           </div>
-          <h1 className="text-2xl font-semibold text-foreground">Welcome back</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Welcome back to Winston</h1>
           <p className="text-muted-foreground mt-1">Sign in to your account</p>
         </div>
 
@@ -57,10 +57,7 @@ export default function Login() {
         </form>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          Don't have an account?{' '}
-          <button className="text-primary hover:underline font-medium">
-            Sign up
-          </button>
+          Don't have an account? <button className="text-primary hover:underline font-medium">Sign up</button>
         </p>
       </div>
     </div>
