@@ -135,7 +135,7 @@ export function ScriptingStep({
           <ResizablePanel defaultSize={60} minSize={40} maxSize={75}>
             <div className="h-full bg-muted/30 flex flex-col overflow-hidden">
               {/* Item Carousel */}
-              <div className="bg-card border-b px-4 py-4 ">
+              <div className="bg-card border-b px-6 py-4 ">
                 <div className="flex items-center justify-center gap-2">
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => goToItem(currentItemIndex - 1)} disabled={currentItemIndex === 0}>
                     <ChevronLeft className="h-4 w-4" />
