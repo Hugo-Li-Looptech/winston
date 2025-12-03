@@ -93,7 +93,7 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
           <ResizablePanel defaultSize={40} minSize={25} maxSize={60}>
             <div className="h-full bg-card flex flex-col">
               {/* Tab Navigation - aligned with carousel */}
-              <div className="bg-card border-b px-6 py-4">
+              <div className="bg-card border-b px-6 h-14 flex items-end">
                 <div className="flex gap-4">
                   <button
                     onClick={() => setActiveTab("scripting")}
