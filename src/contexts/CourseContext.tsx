@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Course, SlideFile, WizardSettings, Slide, Assessment, WizardStep, CourseItem } from '@/types/course';
+import { Course, SlideFile, WizardSettings, Slide, Assessment, AssessmentQuestion, WizardStep, CourseItem } from '@/types/course';
 
 interface CourseContextType {
   courses: Course[];
@@ -20,6 +20,8 @@ interface CourseContextType {
   setAssessments: (assessments: Assessment[]) => void;
   setCourseItems: (items: CourseItem[]) => void;
   insertAssessmentAtIndex: (index: number) => void;
+  addQuestionToAssessment: (assessmentId: string) => void;
+  removeQuestionFromAssessment: (assessmentId: string, questionId: string) => void;
   setCurrentStep: (step: WizardStep) => void;
   resetCurrentCourse: () => void;
   deleteCourse: (id: string) => void;
@@ -161,18 +163,23 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const createDefaultQuestion = (): AssessmentQuestion => ({
+    id: `question-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    question: '',
+    type: 'multi_selection',
+    options: [
+      { label: '', isCorrect: false },
+      { label: '', isCorrect: false },
+      { label: '', isCorrect: false },
+    ],
+  });
+
   const insertAssessmentAtIndex = (index: number) => {
     const newAssessment: Assessment = {
       id: `assessment-${Date.now()}`,
-      question: '',
-      type: 'multi_selection',
       weight: 10,
       passingThreshold: 50,
-      options: [
-        { label: '', isCorrect: false },
-        { label: '', isCorrect: false },
-        { label: '', isCorrect: false },
-      ],
+      questions: [createDefaultQuestion()],
     };
     
     const newItem: CourseItem = {
@@ -188,6 +195,43 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     });
     
     setAssessments((prev) => [...prev, newAssessment]);
+  };
+
+  const addQuestionToAssessment = (assessmentId: string) => {
+    setCourseItems((prevItems) =>
+      prevItems.map((item) => {
+        if (item.type === 'assessment' && item.assessmentData?.id === assessmentId) {
+          return {
+            ...item,
+            assessmentData: {
+              ...item.assessmentData,
+              questions: [...item.assessmentData.questions, createDefaultQuestion()],
+            },
+          };
+        }
+        return item;
+      })
+    );
+  };
+
+  const removeQuestionFromAssessment = (assessmentId: string, questionId: string) => {
+    setCourseItems((prevItems) =>
+      prevItems.map((item) => {
+        if (item.type === 'assessment' && item.assessmentData?.id === assessmentId) {
+          const updatedQuestions = item.assessmentData.questions.filter((q) => q.id !== questionId);
+          // Don't allow removing the last question
+          if (updatedQuestions.length === 0) return item;
+          return {
+            ...item,
+            assessmentData: {
+              ...item.assessmentData,
+              questions: updatedQuestions,
+            },
+          };
+        }
+        return item;
+      })
+    );
   };
 
   const resetCurrentCourse = () => {
@@ -247,6 +291,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         setAssessments,
         setCourseItems,
         insertAssessmentAtIndex,
+        addQuestionToAssessment,
+        removeQuestionFromAssessment,
         setCurrentStep,
         resetCurrentCourse,
         deleteCourse,
