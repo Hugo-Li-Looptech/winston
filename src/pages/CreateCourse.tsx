@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StepIndicator } from '@/components/StepIndicator';
@@ -16,8 +16,10 @@ type SubStep = 'upload' | 'wizard-input' | 'wizard-confirm' | 'scripting' | 'pre
 
 export default function CreateCourse() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { setCurrentStep } = useCourse();
-  const [subStep, setSubStep] = useState<SubStep>('upload');
+  const isPreviewOnly = searchParams.get('mode') === 'preview';
+  const [subStep, setSubStep] = useState<SubStep>(isPreviewOnly ? 'preview' : 'upload');
   const [isStepIndicatorCollapsed, setIsStepIndicatorCollapsed] = useState(false);
 
   const getWizardStep = (): WizardStepType => {
@@ -87,7 +89,18 @@ export default function CreateCourse() {
           />
         );
       case 'preview':
-        return <PreviewStep onBack={() => setSubStep('scripting')} />;
+        return (
+          <PreviewStep 
+            onBack={() => {
+              if (isPreviewOnly) {
+                navigate('/dashboard');
+              } else {
+                setSubStep('scripting');
+              }
+            }} 
+            isPreviewOnly={isPreviewOnly} 
+          />
+        );
       default:
         return null;
     }

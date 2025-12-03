@@ -8,9 +8,10 @@ import { Slider } from '@/components/ui/slider';
 
 interface PreviewStepProps {
   onBack: () => void;
+  isPreviewOnly?: boolean;
 }
 
-export function PreviewStep({ onBack }: PreviewStepProps) {
+export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps) {
   const navigate = useNavigate();
   const { currentCourse, setCourses, courses } = useCourse();
   const { courseItems } = currentCourse;
@@ -62,14 +63,16 @@ export function PreviewStep({ onBack }: PreviewStepProps) {
             <h1 className="text-xl font-semibold text-foreground">Preview Your Course</h1>
             <p className="text-sm text-muted-foreground">Experience your course from a student's perspective</p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={handleSaveDraft} className="rounded-xl">
-              Save as Draft
-            </Button>
-            <Button onClick={handlePublish} className="rounded-xl">
-              Publish Course
-            </Button>
-          </div>
+          {!isPreviewOnly && (
+            <div className="flex items-center gap-3">
+              <Button variant="outline" onClick={handleSaveDraft} className="rounded-xl">
+                Save as Draft
+              </Button>
+              <Button onClick={handlePublish} className="rounded-xl">
+                Publish Course
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -262,7 +265,7 @@ export function PreviewStep({ onBack }: PreviewStepProps) {
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <Button variant="outline" onClick={onBack} className="gap-2 rounded-xl">
             <ArrowLeft className="h-4 w-4" />
-            Back to Editing
+            {isPreviewOnly ? 'Back to Dashboard' : 'Back to Editing'}
           </Button>
           <div className="text-sm text-muted-foreground">
             {courseItems.filter(i => i.type === 'slide').length} slides • {courseItems.filter(i => i.type === 'assessment').length} assessments

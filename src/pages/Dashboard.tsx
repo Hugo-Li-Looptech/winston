@@ -14,6 +14,7 @@ import {
   EyeOff,
   Eye,
   Trash2,
+  Play,
 } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
 import { AIAssistant } from "@/components/AIAssistant";
@@ -51,6 +52,10 @@ export default function Dashboard() {
 
   const handleEditCourse = (courseId: string) => {
     navigate("/create");
+  };
+
+  const handlePreviewCourse = (courseId: string) => {
+    navigate("/create?mode=preview");
   };
 
   const handleDuplicateCourse = (courseId: string) => {
@@ -200,6 +205,10 @@ export default function Dashboard() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={() => handlePreviewCourse(course.id)}>
+                            <Play className="h-4 w-4 mr-2" />
+                            Preview
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEditCourse(course.id)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
