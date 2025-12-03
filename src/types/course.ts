@@ -68,17 +68,24 @@ export const RUBRIC_LEVELS: { level: RubricLevel; label: string; points: number 
   { level: 'exceeding', label: 'Exceeding', points: 10 },
 ];
 
-export interface Assessment {
+// Individual question within an assessment
+export interface AssessmentQuestion {
   id: string;
   question: string;
   type: QuestionType;
-  weight: number;
-  passingThreshold: number;
   // For multi_selection (single correct) and checkbox (multiple correct)
   options?: { label: string; isCorrect: boolean }[];
   // For open_ended with rubric
   rubricCriteria?: RubricCriteria[];
   rubricCells?: RubricCell[];
+}
+
+// Assessment is now a collection of questions
+export interface Assessment {
+  id: string;
+  weight: number;
+  passingThreshold: number;
+  questions: AssessmentQuestion[];
 }
 
 export type WizardStep = 'upload' | 'wizard' | 'scripting' | 'preview';

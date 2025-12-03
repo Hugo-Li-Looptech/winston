@@ -157,42 +157,55 @@ export function PreviewStep({ onBack }: PreviewStepProps) {
                     <ClipboardList className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground">Assessment Question</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Assessment</h3>
                     <p className="text-sm text-muted-foreground">
-                      {currentAssessment.type === 'multi_selection' && 'Select the correct answer'}
-                      {currentAssessment.type === 'checkbox' && 'Select all that apply'}
-                      {currentAssessment.type === 'open_ended' && 'Write your response'}
+                      {currentAssessment.questions.length} question{currentAssessment.questions.length !== 1 ? 's' : ''}
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-muted/50 rounded-xl p-6">
-                  <p className="text-lg font-medium text-foreground mb-4">
-                    {currentAssessment.question || 'No question text configured'}
-                  </p>
-                  
-                  {(currentAssessment.type === 'multi_selection' || currentAssessment.type === 'checkbox') && 
-                    currentAssessment.options && (
-                    <div className="space-y-3">
-                      {currentAssessment.options.map((opt, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center gap-3 p-3 bg-background rounded-lg border cursor-pointer hover:border-primary/50 transition-colors"
-                        >
-                          <div className={`w-5 h-5 rounded-full border-2 ${
-                            currentAssessment.type === 'checkbox' ? 'rounded' : ''
-                          } border-muted-foreground`} />
-                          <span className="text-foreground">{opt.label || `Option ${i + 1}`}</span>
+                <div className="space-y-6">
+                  {currentAssessment.questions.map((question, qIndex) => (
+                    <div key={question.id} className="bg-muted/50 rounded-xl p-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                          Q{qIndex + 1}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {question.type === 'multi_selection' && 'Select one'}
+                          {question.type === 'checkbox' && 'Select all that apply'}
+                          {question.type === 'open_ended' && 'Open response'}
+                        </span>
+                      </div>
+                      
+                      <p className="text-lg font-medium text-foreground mb-4">
+                        {question.question || 'No question text configured'}
+                      </p>
+                      
+                      {(question.type === 'multi_selection' || question.type === 'checkbox') && 
+                        question.options && (
+                        <div className="space-y-3">
+                          {question.options.map((opt, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center gap-3 p-3 bg-background rounded-lg border cursor-pointer hover:border-primary/50 transition-colors"
+                            >
+                              <div className={`w-5 h-5 border-2 ${
+                                question.type === 'checkbox' ? 'rounded' : 'rounded-full'
+                              } border-muted-foreground`} />
+                              <span className="text-foreground">{opt.label || `Option ${i + 1}`}</span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
+                      
+                      {question.type === 'open_ended' && (
+                        <div className="bg-background rounded-lg p-4 border-2 border-dashed border-muted-foreground/30 min-h-[120px]">
+                          <p className="text-muted-foreground">Student response area...</p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  
-                  {currentAssessment.type === 'open_ended' && (
-                    <div className="bg-background rounded-lg p-4 border-2 border-dashed border-muted-foreground/30 min-h-[120px]">
-                      <p className="text-muted-foreground">Student response area...</p>
-                    </div>
-                  )}
+                  ))}
                 </div>
               </div>
             )}
