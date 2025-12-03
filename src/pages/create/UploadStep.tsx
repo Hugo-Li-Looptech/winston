@@ -165,7 +165,7 @@ export function UploadStep({ onContinue }: UploadStepProps) {
 
         {!hasSupplementFiles ? (
           <div
-            className={`m-6 flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 ${
+            className={`m-6 flex flex-col items-center justify-center h-40 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 ${
               isDraggingSupp ? "border-primary bg-primary/5" : "border-border hover:border-primary hover:bg-muted/30"
             }`}
             onDragOver={(e) => {
