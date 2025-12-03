@@ -18,8 +18,12 @@ export default function CreateCourse() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { setCurrentStep } = useCourse();
-  const isPreviewOnly = searchParams.get('mode') === 'preview';
-  const [subStep, setSubStep] = useState<SubStep>(isPreviewOnly ? 'preview' : 'upload');
+  const mode = searchParams.get('mode');
+  const isPreviewOnly = mode === 'preview';
+  const isEditMode = mode === 'edit';
+  const [subStep, setSubStep] = useState<SubStep>(
+    isPreviewOnly ? 'preview' : isEditMode ? 'scripting' : 'upload'
+  );
   const [isStepIndicatorCollapsed, setIsStepIndicatorCollapsed] = useState(false);
 
   const getWizardStep = (): WizardStepType => {

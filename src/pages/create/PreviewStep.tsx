@@ -32,7 +32,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
   };
 
   const handleEdit = () => {
-    navigate('/create');
+    navigate('/create?mode=edit');
   };
 
   const handleTogglePublish = () => {
