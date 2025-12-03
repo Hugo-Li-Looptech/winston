@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { useCourse } from '@/contexts/CourseContext';
 import { Plus, Trash2, CheckCircle, X, Edit2, Save, ChevronLeft, ChevronRight, ClipboardList } from 'lucide-react';
-import { Assessment, QuestionType, RubricCriteria, RubricCell, RUBRIC_LEVELS } from '@/types/course';
+import { Assessment, QuestionType, RubricCriteria, RubricCell, RUBRIC_LEVELS, WizardStep } from '@/types/course';
 import {
   Select,
   SelectContent,
@@ -26,9 +26,10 @@ import {
 interface AssessmentStepProps {
   onContinue: () => void;
   onBack: () => void;
+  onStepClick?: (step: WizardStep) => void;
 }
 
-export function AssessmentStep({ onContinue, onBack }: AssessmentStepProps) {
+export function AssessmentStep({ onContinue, onBack, onStepClick }: AssessmentStepProps) {
   const navigate = useNavigate();
   const { currentCourse, setAssessments } = useCourse();
   const [assessments, setLocalAssessments] = useState<Assessment[]>(
@@ -169,6 +170,7 @@ export function AssessmentStep({ onContinue, onBack }: AssessmentStepProps) {
         isCollapsed={isHeaderCollapsed}
         onToggleCollapse={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
         onClose={() => navigate('/dashboard')}
+        onStepClick={onStepClick}
         showActions={true}
       />
 

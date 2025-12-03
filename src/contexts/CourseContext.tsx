@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Course, SlideFile, WizardSettings, Slide, Assessment, WizardStep } from '@/types/course';
+import { Course, SlideFile, WizardSettings, Slide, Assessment, WizardStep, CourseItem } from '@/types/course';
 
 interface CourseContextType {
   courses: Course[];
@@ -10,6 +10,7 @@ interface CourseContextType {
     wizardSettings: WizardSettings;
     slides: Slide[];
     assessments: Assessment[];
+    courseItems: CourseItem[];
     currentStep: WizardStep;
   };
   setSlideFiles: (files: SlideFile[]) => void;
@@ -17,6 +18,8 @@ interface CourseContextType {
   setWizardSettings: (settings: WizardSettings) => void;
   setSlides: (slides: Slide[]) => void;
   setAssessments: (assessments: Assessment[]) => void;
+  setCourseItems: (items: CourseItem[]) => void;
+  insertAssessmentAtIndex: (index: number) => void;
   setCurrentStep: (step: WizardStep) => void;
   resetCurrentCourse: () => void;
   deleteCourse: (id: string) => void;
@@ -117,6 +120,15 @@ const defaultSlides: Slide[] = [
 
 const CourseContext = createContext<CourseContextType | undefined>(undefined);
 
+// Build initial course items from default slides
+const buildCourseItemsFromSlides = (slides: Slide[]): CourseItem[] => {
+  return slides.map((slide) => ({
+    id: slide.id,
+    type: 'slide' as const,
+    slideData: slide,
+  }));
+};
+
 export function CourseProvider({ children }: { children: ReactNode }) {
   const [courses, setCourses] = useState<Course[]>([
     { id: '1', title: 'PBJ tutorial 101', date: '05/25/25', status: 'published', progress: '100%' },
@@ -127,16 +139,64 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   const [slideFiles, setSlideFiles] = useState<SlideFile[]>([]);
   const [supplementFiles, setSupplementFiles] = useState<SlideFile[]>([]);
   const [wizardSettings, setWizardSettings] = useState<WizardSettings>(defaultWizardSettings);
-  const [slides, setSlides] = useState<Slide[]>(defaultSlides);
+  const [slides, setSlidesState] = useState<Slide[]>(defaultSlides);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [courseItems, setCourseItems] = useState<CourseItem[]>(buildCourseItemsFromSlides(defaultSlides));
   const [currentStep, setCurrentStep] = useState<WizardStep>('upload');
+
+  // Wrapper to keep slides and courseItems in sync
+  const setSlides = (newSlides: Slide[]) => {
+    setSlidesState(newSlides);
+    // Update courseItems to reflect slide changes
+    setCourseItems((prevItems) => {
+      const assessmentItems = prevItems.filter((item) => item.type === 'assessment');
+      const newSlideItems = newSlides.map((slide) => ({
+        id: slide.id,
+        type: 'slide' as const,
+        slideData: slide,
+      }));
+      // Re-merge: slides first, then assessments at their positions
+      // For now, just rebuild based on slides (assessments handled separately)
+      return [...newSlideItems, ...assessmentItems];
+    });
+  };
+
+  const insertAssessmentAtIndex = (index: number) => {
+    const newAssessment: Assessment = {
+      id: `assessment-${Date.now()}`,
+      question: '',
+      type: 'multi_selection',
+      weight: 10,
+      passingThreshold: 50,
+      options: [
+        { label: '', isCorrect: false },
+        { label: '', isCorrect: false },
+        { label: '', isCorrect: false },
+      ],
+    };
+    
+    const newItem: CourseItem = {
+      id: newAssessment.id,
+      type: 'assessment',
+      assessmentData: newAssessment,
+    };
+    
+    setCourseItems((prevItems) => {
+      const newItems = [...prevItems];
+      newItems.splice(index + 1, 0, newItem);
+      return newItems;
+    });
+    
+    setAssessments((prev) => [...prev, newAssessment]);
+  };
 
   const resetCurrentCourse = () => {
     setSlideFiles([]);
     setSupplementFiles([]);
     setWizardSettings(defaultWizardSettings);
-    setSlides(defaultSlides);
+    setSlidesState(defaultSlides);
     setAssessments([]);
+    setCourseItems(buildCourseItemsFromSlides(defaultSlides));
     setCurrentStep('upload');
   };
 
@@ -177,6 +237,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
           wizardSettings,
           slides,
           assessments,
+          courseItems,
           currentStep,
         },
         setSlideFiles,
@@ -184,6 +245,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         setWizardSettings,
         setSlides,
         setAssessments,
+        setCourseItems,
+        insertAssessmentAtIndex,
         setCurrentStep,
         resetCurrentCourse,
         deleteCourse,
