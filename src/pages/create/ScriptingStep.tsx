@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ArrowRight, Send, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, ArrowRight, Send, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
 import { QuickEditsPanel } from "@/components/QuickEditsPanel";
 import { RichTextToolbar } from "@/components/RichTextToolbar";
@@ -15,16 +16,27 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { ClipboardList } from "lucide-react";
-import { WizardStep } from "@/types/course";
+import { WizardStep, QuestionType, Assessment } from "@/types/course";
+import { RubricEditor } from "@/components/RubricEditor";
+
 interface ScriptingStepProps {
   onContinue: () => void;
   onBack: () => void;
   onStepClick?: (step: WizardStep) => void;
 }
+
 export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStepProps) {
   const navigate = useNavigate();
-  const { currentCourse, setSlides, insertAssessmentAtIndex } = useCourse();
+  const { currentCourse, setSlides, insertAssessmentAtIndex, setCourseItems } = useCourse();
   const { slides, courseItems } = currentCourse;
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [aiPrompt, setAiPrompt] = useState("");
@@ -37,42 +49,131 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
   const currentItem = courseItems[currentItemIndex];
   const currentSlide = currentItem?.type === "slide" ? currentItem.slideData : null;
   const currentAssessment = currentItem?.type === "assessment" ? currentItem.assessmentData : null;
+
   const updateTalkPoints = (newTalkPoints: string) => {
     if (!currentSlide) return;
     const updatedSlides = slides.map((slide) =>
       slide.id === currentSlide.id
-        ? {
-            ...slide,
-            talkPoints: newTalkPoints,
-          }
+        ? { ...slide, talkPoints: newTalkPoints }
         : slide,
     );
     setSlides(updatedSlides);
   };
+
   const goToItem = (index: number) => {
     if (index >= 0 && index < courseItems.length) {
       setCurrentItemIndex(index);
     }
   };
+
   const handleAskWinston = () => {
     console.log("Ask Winston clicked");
   };
+
   const handleAiPromptSubmit = () => {
     if (aiPrompt.trim()) {
       console.log("AI Prompt submitted:", aiPrompt);
       setAiPrompt("");
     }
   };
+
   const handleAddAssessment = () => {
     insertAssessmentAtIndex(currentItemIndex);
-    // Move to the newly inserted assessment
     setCurrentItemIndex(currentItemIndex + 1);
+  };
+
+  // Assessment update functions
+  const updateAssessment = (updates: Partial<Assessment>) => {
+    if (!currentAssessment) return;
+    setCourseItems(
+      courseItems.map((item) =>
+        item.id === currentAssessment.id
+          ? { ...item, assessmentData: { ...currentAssessment, ...updates } }
+          : item
+      )
+    );
+  };
+
+  const updateAssessmentType = (type: QuestionType) => {
+    if (!currentAssessment) return;
+    const updates: Partial<Assessment> = { type };
+    if (type === 'open_ended') {
+      updates.options = undefined;
+      updates.rubricCriteria = [];
+      updates.rubricCells = [];
+    } else {
+      updates.rubricCriteria = undefined;
+      updates.rubricCells = undefined;
+      updates.options = [
+        { label: '', isCorrect: false },
+        { label: '', isCorrect: false },
+        { label: '', isCorrect: false },
+      ];
+    }
+    updateAssessment(updates);
+  };
+
+  const updateOptionLabel = (index: number, label: string) => {
+    if (!currentAssessment?.options) return;
+    const newOptions = [...currentAssessment.options];
+    newOptions[index] = { ...newOptions[index], label };
+    updateAssessment({ options: newOptions });
+  };
+
+  const toggleCorrectAnswer = (index: number) => {
+    if (!currentAssessment?.options) return;
+    const newOptions = currentAssessment.options.map((opt, i) => {
+      if (currentAssessment.type === 'multi_selection') {
+        return { ...opt, isCorrect: i === index };
+      }
+      return i === index ? { ...opt, isCorrect: !opt.isCorrect } : opt;
+    });
+    updateAssessment({ options: newOptions });
+  };
+
+  const addOption = () => {
+    if (!currentAssessment?.options) return;
+    updateAssessment({
+      options: [...currentAssessment.options, { label: '', isCorrect: false }],
+    });
+  };
+
+  const removeOption = (index: number) => {
+    if (!currentAssessment?.options || currentAssessment.options.length <= 2) return;
+    updateAssessment({
+      options: currentAssessment.options.filter((_, i) => i !== index),
+    });
+  };
+
+  const deleteAssessment = () => {
+    if (!currentAssessment) return;
+    const newItems = courseItems.filter((item) => item.id !== currentAssessment.id);
+    setCourseItems(newItems);
+    setCurrentItemIndex(Math.max(0, currentItemIndex - 1));
+  };
+
+  // Navigation handlers
+  const handleNext = () => {
+    if (currentItemIndex < courseItems.length - 1) {
+      goToItem(currentItemIndex + 1);
+    } else {
+      onContinue();
+    }
+  };
+
+  const handleBack = () => {
+    if (currentItemIndex > 0) {
+      goToItem(currentItemIndex - 1);
+    } else {
+      onBack();
+    }
   };
 
   // Calculate visible thumbnails (show 5 at a time)
   const visibleCount = 5;
   const startIndex = Math.max(0, Math.min(currentItemIndex - 2, courseItems.length - visibleCount));
   const visibleItems = courseItems.slice(startIndex, startIndex + visibleCount);
+
   return (
     <div className="h-full flex flex-col">
       {/* Header with Progress Bar */}
@@ -89,7 +190,7 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
       {/* Main Content Area with Resizable Panels */}
       <div className="flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal" className="h-full">
-          {/* Left Panel - Talk Points Editor */}
+          {/* Left Panel - Editor */}
           <ResizablePanel defaultSize={40} minSize={25} maxSize={60}>
             <div className="h-full bg-card flex flex-col">
               {/* Tab Navigation - aligned with carousel */}
@@ -111,67 +212,210 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                {/* Talk Points Header */}
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-1">Talk Points</h3>
-                  <div className="h-0.5 w-20 bg-primary rounded-full" />
-                </div>
+                {/* Show different content based on item type */}
+                {currentItem?.type === "slide" && currentSlide && (
+                  <>
+                    {/* Talk Points Header */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground mb-1">Talk Points</h3>
+                      <div className="h-0.5 w-20 bg-primary rounded-full" />
+                    </div>
 
-                {/* Quick Edits - Horizontal Layout */}
-                <QuickEditsPanel
-                  isVerbose={isVerbose}
-                  isStreamlined={isStreamlined}
-                  onVerboseChange={setIsVerbose}
-                  onStreamlinedChange={setIsStreamlined}
-                  onAskWinston={handleAskWinston}
-                />
+                    {/* Quick Edits - Horizontal Layout */}
+                    <QuickEditsPanel
+                      isVerbose={isVerbose}
+                      isStreamlined={isStreamlined}
+                      onVerboseChange={setIsVerbose}
+                      onStreamlinedChange={setIsStreamlined}
+                      onAskWinston={handleAskWinston}
+                    />
 
-                {/* AI Prompt Input */}
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleAiPromptSubmit()}
-                    placeholder="Make it less complicated..."
-                    className="w-full px-4 py-3 pr-12 bg-muted/50 border border-border rounded-xl text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-                    onClick={handleAiPromptSubmit}
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
+                    {/* AI Prompt Input */}
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleAiPromptSubmit()}
+                        placeholder="Make it less complicated..."
+                        className="w-full px-4 py-3 pr-12 bg-muted/50 border border-border rounded-xl text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                        onClick={handleAiPromptSubmit}
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
 
-                {/* Rich Text Toolbar */}
-                <RichTextToolbar />
+                    {/* Rich Text Toolbar */}
+                    <RichTextToolbar />
 
-                {/* Talk Points Textarea - Larger */}
-                <Textarea
-                  value={currentSlide?.talkPoints || ""}
-                  onChange={(e) => updateTalkPoints(e.target.value)}
-                  placeholder="Enter talk points for this slide..."
-                  className="min-h-[280px] resize-none text-sm leading-relaxed"
-                />
+                    {/* Talk Points Textarea */}
+                    <Textarea
+                      value={currentSlide?.talkPoints || ""}
+                      onChange={(e) => updateTalkPoints(e.target.value)}
+                      placeholder="Enter talk points for this slide..."
+                      className="min-h-[280px] resize-none text-sm leading-relaxed"
+                    />
 
-                {/* Preview Button */}
-                <Button variant="outline" className="w-full rounded-xl">
-                  Preview
-                </Button>
+                    {/* Preview Button */}
+                    <Button variant="outline" className="w-full rounded-xl">
+                      Preview
+                    </Button>
+                  </>
+                )}
+
+                {currentItem?.type === "assessment" && currentAssessment && (
+                  <>
+                    {/* Assessment Header */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
+                          <ClipboardList className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium text-primary">Assessment</span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={deleteAssessment}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+
+                    {/* Question Type */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Question Type</label>
+                      <Select
+                        value={currentAssessment.type}
+                        onValueChange={(val) => updateAssessmentType(val as QuestionType)}
+                      >
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="multi_selection">Multiple Choice (Single Answer)</SelectItem>
+                          <SelectItem value="checkbox">Multiple Choice (Multiple Answers)</SelectItem>
+                          <SelectItem value="open_ended">Open Ended</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Question Text */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Question</label>
+                      <Textarea
+                        value={currentAssessment.question}
+                        onChange={(e) => updateAssessment({ question: e.target.value })}
+                        placeholder="Enter your question..."
+                        className="min-h-[100px] resize-none rounded-xl"
+                      />
+                    </div>
+
+                    {/* Options for multi_selection and checkbox */}
+                    {(currentAssessment.type === 'multi_selection' || currentAssessment.type === 'checkbox') && (
+                      <div className="space-y-3">
+                        <label className="text-sm font-medium text-foreground">
+                          Answer Options {currentAssessment.type === 'checkbox' && '(select all correct)'}
+                        </label>
+                        {currentAssessment.options?.map((option, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleCorrectAnswer(index)}
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                option.isCorrect
+                                  ? 'border-primary bg-primary text-primary-foreground'
+                                  : 'border-muted-foreground'
+                              }`}
+                            >
+                              {option.isCorrect && <span className="text-xs">✓</span>}
+                            </button>
+                            <Input
+                              value={option.label}
+                              onChange={(e) => updateOptionLabel(index, e.target.value)}
+                              placeholder={`Option ${index + 1}`}
+                              className="flex-1 rounded-xl"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeOption(index)}
+                              disabled={currentAssessment.options!.length <= 2}
+                              className="h-8 w-8"
+                            >
+                              <Trash2 className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={addOption}
+                          className="gap-1 rounded-xl"
+                        >
+                          <Plus className="h-3 w-3" />
+                          Add Option
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Rubric for open_ended */}
+                    {currentAssessment.type === 'open_ended' && (
+                      <RubricEditor
+                        criteria={currentAssessment.rubricCriteria || []}
+                        cells={currentAssessment.rubricCells || []}
+                        onCriteriaChange={(criteria) => updateAssessment({ rubricCriteria: criteria })}
+                        onCellsChange={(cells) => updateAssessment({ rubricCells: cells })}
+                      />
+                    )}
+
+                    {/* Weight & Threshold */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">
+                          Weight: {currentAssessment.weight}%
+                        </label>
+                        <Slider
+                          value={[currentAssessment.weight]}
+                          onValueChange={([val]) => updateAssessment({ weight: val })}
+                          min={0}
+                          max={100}
+                          step={5}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">
+                          Passing: {currentAssessment.passingThreshold}%
+                        </label>
+                        <Slider
+                          value={[currentAssessment.passingThreshold]}
+                          onValueChange={([val]) => updateAssessment({ passingThreshold: val })}
+                          min={0}
+                          max={100}
+                          step={5}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </ResizablePanel>
 
           <ResizableHandle withHandle />
 
-          {/* Right Panel - Slide Preview */}
+          {/* Right Panel - Preview */}
           <ResizablePanel defaultSize={60} minSize={40} maxSize={75}>
             <div className="h-full bg-muted/30 flex flex-col overflow-hidden">
               {/* Item Carousel */}
-              <div className="bg-card border-b px-6 h-14 flex items-center ">
+              <div className="bg-card border-b px-6 h-14 flex items-center">
                 <div className="flex items-center justify-center gap-2 w-full">
                   <Button
                     variant="ghost"
@@ -288,15 +532,46 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                   <div className="bg-card rounded-2xl p-6 border">
                     <div className="flex items-center gap-2 mb-4">
                       <ClipboardList className="h-5 w-5 text-primary" />
-                      <h3 className="text-lg font-semibold text-foreground">Assessment Question</h3>
+                      <h3 className="text-lg font-semibold text-foreground">Assessment Preview</h3>
                     </div>
-                    <p className="text-muted-foreground mb-4">
-                      {currentAssessment.question ||
-                        "No question text yet. Configure this assessment in the Assessment step."}
-                    </p>
-                    <Button variant="outline" onClick={onContinue}>
-                      Edit Assessment
-                    </Button>
+                    
+                    <div className="space-y-4">
+                      <div className="p-4 bg-muted/50 rounded-xl">
+                        <p className="font-medium text-foreground mb-3">
+                          {currentAssessment.question || "No question text yet"}
+                        </p>
+                        
+                        {(currentAssessment.type === 'multi_selection' || currentAssessment.type === 'checkbox') && 
+                          currentAssessment.options && (
+                          <div className="space-y-2">
+                            {currentAssessment.options.map((opt, i) => (
+                              <div
+                                key={i}
+                                className={`flex items-center gap-2 p-2 rounded-lg ${
+                                  opt.isCorrect ? 'bg-primary/10 border border-primary/30' : 'bg-background'
+                                }`}
+                              >
+                                <div className={`w-4 h-4 rounded-full border ${
+                                  opt.isCorrect ? 'bg-primary border-primary' : 'border-muted-foreground'
+                                }`} />
+                                <span className="text-sm">{opt.label || `Option ${i + 1}`}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {currentAssessment.type === 'open_ended' && (
+                          <div className="bg-background rounded-lg p-3 border border-dashed border-muted-foreground">
+                            <p className="text-sm text-muted-foreground">Open-ended response area</p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <span>Weight: {currentAssessment.weight}%</span>
+                        <span>Passing: {currentAssessment.passingThreshold}%</span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -307,13 +582,13 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
 
       {/* Footer Navigation */}
       <div className="bg-card border-t px-6 py-4 flex items-center justify-between">
-        <Button variant="outline" onClick={onBack} className="gap-2 rounded-xl">
+        <Button variant="outline" onClick={handleBack} className="gap-2 rounded-xl">
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
 
-        <Button onClick={onContinue} className="gap-2 rounded-xl">
-          Next
+        <Button onClick={handleNext} className="gap-2 rounded-xl">
+          {currentItemIndex === courseItems.length - 1 ? "Preview Course" : "Next"}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>

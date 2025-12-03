@@ -54,7 +54,7 @@ export function AIAssistant() {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center hover:scale-105 active:scale-95 z-40 ${isOpen ? 'hidden' : ''}`}
+        className={`fixed bottom-20 right-6 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center hover:scale-105 active:scale-95 z-40 ${isOpen ? 'hidden' : ''}`}
       >
         <Bot className="h-6 w-6" />
       </button>
