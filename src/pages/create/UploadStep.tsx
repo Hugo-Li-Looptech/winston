@@ -1,16 +1,9 @@
-import { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Upload, FileText, Trash2, CheckCircle, Plus } from 'lucide-react';
-import { useCourse } from '@/contexts/CourseContext';
-import { SlideFile } from '@/types/course';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { useState, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Upload, FileText, Trash2, CheckCircle, Plus } from "lucide-react";
+import { useCourse } from "@/contexts/CourseContext";
+import { SlideFile } from "@/types/course";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface UploadStepProps {
   onContinue: () => void;
@@ -26,10 +19,10 @@ export function UploadStep({ onContinue }: UploadStepProps) {
       const newFiles: SlideFile[] = Array.from(files).map((file, index) => ({
         id: Date.now().toString() + index,
         name: file.name,
-        type: file.type || 'application/pdf',
+        type: file.type || "application/pdf",
         size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
         uploadedDate: new Date().toLocaleDateString(),
-        status: 'indexed' as const,
+        status: "indexed" as const,
         chunks: Math.floor(Math.random() * 50) + 20,
       }));
 
@@ -39,7 +32,7 @@ export function UploadStep({ onContinue }: UploadStepProps) {
         setSupplementFiles([...currentCourse.supplementFiles, ...newFiles]);
       }
     },
-    [currentCourse.slideFiles, currentCourse.supplementFiles, setSlideFiles, setSupplementFiles]
+    [currentCourse.slideFiles, currentCourse.supplementFiles, setSlideFiles, setSupplementFiles],
   );
 
   const handleDrop = (e: React.DragEvent, isSlide: boolean) => {
@@ -53,10 +46,10 @@ export function UploadStep({ onContinue }: UploadStepProps) {
   };
 
   const handleBrowse = (isSlide: boolean) => {
-    const input = document.createElement('input');
-    input.type = 'file';
+    const input = document.createElement("input");
+    input.type = "file";
     input.multiple = !isSlide;
-    input.accept = '.pdf,.ppt,.pptx,.doc,.docx';
+    input.accept = ".pdf,.ppt,.pptx,.doc,.docx";
     input.onchange = (e) => {
       const files = (e.target as HTMLInputElement).files;
       if (files) handleFileDrop(files, isSlide);
@@ -86,10 +79,10 @@ export function UploadStep({ onContinue }: UploadStepProps) {
 
         {!hasSlideFile ? (
           <div
-            className={`m-6 flex flex-col items-center justify-center h-48 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-              isDraggingSlide 
-                ? 'border-primary bg-primary/5 border-solid' 
-                : 'border-border border-solid hover:border-primary hover:bg-muted/30'
+            className={`m-6 flex flex-col items-center justify-center h-60 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+              isDraggingSlide
+                ? "border-primary bg-primary/5 border-solid"
+                : "border-border border-solid hover:border-primary hover:bg-muted/30"
             }`}
             onDragOver={(e) => {
               e.preventDefault();
@@ -165,15 +158,15 @@ export function UploadStep({ onContinue }: UploadStepProps) {
       <div className="bg-card rounded-2xl shadow-lg border overflow-hidden">
         <div className="p-6 border-b bg-muted/30">
           <h3 className="text-lg font-semibold text-foreground">Supplement Files</h3>
-          <p className="text-sm text-muted-foreground mt-1">Winston can refer to these files to better respond to user's questions</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Winston can refer to these files to better respond to user's questions
+          </p>
         </div>
 
         {!hasSupplementFiles ? (
           <div
             className={`m-6 flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 ${
-              isDraggingSupp 
-                ? 'border-primary bg-primary/5' 
-                : 'border-border hover:border-primary hover:bg-muted/30'
+              isDraggingSupp ? "border-primary bg-primary/5" : "border-border hover:border-primary hover:bg-muted/30"
             }`}
             onDragOver={(e) => {
               e.preventDefault();
@@ -238,7 +231,7 @@ export function UploadStep({ onContinue }: UploadStepProps) {
                 ))}
               </TableBody>
             </Table>
-            
+
             {/* Add More Button */}
             <div className="flex justify-center mt-4">
               <Button
@@ -256,12 +249,7 @@ export function UploadStep({ onContinue }: UploadStepProps) {
 
       {/* Continue Button */}
       <div className="flex justify-center pt-4">
-        <Button
-          onClick={onContinue}
-          disabled={!hasSlideFile}
-          size="lg"
-          className="rounded-xl px-12"
-        >
+        <Button onClick={onContinue} disabled={!hasSlideFile} size="lg" className="rounded-xl px-12">
           Continue
         </Button>
       </div>
