@@ -7,13 +7,12 @@ import { UploadStep } from './create/UploadStep';
 import { WizardStep } from './create/WizardStep';
 import { WizardConfirmStep } from './create/WizardConfirmStep';
 import { ScriptingStep } from './create/ScriptingStep';
-import { AssessmentStep } from './create/AssessmentStep';
 import { PreviewStep } from './create/PreviewStep';
 import { AIAssistant } from '@/components/AIAssistant';
 import { useCourse } from '@/contexts/CourseContext';
 import { WizardStep as WizardStepType } from '@/types/course';
 
-type SubStep = 'upload' | 'wizard-input' | 'wizard-confirm' | 'scripting' | 'assessment' | 'preview';
+type SubStep = 'upload' | 'wizard-input' | 'wizard-confirm' | 'scripting' | 'preview';
 
 export default function CreateCourse() {
   const navigate = useNavigate();
@@ -29,7 +28,6 @@ export default function CreateCourse() {
       case 'wizard-confirm':
         return 'wizard';
       case 'scripting':
-      case 'assessment':
         return 'scripting';
       case 'preview':
         return 'preview';
@@ -59,8 +57,8 @@ export default function CreateCourse() {
     }
   };
 
-  const isFullWidthStep = subStep === 'scripting' || subStep === 'assessment' || subStep === 'preview';
-  const hideMainHeader = subStep === 'scripting' || subStep === 'assessment';
+  const isFullWidthStep = subStep === 'scripting' || subStep === 'preview';
+  const hideMainHeader = subStep === 'scripting';
 
   const renderStep = () => {
     switch (subStep) {
@@ -83,21 +81,13 @@ export default function CreateCourse() {
       case 'scripting':
         return (
           <ScriptingStep
-            onContinue={() => setSubStep('assessment')}
+            onContinue={() => setSubStep('preview')}
             onBack={() => setSubStep('wizard-confirm')}
             onStepClick={handleStepClick}
           />
         );
-      case 'assessment':
-        return (
-          <AssessmentStep
-            onContinue={() => setSubStep('preview')}
-            onBack={() => setSubStep('scripting')}
-            onStepClick={handleStepClick}
-          />
-        );
       case 'preview':
-        return <PreviewStep onBack={() => setSubStep('assessment')} />;
+        return <PreviewStep onBack={() => setSubStep('scripting')} />;
       default:
         return null;
     }

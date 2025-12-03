@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCourse } from '@/contexts/CourseContext';
-import { ChevronLeft, ChevronRight, Play, Pause, Volume2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, ArrowLeft, ClipboardList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import { Slider } from '@/components/ui/slider';
 
 interface PreviewStepProps {
   onBack: () => void;
@@ -12,15 +13,19 @@ interface PreviewStepProps {
 export function PreviewStep({ onBack }: PreviewStepProps) {
   const navigate = useNavigate();
   const { currentCourse, setCourses, courses } = useCourse();
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const { courseItems } = currentCourse;
+  const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(80);
 
-  const slides = currentCourse.slides;
-  const currentSlide = slides[currentSlideIndex];
+  const currentItem = courseItems[currentItemIndex];
+  const currentSlide = currentItem?.type === 'slide' ? currentItem.slideData : null;
+  const currentAssessment = currentItem?.type === 'assessment' ? currentItem.assessmentData : null;
 
-  const goToSlide = (index: number) => {
-    if (index >= 0 && index < slides.length) {
-      setCurrentSlideIndex(index);
+  const goToItem = (index: number) => {
+    if (index >= 0 && index < courseItems.length) {
+      setCurrentItemIndex(index);
     }
   };
 
@@ -40,129 +45,215 @@ export function PreviewStep({ onBack }: PreviewStepProps) {
     navigate('/dashboard');
   };
 
+  const handleSaveDraft = () => {
+    toast({
+      title: 'Draft Saved',
+      description: 'Your course has been saved as a draft.',
+    });
+    navigate('/dashboard');
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold">Preview Your Course</h2>
-        <p className="text-muted-foreground mt-2">
-          Experience your course from a student's perspective
-        </p>
+    <div className="h-full flex flex-col bg-muted/30">
+      {/* Header */}
+      <div className="bg-card border-b px-6 py-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground">Preview Your Course</h1>
+            <p className="text-sm text-muted-foreground">Experience your course from a student's perspective</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={handleSaveDraft} className="rounded-xl">
+              Save as Draft
+            </Button>
+            <Button onClick={handlePublish} className="rounded-xl">
+              Publish Course
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Main Preview Area */}
-      <div className="bg-secondary border-2 border-foreground min-h-[500px] relative">
-        {/* Slide Content */}
-        <div className="p-12">
-          <div className="flex gap-8">
-            <div className="flex-1">
-              <h2 className="text-4xl font-bold mb-8">{currentSlide?.title || 'Slide Title'}</h2>
-              <div className="space-y-4 text-lg">
-                {currentSlide?.content.map((point, i) => (
-                  <p key={i}>• {point}</p>
-                ))}
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-5xl mx-auto space-y-6">
+          {/* Slide/Assessment Card */}
+          <div className="bg-card rounded-2xl shadow-lg border overflow-hidden">
+            {currentItem?.type === 'slide' && currentSlide && (
+              <>
+                {/* Slide Content */}
+                <div className="aspect-video bg-gradient-to-br from-muted/50 to-muted p-8 flex">
+                  <div className="flex-1 flex flex-col justify-center">
+                    <h2 className="text-3xl font-bold text-foreground mb-6">{currentSlide.title}</h2>
+                    <div className="space-y-3">
+                      {currentSlide.content.map((point, i) => (
+                        <p key={i} className="text-lg text-foreground/80 flex items-start gap-3">
+                          <span className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0" />
+                          {point}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="w-1/3 ml-6 bg-muted rounded-xl flex items-center justify-center border-2 border-dashed border-muted-foreground/30">
+                    <span className="text-muted-foreground">Slide Image</span>
+                  </div>
+                </div>
+
+                {/* Audio Player Bar */}
+                <div className="bg-background border-t px-6 py-4">
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setIsPlaying(!isPlaying)}
+                      className="h-10 w-10 rounded-full"
+                    >
+                      {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    </Button>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium text-foreground">Winston is speaking:</span>
+                        {isPlaying && (
+                          <div className="flex items-center gap-0.5">
+                            <span className="w-1 h-3 bg-primary rounded-full animate-pulse" />
+                            <span className="w-1 h-4 bg-primary rounded-full animate-pulse [animation-delay:0.1s]" />
+                            <span className="w-1 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.2s]" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-1">
+                        {currentSlide.talkPoints}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-32">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsMuted(!isMuted)}
+                        className="h-8 w-8"
+                      >
+                        {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                      </Button>
+                      <Slider
+                        value={[isMuted ? 0 : volume]}
+                        onValueChange={([val]) => {
+                          setVolume(val);
+                          if (val > 0) setIsMuted(false);
+                        }}
+                        max={100}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {currentItem?.type === 'assessment' && currentAssessment && (
+              <div className="p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <ClipboardList className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Assessment Question</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {currentAssessment.type === 'multi_selection' && 'Select the correct answer'}
+                      {currentAssessment.type === 'checkbox' && 'Select all that apply'}
+                      {currentAssessment.type === 'open_ended' && 'Write your response'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-muted/50 rounded-xl p-6">
+                  <p className="text-lg font-medium text-foreground mb-4">
+                    {currentAssessment.question || 'No question text configured'}
+                  </p>
+                  
+                  {(currentAssessment.type === 'multi_selection' || currentAssessment.type === 'checkbox') && 
+                    currentAssessment.options && (
+                    <div className="space-y-3">
+                      {currentAssessment.options.map((opt, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-3 p-3 bg-background rounded-lg border cursor-pointer hover:border-primary/50 transition-colors"
+                        >
+                          <div className={`w-5 h-5 rounded-full border-2 ${
+                            currentAssessment.type === 'checkbox' ? 'rounded' : ''
+                          } border-muted-foreground`} />
+                          <span className="text-foreground">{opt.label || `Option ${i + 1}`}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {currentAssessment.type === 'open_ended' && (
+                    <div className="bg-background rounded-lg p-4 border-2 border-dashed border-muted-foreground/30 min-h-[120px]">
+                      <p className="text-muted-foreground">Student response area...</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="w-1/3 h-64 bg-muted border-2 border-foreground" />
-          </div>
-        </div>
-
-        {/* Talk Points Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-background/95 border-t-2 border-foreground p-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsPlaying(!isPlaying)}
-            >
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            </Button>
-            <div className="flex-1">
-              <p className="text-sm font-medium">Winston is speaking:</p>
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {currentSlide?.talkPoints}
-              </p>
-            </div>
-            <Button variant="ghost" size="icon">
-              <Volume2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation Controls */}
-      <div className="flex items-center justify-center gap-4">
-        <Button
-          variant="outline"
-          onClick={() => goToSlide(currentSlideIndex - 1)}
-          disabled={currentSlideIndex === 0}
-        >
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Previous
-        </Button>
-        
-        <div className="flex items-center gap-2">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => goToSlide(index)}
-              className={`h-3 w-3 rounded-full border-2 border-foreground transition-colors ${
-                index === currentSlideIndex ? 'bg-foreground' : 'bg-background'
-              }`}
-            />
-          ))}
-        </div>
-
-        <Button
-          variant="outline"
-          onClick={() => goToSlide(currentSlideIndex + 1)}
-          disabled={currentSlideIndex === slides.length - 1}
-        >
-          Next
-          <ChevronRight className="h-4 w-4 ml-2" />
-        </Button>
-      </div>
-
-      {/* Slide Counter */}
-      <div className="text-center text-sm text-muted-foreground">
-        Slide {currentSlideIndex + 1} of {slides.length}
-      </div>
-
-      {/* Assessments Preview */}
-      {currentCourse.assessments.length > 0 && currentSlideIndex === slides.length - 1 && (
-        <div className="border-2 border-foreground p-6">
-          <h3 className="text-xl font-bold mb-4">Course Assessment Preview</h3>
-          <p className="text-muted-foreground mb-4">
-            This course includes {currentCourse.assessments.length} assessment question(s).
-          </p>
-          <div className="space-y-3">
-            {currentCourse.assessments.slice(0, 2).map((assessment, index) => (
-              <div key={assessment.id} className="bg-secondary p-3">
-                <p className="font-medium">
-                  Q{index + 1}: {assessment.question}
-                </p>
-              </div>
-            ))}
-            {currentCourse.assessments.length > 2 && (
-              <p className="text-sm text-muted-foreground">
-                + {currentCourse.assessments.length - 2} more questions
-              </p>
             )}
           </div>
-        </div>
-      )}
 
-      {/* Actions */}
-      <div className="flex justify-between pt-4">
-        <Button variant="outline" onClick={onBack}>
-          Back to Editing
-        </Button>
-        <div className="flex gap-4">
-          <Button variant="outline" onClick={() => navigate('/dashboard')}>
-            Save as Draft
+          {/* Navigation */}
+          <div className="flex items-center justify-center gap-4">
+            <Button
+              variant="outline"
+              onClick={() => goToItem(currentItemIndex - 1)}
+              disabled={currentItemIndex === 0}
+              className="rounded-xl"
+            >
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Previous
+            </Button>
+            
+            <div className="flex items-center gap-2 px-4">
+              {courseItems.map((item, index) => (
+                <button
+                  key={item.id}
+                  onClick={() => goToItem(index)}
+                  className={`h-2.5 rounded-full transition-all ${
+                    index === currentItemIndex 
+                      ? 'w-8 bg-primary' 
+                      : item.type === 'assessment'
+                        ? 'w-2.5 bg-primary/40 hover:bg-primary/60'
+                        : 'w-2.5 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                  }`}
+                />
+              ))}
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={() => goToItem(currentItemIndex + 1)}
+              disabled={currentItemIndex === courseItems.length - 1}
+              className="rounded-xl"
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+
+          {/* Item Counter */}
+          <div className="text-center text-sm text-muted-foreground">
+            {currentItem?.type === 'slide' ? 'Slide' : 'Assessment'} {currentItemIndex + 1} of {courseItems.length}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="bg-card border-t px-6 py-4">
+        <div className="max-w-5xl mx-auto flex justify-between items-center">
+          <Button variant="outline" onClick={onBack} className="gap-2 rounded-xl">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Editing
           </Button>
-          <Button onClick={handlePublish}>
-            Publish Course
-          </Button>
+          <div className="text-sm text-muted-foreground">
+            {courseItems.filter(i => i.type === 'slide').length} slides • {courseItems.filter(i => i.type === 'assessment').length} assessments
+          </div>
         </div>
       </div>
     </div>
