@@ -16,35 +16,41 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ClipboardList } from 'lucide-react';
+import { WizardStep } from '@/types/course';
 
 interface ScriptingStepProps {
   onContinue: () => void;
   onBack: () => void;
+  onStepClick?: (step: WizardStep) => void;
 }
 
-export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
+export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStepProps) {
   const navigate = useNavigate();
-  const { currentCourse, setSlides } = useCourse();
-  const { slides } = currentCourse;
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const { currentCourse, setSlides, insertAssessmentAtIndex } = useCourse();
+  const { slides, courseItems } = currentCourse;
+  const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [aiPrompt, setAiPrompt] = useState('');
   const [isVerbose, setIsVerbose] = useState(false);
   const [isStreamlined, setIsStreamlined] = useState(false);
   const [activeTab, setActiveTab] = useState<'scripting' | 'metadata'>('scripting');
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(true);
 
-  const currentSlide = slides[currentSlideIndex];
+  // Get current item (slide or assessment)
+  const currentItem = courseItems[currentItemIndex];
+  const currentSlide = currentItem?.type === 'slide' ? currentItem.slideData : null;
+  const currentAssessment = currentItem?.type === 'assessment' ? currentItem.assessmentData : null;
 
   const updateTalkPoints = (newTalkPoints: string) => {
-    const updatedSlides = slides.map((slide, index) =>
-      index === currentSlideIndex ? { ...slide, talkPoints: newTalkPoints } : slide
+    if (!currentSlide) return;
+    const updatedSlides = slides.map((slide) =>
+      slide.id === currentSlide.id ? { ...slide, talkPoints: newTalkPoints } : slide
     );
     setSlides(updatedSlides);
   };
 
-  const goToSlide = (index: number) => {
-    if (index >= 0 && index < slides.length) {
-      setCurrentSlideIndex(index);
+  const goToItem = (index: number) => {
+    if (index >= 0 && index < courseItems.length) {
+      setCurrentItemIndex(index);
     }
   };
 
@@ -60,13 +66,15 @@ export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
   };
 
   const handleAddAssessment = () => {
-    onContinue(); // Navigate to assessment step
+    insertAssessmentAtIndex(currentItemIndex);
+    // Move to the newly inserted assessment
+    setCurrentItemIndex(currentItemIndex + 1);
   };
 
   // Calculate visible thumbnails (show 5 at a time)
   const visibleCount = 5;
-  const startIndex = Math.max(0, Math.min(currentSlideIndex - 2, slides.length - visibleCount));
-  const visibleSlides = slides.slice(startIndex, startIndex + visibleCount);
+  const startIndex = Math.max(0, Math.min(currentItemIndex - 2, courseItems.length - visibleCount));
+  const visibleItems = courseItems.slice(startIndex, startIndex + visibleCount);
 
   return (
     <div className="h-full flex flex-col">
@@ -77,6 +85,7 @@ export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
         isCollapsed={isHeaderCollapsed}
         onToggleCollapse={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
         onClose={() => navigate('/dashboard')}
+        onStepClick={onStepClick}
         showActions={true}
       />
 
@@ -86,8 +95,8 @@ export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
           {/* Left Panel - Talk Points Editor */}
           <ResizablePanel defaultSize={40} minSize={25} maxSize={60}>
             <div className="h-full bg-card flex flex-col">
-              {/* Tab Navigation */}
-              <div className="px-6 pt-4 pb-2 border-b">
+              {/* Tab Navigation - aligned with carousel */}
+              <div className="bg-card border-b px-6 py-4">
                 <div className="flex gap-4">
                   <button
                     onClick={() => setActiveTab('scripting')}
@@ -172,36 +181,41 @@ export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
           {/* Right Panel - Slide Preview */}
           <ResizablePanel defaultSize={60} minSize={40} maxSize={75}>
             <div className="h-full bg-muted/30 flex flex-col overflow-hidden">
-              {/* Slide Carousel */}
+              {/* Item Carousel */}
               <div className="bg-card border-b px-6 py-4">
                 <div className="flex items-center justify-center gap-2">
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 rounded-full"
-                    onClick={() => goToSlide(currentSlideIndex - 1)}
-                    disabled={currentSlideIndex === 0}
+                    onClick={() => goToItem(currentItemIndex - 1)}
+                    disabled={currentItemIndex === 0}
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
 
                   <div className="flex items-center gap-2">
-                    {visibleSlides.map((slide, idx) => {
+                    {visibleItems.map((item, idx) => {
                       const actualIndex = startIndex + idx;
-                      const isActive = actualIndex === currentSlideIndex;
+                      const isActive = actualIndex === currentItemIndex;
+                      const isAssessment = item.type === 'assessment';
                       return (
                         <button
-                          key={slide.id}
-                          onClick={() => goToSlide(actualIndex)}
+                          key={item.id}
+                          onClick={() => goToItem(actualIndex)}
                           className={`relative rounded-lg overflow-hidden transition-all ${
                             isActive
                               ? 'ring-2 ring-primary shadow-lg scale-105'
                               : 'opacity-60 hover:opacity-100'
                           }`}
                         >
-                          <div className="w-16 aspect-video bg-muted flex items-center justify-center">
-                            <span className="text-xs font-medium text-muted-foreground">
-                              {actualIndex + 1}
+                          <div className={`w-16 aspect-video flex items-center justify-center ${
+                            isAssessment ? 'bg-primary/20' : 'bg-muted'
+                          }`}>
+                            <span className={`text-xs font-medium ${
+                              isAssessment ? 'text-primary' : 'text-muted-foreground'
+                            }`}>
+                              {isAssessment ? 'Q' : actualIndex + 1 - courseItems.slice(0, actualIndex).filter(i => i.type === 'assessment').length}
                             </span>
                           </div>
                         </button>
@@ -213,8 +227,8 @@ export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 rounded-full"
-                    onClick={() => goToSlide(currentSlideIndex + 1)}
-                    disabled={currentSlideIndex === slides.length - 1}
+                    onClick={() => goToItem(currentItemIndex + 1)}
+                    disabled={currentItemIndex === courseItems.length - 1}
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -240,44 +254,63 @@ export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
                 </div>
               </div>
 
-              {/* Slide Preview Area */}
+              {/* Content Preview Area */}
               <div className="flex-1 p-6 overflow-y-auto">
-                {/* 16:9 Slide Preview */}
-                <div className="bg-muted rounded-2xl p-4 mb-6">
-                  <div className="aspect-video bg-card rounded-xl shadow-lg overflow-hidden">
-                    <div className="h-full p-6 flex">
-                      {/* Slide Content */}
-                      <div className="flex-1 flex flex-col">
-                        <h2 className="text-xl font-bold text-foreground mb-4">
-                          {currentSlide?.title}
-                        </h2>
-                        <div className="space-y-2 flex-1">
-                          <p className="text-sm font-medium text-muted-foreground mb-2">talk points:</p>
-                          {currentSlide?.talkPoints.split('. ').filter(Boolean).map((point, idx) => (
-                            <p key={idx} className="text-sm text-foreground">
-                              {idx + 1}. {point.trim()}{!point.endsWith('.') ? '.' : ''}
-                            </p>
-                          ))}
+                {currentItem?.type === 'slide' && currentSlide && (
+                  <>
+                    {/* 16:9 Slide Preview */}
+                    <div className="bg-muted rounded-2xl p-4 mb-6">
+                      <div className="aspect-video bg-card rounded-xl shadow-lg overflow-hidden">
+                        <div className="h-full p-6 flex">
+                          {/* Slide Content */}
+                          <div className="flex-1 flex flex-col">
+                            <h2 className="text-xl font-bold text-foreground mb-4">
+                              {currentSlide?.title}
+                            </h2>
+                            <div className="space-y-2 flex-1">
+                              <p className="text-sm font-medium text-muted-foreground mb-2">talk points:</p>
+                              {currentSlide?.talkPoints.split('. ').filter(Boolean).map((point, idx) => (
+                                <p key={idx} className="text-sm text-foreground">
+                                  {idx + 1}. {point.trim()}{!point.endsWith('.') ? '.' : ''}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                          {/* Image Placeholder */}
+                          <div className="w-1/3 ml-4 bg-muted rounded-lg flex items-center justify-center">
+                            <span className="text-xs text-muted-foreground">Image</span>
+                          </div>
                         </div>
                       </div>
-                      {/* Image Placeholder */}
-                      <div className="w-1/3 ml-4 bg-muted rounded-lg flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground">Image</span>
-                      </div>
                     </div>
+
+                    {/* Slide Counter & Details */}
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-sm text-muted-foreground">
+                        Item {currentItemIndex + 1} of {courseItems.length}
+                      </span>
+                      <span className="text-sm font-medium text-foreground">Details</span>
+                    </div>
+
+                    {/* Slide Details Panel */}
+                    <SlideDetailsPanel slide={currentSlide} />
+                  </>
+                )}
+
+                {currentItem?.type === 'assessment' && currentAssessment && (
+                  <div className="bg-card rounded-2xl p-6 border">
+                    <div className="flex items-center gap-2 mb-4">
+                      <ClipboardList className="h-5 w-5 text-primary" />
+                      <h3 className="text-lg font-semibold text-foreground">Assessment Question</h3>
+                    </div>
+                    <p className="text-muted-foreground mb-4">
+                      {currentAssessment.question || 'No question text yet. Configure this assessment in the Assessment step.'}
+                    </p>
+                    <Button variant="outline" onClick={onContinue}>
+                      Edit Assessment
+                    </Button>
                   </div>
-                </div>
-
-                {/* Slide Counter & Details */}
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm text-muted-foreground">
-                    Slide {currentSlideIndex + 1} of {slides.length}
-                  </span>
-                  <span className="text-sm font-medium text-foreground">Details</span>
-                </div>
-
-                {/* Slide Details Panel */}
-                {currentSlide && <SlideDetailsPanel slide={currentSlide} />}
+                )}
               </div>
             </div>
           </ResizablePanel>
@@ -290,10 +323,6 @@ export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
-
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-          <span className="text-lg">🤖</span>
-        </div>
 
         <Button onClick={onContinue} className="gap-2 rounded-xl">
           Next

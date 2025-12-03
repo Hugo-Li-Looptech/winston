@@ -42,6 +42,23 @@ export default function CreateCourse() {
     navigate('/dashboard');
   };
 
+  const handleStepClick = (step: WizardStepType) => {
+    switch (step) {
+      case 'upload':
+        setSubStep('upload');
+        break;
+      case 'wizard':
+        setSubStep('wizard-input');
+        break;
+      case 'scripting':
+        setSubStep('scripting');
+        break;
+      case 'preview':
+        setSubStep('preview');
+        break;
+    }
+  };
+
   const isFullWidthStep = subStep === 'scripting' || subStep === 'assessment' || subStep === 'preview';
   const hideMainHeader = subStep === 'scripting' || subStep === 'assessment';
 
@@ -68,6 +85,7 @@ export default function CreateCourse() {
           <ScriptingStep
             onContinue={() => setSubStep('assessment')}
             onBack={() => setSubStep('wizard-confirm')}
+            onStepClick={handleStepClick}
           />
         );
       case 'assessment':
@@ -75,6 +93,7 @@ export default function CreateCourse() {
           <AssessmentStep
             onContinue={() => setSubStep('preview')}
             onBack={() => setSubStep('scripting')}
+            onStepClick={handleStepClick}
           />
         );
       case 'preview':
@@ -94,6 +113,7 @@ export default function CreateCourse() {
               currentStep={getWizardStep()} 
               isCollapsed={isStepIndicatorCollapsed}
               onToggleCollapse={() => setIsStepIndicatorCollapsed(!isStepIndicatorCollapsed)}
+              onStepClick={handleStepClick}
             />
             <Button
               variant="ghost"

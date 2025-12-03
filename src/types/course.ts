@@ -82,3 +82,13 @@ export interface Assessment {
 }
 
 export type WizardStep = 'upload' | 'wizard' | 'scripting' | 'preview';
+
+// Unified Course Item System for inline assessments
+export type CourseItemType = 'slide' | 'assessment';
+
+export interface CourseItem {
+  id: string;
+  type: CourseItemType;
+  slideData?: Slide;
+  assessmentData?: Assessment;
+}
