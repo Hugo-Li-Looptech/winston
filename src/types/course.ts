@@ -38,11 +38,47 @@ export interface Slide {
   imageUrl?: string;
 }
 
+// Assessment Types
+export type QuestionType = 'multi_selection' | 'checkbox' | 'open_ended';
+
+export interface RubricCriteria {
+  id: string;
+  name: string;
+}
+
+export type RubricLevel = 'beginning' | 'approaching' | 'meeting' | 'exceeding';
+
+export interface RubricCell {
+  criteriaId: string;
+  level: RubricLevel;
+  description: string;
+}
+
+export const RUBRIC_POINTS: Record<RubricLevel, number> = {
+  beginning: 2,
+  approaching: 4,
+  meeting: 6,
+  exceeding: 10,
+};
+
+export const RUBRIC_LEVELS: { level: RubricLevel; label: string; points: number }[] = [
+  { level: 'beginning', label: 'Beginning', points: 2 },
+  { level: 'approaching', label: 'Approaching', points: 4 },
+  { level: 'meeting', label: 'Meeting', points: 6 },
+  { level: 'exceeding', label: 'Exceeding', points: 10 },
+];
+
 export interface Assessment {
   id: string;
   question: string;
-  type: 'multiple_choice' | 'open_ended';
+  type: QuestionType;
+  weight: number;
+  passingThreshold: number;
+  // For multi_selection (single correct) and checkbox (multiple correct)
   options?: { label: string; isCorrect: boolean }[];
+  // For open_ended with rubric
+  rubricCriteria?: RubricCriteria[];
+  rubricCells?: RubricCell[];
 }
 
 export type WizardStep = 'upload' | 'wizard' | 'scripting' | 'preview';

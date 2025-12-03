@@ -1,12 +1,21 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, ArrowRight, Send, ChevronLeft, ChevronRight, Plus, FileText, MessageSquare, Save, Upload } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Send, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
 import { QuickEditsPanel } from '@/components/QuickEditsPanel';
 import { RichTextToolbar } from '@/components/RichTextToolbar';
 import { SlideDetailsPanel } from '@/components/SlideDetailsPanel';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { CourseEditorHeader } from '@/components/CourseEditorHeader';
+import { useNavigate } from 'react-router-dom';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ClipboardList } from 'lucide-react';
 
 interface ScriptingStepProps {
   onContinue: () => void;
@@ -14,6 +23,7 @@ interface ScriptingStepProps {
 }
 
 export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
+  const navigate = useNavigate();
   const { currentCourse, setSlides } = useCourse();
   const { slides } = currentCourse;
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
@@ -21,6 +31,7 @@ export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
   const [isVerbose, setIsVerbose] = useState(false);
   const [isStreamlined, setIsStreamlined] = useState(false);
   const [activeTab, setActiveTab] = useState<'scripting' | 'metadata'>('scripting');
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(true);
 
   const currentSlide = slides[currentSlideIndex];
 
@@ -48,6 +59,10 @@ export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
     }
   };
 
+  const handleAddAssessment = () => {
+    onContinue(); // Navigate to assessment step
+  };
+
   // Calculate visible thumbnails (show 5 at a time)
   const visibleCount = 5;
   const startIndex = Math.max(0, Math.min(currentSlideIndex - 2, slides.length - visibleCount));
@@ -55,30 +70,15 @@ export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Status Bar */}
-      <div className="bg-card border-b px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-            <FileText className="h-4 w-4 text-primary" />
-          </div>
-          <span className="font-medium text-foreground">How to Make a PBJ Sand - Intro</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">unsaved changes</span>
-          <Button variant="ghost" size="sm" className="gap-1">
-            <MessageSquare className="h-4 w-4" />
-            Comments
-          </Button>
-          <Button variant="ghost" size="sm" className="gap-1">
-            <Save className="h-4 w-4" />
-            Saved
-          </Button>
-          <Button variant="default" size="sm" className="gap-1">
-            <Upload className="h-4 w-4" />
-            Publish
-          </Button>
-        </div>
-      </div>
+      {/* Header with Progress Bar */}
+      <CourseEditorHeader
+        currentStep="scripting"
+        courseTitle="How to Make a PBJ Sand - Intro"
+        isCollapsed={isHeaderCollapsed}
+        onToggleCollapse={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+        onClose={() => navigate('/dashboard')}
+        showActions={true}
+      />
 
       {/* Main Content Area with Resizable Panels */}
       <div className="flex-1 overflow-hidden">
@@ -219,13 +219,24 @@ export function ScriptingStep({ onContinue, onBack }: ScriptingStepProps) {
                     <ChevronRight className="h-4 w-4" />
                   </Button>
 
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 rounded-full ml-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                  {/* Plus Button with Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 rounded-full ml-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={handleAddAssessment}>
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                        Add Assessment
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
 
