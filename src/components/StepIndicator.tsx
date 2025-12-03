@@ -1,8 +1,11 @@
 import { WizardStep } from '@/types/course';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface StepIndicatorProps {
   currentStep: WizardStep;
   onStepClick?: (step: WizardStep) => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 const steps: { key: WizardStep; label: string }[] = [
@@ -12,38 +15,74 @@ const steps: { key: WizardStep; label: string }[] = [
   { key: 'preview', label: 'Preview' },
 ];
 
-export function StepIndicator({ currentStep, onStepClick }: StepIndicatorProps) {
+export function StepIndicator({ 
+  currentStep, 
+  onStepClick, 
+  isCollapsed = false,
+  onToggleCollapse 
+}: StepIndicatorProps) {
   const currentIndex = steps.findIndex((s) => s.key === currentStep);
 
+  if (isCollapsed) {
+    return (
+      <button
+        onClick={onToggleCollapse}
+        className="flex items-center gap-2 bg-card/80 backdrop-blur-sm shadow-sm rounded-full px-4 py-2 transition-all hover:shadow-md"
+      >
+        {steps.map((step, index) => (
+          <div
+            key={step.key}
+            className={`h-2.5 w-2.5 rounded-full transition-colors ${
+              index <= currentIndex ? 'bg-primary' : 'bg-muted-foreground/30'
+            }`}
+          />
+        ))}
+        <ChevronDown className="h-4 w-4 text-muted-foreground ml-1" />
+      </button>
+    );
+  }
+
   return (
-    <div className="flex items-center justify-center gap-0 bg-card border-2 border-foreground p-4 mx-auto w-fit">
+    <button
+      onClick={onToggleCollapse}
+      className="flex items-center gap-0 bg-card/80 backdrop-blur-sm shadow-sm rounded-full px-6 py-3 transition-all hover:shadow-md"
+    >
       {steps.map((step, index) => (
         <div key={step.key} className="flex items-center">
-          <button
-            onClick={() => onStepClick?.(step.key)}
-            disabled={!onStepClick}
-            className="flex flex-col items-center gap-2"
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onStepClick?.(step.key);
+            }}
+            className="flex flex-col items-center gap-1.5 cursor-pointer"
           >
             <div
-              className={`h-5 w-5 rounded-full border-2 border-foreground flex items-center justify-center transition-colors ${
-                index <= currentIndex ? 'bg-foreground' : 'bg-background'
+              className={`h-4 w-4 rounded-full flex items-center justify-center transition-all ${
+                index <= currentIndex 
+                  ? 'bg-primary' 
+                  : 'bg-muted-foreground/20'
               }`}
             >
               {index < currentIndex && (
-                <div className="h-2 w-2 bg-background rounded-full" />
+                <div className="h-1.5 w-1.5 bg-primary-foreground rounded-full" />
               )}
             </div>
-            <span className="text-xs font-medium">{step.label}</span>
-          </button>
+            <span className={`text-xs font-medium transition-colors ${
+              index <= currentIndex ? 'text-foreground' : 'text-muted-foreground'
+            }`}>
+              {step.label}
+            </span>
+          </div>
           {index < steps.length - 1 && (
             <div
-              className={`h-0.5 w-16 mx-2 mb-6 ${
-                index < currentIndex ? 'bg-foreground' : 'bg-muted'
+              className={`h-0.5 w-12 mx-3 mb-5 rounded-full transition-colors ${
+                index < currentIndex ? 'bg-primary' : 'bg-muted-foreground/20'
               }`}
             />
           )}
         </div>
       ))}
-    </div>
+      <ChevronUp className="h-4 w-4 text-muted-foreground ml-2" />
+    </button>
   );
 }

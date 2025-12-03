@@ -2,19 +2,79 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, MoreHorizontal, GraduationCap, LogOut, FolderOpen } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, GraduationCap, LogOut, FolderOpen, Edit, Copy, EyeOff, Eye, Trash2 } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
 import { AIAssistant } from '@/components/AIAssistant';
 import { Course } from '@/types/course';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from '@/hooks/use-toast';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { courses, resetCurrentCourse } = useCourse();
+  const { courses, resetCurrentCourse, deleteCourse, updateCourseStatus, duplicateCourse } = useCourse();
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
 
   const handleCreateCourse = () => {
     resetCurrentCourse();
     navigate('/create');
+  };
+
+  const handleEditCourse = (courseId: string) => {
+    navigate('/create');
+  };
+
+  const handleDuplicateCourse = (courseId: string) => {
+    duplicateCourse(courseId);
+    toast({
+      title: 'Course duplicated',
+      description: 'A copy of the course has been created.',
+    });
+  };
+
+  const handleTogglePublish = (course: Course) => {
+    const newStatus = course.status === 'published' ? 'pending' : 'published';
+    updateCourseStatus(course.id, newStatus);
+    toast({
+      title: newStatus === 'published' ? 'Course published' : 'Course unpublished',
+      description: newStatus === 'published' 
+        ? 'The course is now visible to learners.' 
+        : 'The course is no longer visible to learners.',
+    });
+  };
+
+  const handleDeleteClick = (courseId: string) => {
+    setCourseToDelete(courseId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (courseToDelete) {
+      deleteCourse(courseToDelete);
+      toast({
+        title: 'Course deleted',
+        description: 'The course has been permanently deleted.',
+      });
+    }
+    setDeleteDialogOpen(false);
+    setCourseToDelete(null);
   };
 
   const filteredCourses = courses.filter((course) =>
@@ -120,9 +180,44 @@ export default function Dashboard() {
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-5 w-5" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-5 w-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={() => handleEditCourse(course.id)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDuplicateCourse(course.id)}>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleTogglePublish(course)}>
+                            {course.status === 'published' ? (
+                              <>
+                                <EyeOff className="h-4 w-4 mr-2" />
+                                Unpublish
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Publish
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteClick(course.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))}
@@ -131,6 +226,23 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Course</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this course? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AIAssistant />
     </div>

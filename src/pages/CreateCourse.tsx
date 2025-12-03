@@ -19,6 +19,7 @@ export default function CreateCourse() {
   const navigate = useNavigate();
   const { setCurrentStep } = useCourse();
   const [subStep, setSubStep] = useState<SubStep>('upload');
+  const [isStepIndicatorCollapsed, setIsStepIndicatorCollapsed] = useState(false);
 
   const getWizardStep = (): WizardStepType => {
     switch (subStep) {
@@ -89,7 +90,11 @@ export default function CreateCourse() {
       {!hideMainHeader && (
         <div className="bg-card border-b shadow-sm">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <StepIndicator currentStep={getWizardStep()} />
+            <StepIndicator 
+              currentStep={getWizardStep()} 
+              isCollapsed={isStepIndicatorCollapsed}
+              onToggleCollapse={() => setIsStepIndicatorCollapsed(!isStepIndicatorCollapsed)}
+            />
             <Button
               variant="ghost"
               size="icon"

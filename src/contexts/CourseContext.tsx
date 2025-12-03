@@ -19,6 +19,9 @@ interface CourseContextType {
   setAssessments: (assessments: Assessment[]) => void;
   setCurrentStep: (step: WizardStep) => void;
   resetCurrentCourse: () => void;
+  deleteCourse: (id: string) => void;
+  updateCourseStatus: (id: string, status: Course['status']) => void;
+  duplicateCourse: (id: string) => void;
 }
 
 const defaultWizardSettings: WizardSettings = {
@@ -137,6 +140,32 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     setCurrentStep('upload');
   };
 
+  const deleteCourse = (id: string) => {
+    setCourses(courses.filter((course) => course.id !== id));
+  };
+
+  const updateCourseStatus = (id: string, status: Course['status']) => {
+    setCourses(
+      courses.map((course) =>
+        course.id === id ? { ...course, status } : course
+      )
+    );
+  };
+
+  const duplicateCourse = (id: string) => {
+    const courseToDuplicate = courses.find((course) => course.id === id);
+    if (courseToDuplicate) {
+      const newCourse: Course = {
+        ...courseToDuplicate,
+        id: Date.now().toString(),
+        title: `${courseToDuplicate.title} (Copy)`,
+        status: 'pending',
+        progress: '0%',
+      };
+      setCourses([...courses, newCourse]);
+    }
+  };
+
   return (
     <CourseContext.Provider
       value={{
@@ -157,6 +186,9 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         setAssessments,
         setCurrentStep,
         resetCurrentCourse,
+        deleteCourse,
+        updateCourseStatus,
+        duplicateCourse,
       }}
     >
       {children}
