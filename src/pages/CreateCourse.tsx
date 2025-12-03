@@ -43,7 +43,7 @@ export default function CreateCourse() {
   };
 
   const isFullWidthStep = subStep === 'scripting' || subStep === 'assessment' || subStep === 'preview';
-  const hideMainHeader = subStep === 'scripting';
+  const hideMainHeader = subStep === 'scripting' || subStep === 'assessment';
 
   const renderStep = () => {
     switch (subStep) {
