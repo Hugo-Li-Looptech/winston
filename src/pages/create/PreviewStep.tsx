@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCourse } from '@/contexts/CourseContext';
-import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, ArrowLeft, ClipboardList } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, ArrowLeft, ClipboardList, Edit, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { Slider } from '@/components/ui/slider';
@@ -19,6 +19,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(80);
+  const [isPublished, setIsPublished] = useState(true);
 
   const currentItem = courseItems[currentItemIndex];
   const currentSlide = currentItem?.type === 'slide' ? currentItem.slideData : null;
@@ -28,6 +29,20 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
     if (index >= 0 && index < courseItems.length) {
       setCurrentItemIndex(index);
     }
+  };
+
+  const handleEdit = () => {
+    navigate('/create');
+  };
+
+  const handleTogglePublish = () => {
+    setIsPublished(!isPublished);
+    toast({
+      title: isPublished ? 'Course Unpublished' : 'Course Published',
+      description: isPublished 
+        ? 'The course is no longer visible to learners.' 
+        : 'The course is now live and available to learners.',
+    });
   };
 
   const handlePublish = () => {
@@ -63,16 +78,42 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
             <h1 className="text-xl font-semibold text-foreground">Preview Your Course</h1>
             <p className="text-sm text-muted-foreground">Experience your course from a student's perspective</p>
           </div>
-          {!isPreviewOnly && (
-            <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={handleSaveDraft} className="rounded-xl">
-                Save as Draft
-              </Button>
-              <Button onClick={handlePublish} className="rounded-xl">
-                Publish Course
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            {isPreviewOnly ? (
+              <>
+                <Button variant="outline" onClick={handleEdit} className="rounded-xl gap-2">
+                  <Edit className="h-4 w-4" />
+                  Edit
+                </Button>
+                <Button 
+                  variant={isPublished ? "outline" : "default"} 
+                  onClick={handleTogglePublish} 
+                  className="rounded-xl gap-2"
+                >
+                  {isPublished ? (
+                    <>
+                      <EyeOff className="h-4 w-4" />
+                      Unpublish
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-4 w-4" />
+                      Publish
+                    </>
+                  )}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={handleSaveDraft} className="rounded-xl">
+                  Save as Draft
+                </Button>
+                <Button onClick={handlePublish} className="rounded-xl">
+                  Publish Course
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
