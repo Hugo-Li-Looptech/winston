@@ -26,6 +26,15 @@ export default function CreateCourse() {
   );
   const [isStepIndicatorCollapsed, setIsStepIndicatorCollapsed] = useState(false);
 
+  // Sync subStep with URL mode changes
+  useEffect(() => {
+    if (mode === 'preview') {
+      setSubStep('preview');
+    } else if (mode === 'edit') {
+      setSubStep('scripting');
+    }
+  }, [mode]);
+
   const getWizardStep = (): WizardStepType => {
     switch (subStep) {
       case 'upload':
