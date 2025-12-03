@@ -1,18 +1,30 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Plus, Search, MoreHorizontal, GraduationCap, LogOut, FolderOpen, Edit, Copy, EyeOff, Eye, Trash2 } from 'lucide-react';
-import { useCourse } from '@/contexts/CourseContext';
-import { AIAssistant } from '@/components/AIAssistant';
-import { Course } from '@/types/course';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Plus,
+  Search,
+  MoreHorizontal,
+  GraduationCap,
+  LogOut,
+  FolderOpen,
+  Edit,
+  Copy,
+  EyeOff,
+  Eye,
+  Trash2,
+} from "lucide-react";
+import { useCourse } from "@/contexts/CourseContext";
+import { AIAssistant } from "@/components/AIAssistant";
+import { Course } from "@/types/course";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,41 +34,42 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { toast } from '@/hooks/use-toast';
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { courses, resetCurrentCourse, deleteCourse, updateCourseStatus, duplicateCourse } = useCourse();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
 
   const handleCreateCourse = () => {
     resetCurrentCourse();
-    navigate('/create');
+    navigate("/create");
   };
 
   const handleEditCourse = (courseId: string) => {
-    navigate('/create');
+    navigate("/create");
   };
 
   const handleDuplicateCourse = (courseId: string) => {
     duplicateCourse(courseId);
     toast({
-      title: 'Course duplicated',
-      description: 'A copy of the course has been created.',
+      title: "Course duplicated",
+      description: "A copy of the course has been created.",
     });
   };
 
   const handleTogglePublish = (course: Course) => {
-    const newStatus = course.status === 'published' ? 'pending' : 'published';
+    const newStatus = course.status === "published" ? "pending" : "published";
     updateCourseStatus(course.id, newStatus);
     toast({
-      title: newStatus === 'published' ? 'Course published' : 'Course unpublished',
-      description: newStatus === 'published' 
-        ? 'The course is now visible to learners.' 
-        : 'The course is no longer visible to learners.',
+      title: newStatus === "published" ? "Course published" : "Course unpublished",
+      description:
+        newStatus === "published"
+          ? "The course is now visible to learners."
+          : "The course is no longer visible to learners.",
     });
   };
 
@@ -69,28 +82,26 @@ export default function Dashboard() {
     if (courseToDelete) {
       deleteCourse(courseToDelete);
       toast({
-        title: 'Course deleted',
-        description: 'The course has been permanently deleted.',
+        title: "Course deleted",
+        description: "The course has been permanently deleted.",
       });
     }
     setDeleteDialogOpen(false);
     setCourseToDelete(null);
   };
 
-  const filteredCourses = courses.filter((course) =>
-    course.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCourses = courses.filter((course) => course.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const getStatusBadge = (status: Course['status']) => {
-    const styles: Record<Course['status'], string> = {
-      published: 'bg-primary/10 text-primary',
-      pending: 'bg-muted text-muted-foreground',
-      in_progress: 'bg-accent text-accent-foreground',
+  const getStatusBadge = (status: Course["status"]) => {
+    const styles: Record<Course["status"], string> = {
+      published: "bg-primary/10 text-primary",
+      pending: "bg-muted text-muted-foreground",
+      in_progress: "bg-accent text-accent-foreground",
     };
-    const labels: Record<Course['status'], string> = {
-      published: 'Published',
-      pending: 'Pending',
-      in_progress: 'In Progress',
+    const labels: Record<Course["status"], string> = {
+      published: "Published",
+      pending: "Pending",
+      in_progress: "In Progress",
     };
     return (
       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
@@ -107,9 +118,9 @@ export default function Dashboard() {
             <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center">
               <GraduationCap className="h-5 w-5" />
             </div>
-            <span className="font-semibold text-foreground">CourseAI</span>
+            <span className="font-semibold text-foreground">Winston</span>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <LogOut className="h-5 w-5" />
           </Button>
         </div>
@@ -173,7 +184,9 @@ export default function Dashboard() {
                         <div className="h-2 w-24 bg-muted rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary rounded-full transition-all"
-                            style={{ width: course.progress === '100%' ? '100%' : course.progress === '0%' ? '0%' : '50%' }}
+                            style={{
+                              width: course.progress === "100%" ? "100%" : course.progress === "0%" ? "0%" : "50%",
+                            }}
                           />
                         </div>
                         <span className="text-sm text-muted-foreground">{course.progress}</span>
@@ -196,7 +209,7 @@ export default function Dashboard() {
                             Duplicate
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleTogglePublish(course)}>
-                            {course.status === 'published' ? (
+                            {course.status === "published" ? (
                               <>
                                 <EyeOff className="h-4 w-4 mr-2" />
                                 Unpublish
@@ -209,7 +222,7 @@ export default function Dashboard() {
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => handleDeleteClick(course.id)}
                             className="text-destructive focus:text-destructive"
                           >
@@ -237,7 +250,10 @@ export default function Dashboard() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
