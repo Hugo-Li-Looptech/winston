@@ -50,12 +50,6 @@ export default function Dashboard() {
 
   const hasNoCourses = courses.length === 0;
 
-  // Show tutorial when all courses are removed
-  const handleCourseClick = (courseId: string) => {
-    // Navigate to edit with course metadata
-    navigate(`/create?mode=edit&courseId=${courseId}`);
-  };
-
   const handleCreateCourse = () => {
     resetCurrentCourse();
     navigate("/create");
@@ -200,8 +194,7 @@ export default function Dashboard() {
                 {filteredCourses.map((course) => (
                   <tr 
                     key={course.id} 
-                    className="border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
-                    onClick={() => handleCourseClick(course.id)}
+                    className="border-b last:border-0 hover:bg-muted/30 transition-colors"
                   >
                     <td className="py-4 px-6">
                       <span className="font-medium text-foreground">{course.title}</span>
