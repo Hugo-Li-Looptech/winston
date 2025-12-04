@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, ArrowRight, Send, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
 import { QuickEditsPanel } from "@/components/QuickEditsPanel";
 import { RichTextToolbar } from "@/components/RichTextToolbar";
@@ -36,15 +36,15 @@ interface ScriptingStepProps {
 
 export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStepProps) {
   const navigate = useNavigate();
-  const { currentCourse, setSlides, insertAssessmentAtIndex, addQuestionToAssessment, removeQuestionFromAssessment, setCourseItems, setCourseTitle } = useCourse();
+  const { currentCourse, setSlides, insertAssessmentAtIndex, addQuestionToAssessment, removeQuestionFromAssessment, setCourseItems, setCourseTitle, publishCourse, saveCourseAsDraft } = useCourse();
   const { slides, courseItems, courseTitle } = currentCourse;
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [aiPrompt, setAiPrompt] = useState("");
   const [isVerbose, setIsVerbose] = useState(false);
   const [isStreamlined, setIsStreamlined] = useState(false);
   const [activeTab, setActiveTab] = useState<"scripting" | "metadata">("scripting");
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(true);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
 
   // Get current item (slide or assessment)
   const currentItem = courseItems[currentItemIndex];
@@ -77,11 +77,24 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
     console.log("Ask Winston clicked");
   };
 
-  const handleAiPromptSubmit = () => {
-    if (aiPrompt.trim()) {
-      console.log("AI Prompt submitted:", aiPrompt);
-      setAiPrompt("");
-    }
+  const handleApplyQuickEdit = (type: 'verbose' | 'streamlined') => {
+    console.log(`Applying ${type} edit to talk points`);
+    // TODO: Implement AI-powered talk point modification
+  };
+
+  const handleComment = () => {
+    console.log("Comments clicked");
+    // TODO: Open comments panel
+  };
+
+  const handleSaveAndLeave = () => {
+    saveCourseAsDraft();
+    navigate("/dashboard");
+  };
+
+  const handlePublish = () => {
+    publishCourse();
+    navigate("/dashboard");
   };
 
   const handleAddAssessment = () => {
@@ -220,6 +233,10 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
         onStepClick={onStepClick}
         showActions={true}
         onTitleChange={setCourseTitle}
+        onComment={handleComment}
+        onSave={handleSaveAndLeave}
+        onPublish={handlePublish}
+        hasUnsavedChanges={hasUnsavedChanges}
       />
 
       {/* Main Content Area with Resizable Panels */}
@@ -263,27 +280,8 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                       onVerboseChange={setIsVerbose}
                       onStreamlinedChange={setIsStreamlined}
                       onAskWinston={handleAskWinston}
+                      onApplyQuickEdit={handleApplyQuickEdit}
                     />
-
-                    {/* AI Prompt Input */}
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={aiPrompt}
-                        onChange={(e) => setAiPrompt(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleAiPromptSubmit()}
-                        placeholder="Make it less complicated..."
-                        className="w-full px-4 py-3 pr-12 bg-muted/50 border border-border rounded-xl text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                      />
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-                        onClick={handleAiPromptSubmit}
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </div>
 
                     {/* Rich Text Toolbar */}
                     <RichTextToolbar />
