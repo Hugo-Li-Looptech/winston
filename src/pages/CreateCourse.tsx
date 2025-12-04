@@ -80,7 +80,7 @@ export default function CreateCourse() {
 
   // Check if a step is accessible (for new courses, must complete in sequence)
   const isStepAccessible = (step: WizardStepType): boolean => {
-    // In edit mode, allow access based on completed steps
+    // In edit mode (existing course), all steps are accessible
     if (isEditMode) return true;
     
     switch (step) {
@@ -180,6 +180,7 @@ export default function CreateCourse() {
               onToggleCollapse={() => setIsStepIndicatorCollapsed(!isStepIndicatorCollapsed)}
               onStepClick={handleStepClick}
               completedSteps={completedSteps}
+              isEditMode={isEditMode}
             />
             <Button
               variant="ghost"
