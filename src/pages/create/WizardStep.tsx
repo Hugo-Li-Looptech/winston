@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCourse } from '@/contexts/CourseContext';
+import { Pencil } from 'lucide-react';
 
 interface WizardStepProps {
   onContinue: () => void;
@@ -36,8 +38,10 @@ const learningGoals = [
 ];
 
 export function WizardStep({ onContinue, onBack }: WizardStepProps) {
-  const { currentCourse, setWizardSettings } = useCourse();
+  const { currentCourse, setWizardSettings, setCourseTitle } = useCourse();
   const [settings, setSettings] = useState(currentCourse.wizardSettings);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(currentCourse.courseTitle);
 
   const toggleAudience = (type: string) => {
     const updated = settings.audienceTypes.includes(type)
@@ -58,10 +62,44 @@ export function WizardStep({ onContinue, onBack }: WizardStepProps) {
     onContinue();
   };
 
+  const handleSaveTitle = () => {
+    setCourseTitle(editedTitle);
+    setIsEditingTitle(false);
+  };
+
   return (
     <div className="space-y-8">
+      {/* Course Title Display */}
       <div className="text-center">
-        <h2 className="text-2xl font-semibold text-foreground">Course Setup</h2>
+        <div className="flex items-center justify-center gap-2 mb-2">
+          {isEditingTitle ? (
+            <Input
+              value={editedTitle}
+              onChange={(e) => setEditedTitle(e.target.value)}
+              onBlur={handleSaveTitle}
+              onKeyDown={(e) => e.key === 'Enter' && handleSaveTitle()}
+              className="max-w-md text-center text-2xl font-semibold"
+              autoFocus
+            />
+          ) : (
+            <>
+              <h2 className="text-2xl font-semibold text-foreground">
+                {currentCourse.courseTitle || 'Untitled Course'}
+              </h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  setEditedTitle(currentCourse.courseTitle);
+                  setIsEditingTitle(true);
+                }}
+              >
+                <Pencil className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </>
+          )}
+        </div>
         <p className="text-muted-foreground mt-2">
           Help Winston understand your target audience for better content delivery
         </p>

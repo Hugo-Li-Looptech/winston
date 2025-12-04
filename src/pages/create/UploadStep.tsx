@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Upload, FileText, Trash2, CheckCircle, Plus } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
 import { SlideFile } from "@/types/course";
@@ -10,7 +12,7 @@ interface UploadStepProps {
 }
 
 export function UploadStep({ onContinue }: UploadStepProps) {
-  const { currentCourse, setSlideFiles, setSupplementFiles } = useCourse();
+  const { currentCourse, setSlideFiles, setSupplementFiles, setCourseTitle, setCourseDescription } = useCourse();
   const [isDraggingSlide, setIsDraggingSlide] = useState(false);
   const [isDraggingSupp, setIsDraggingSupp] = useState(false);
 
@@ -67,9 +69,39 @@ export function UploadStep({ onContinue }: UploadStepProps) {
 
   const hasSlideFile = currentCourse.slideFiles.length > 0;
   const hasSupplementFiles = currentCourse.supplementFiles.length > 0;
+  const hasTitle = currentCourse.courseTitle.trim().length > 0;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
+      {/* Course Information Section */}
+      <div className="bg-card rounded-2xl shadow-lg border overflow-hidden">
+        <div className="p-6 border-b bg-muted/30">
+          <h3 className="text-lg font-semibold text-foreground">Course Information</h3>
+          <p className="text-sm text-muted-foreground mt-1">Set up your course title and description</p>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Course Title <span className="text-destructive">*</span>
+            </label>
+            <Input
+              value={currentCourse.courseTitle}
+              onChange={(e) => setCourseTitle(e.target.value)}
+              placeholder="Enter your course title..."
+              className="rounded-xl"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Description</label>
+            <Textarea
+              value={currentCourse.courseDescription}
+              onChange={(e) => setCourseDescription(e.target.value)}
+              placeholder="Briefly describe what learners will gain from this course..."
+              className="rounded-xl resize-none min-h-[80px]"
+            />
+          </div>
+        </div>
+      </div>
       {/* Main Slide File Section */}
       <div className="bg-card rounded-2xl shadow-lg border overflow-hidden">
         <div className="p-6 border-b bg-muted/30">
@@ -249,7 +281,7 @@ export function UploadStep({ onContinue }: UploadStepProps) {
 
       {/* Continue Button */}
       <div className="flex justify-center pt-4">
-        <Button onClick={onContinue} disabled={!hasSlideFile} size="lg" className="rounded-xl px-12">
+        <Button onClick={onContinue} disabled={!hasSlideFile || !hasTitle} size="lg" className="rounded-xl px-12">
           Continue
         </Button>
       </div>

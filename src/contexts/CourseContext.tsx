@@ -12,6 +12,8 @@ interface CourseContextType {
     assessments: Assessment[];
     courseItems: CourseItem[];
     currentStep: WizardStep;
+    courseTitle: string;
+    courseDescription: string;
   };
   setSlideFiles: (files: SlideFile[]) => void;
   setSupplementFiles: (files: SlideFile[]) => void;
@@ -23,6 +25,8 @@ interface CourseContextType {
   addQuestionToAssessment: (assessmentId: string) => void;
   removeQuestionFromAssessment: (assessmentId: string, questionId: string) => void;
   setCurrentStep: (step: WizardStep) => void;
+  setCourseTitle: (title: string) => void;
+  setCourseDescription: (description: string) => void;
   resetCurrentCourse: () => void;
   deleteCourse: (id: string) => void;
   updateCourseStatus: (id: string, status: Course['status']) => void;
@@ -132,11 +136,7 @@ const buildCourseItemsFromSlides = (slides: Slide[]): CourseItem[] => {
 };
 
 export function CourseProvider({ children }: { children: ReactNode }) {
-  const [courses, setCourses] = useState<Course[]>([
-    { id: '1', title: 'PBJ tutorial 101', date: '05/25/25', status: 'published', progress: '100%' },
-    { id: '2', title: 'Food Safety Training', date: '05/25/25', status: 'pending', progress: '0%' },
-    { id: '3', title: 'Customer Service Basics', date: '05/25/25', status: 'in_progress', progress: 'slides_uploaded' },
-  ]);
+  const [courses, setCourses] = useState<Course[]>([]);
 
   const [slideFiles, setSlideFiles] = useState<SlideFile[]>([]);
   const [supplementFiles, setSupplementFiles] = useState<SlideFile[]>([]);
@@ -145,6 +145,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [courseItems, setCourseItems] = useState<CourseItem[]>(buildCourseItemsFromSlides(defaultSlides));
   const [currentStep, setCurrentStep] = useState<WizardStep>('upload');
+  const [courseTitle, setCourseTitle] = useState<string>('');
+  const [courseDescription, setCourseDescription] = useState<string>('');
 
   // Wrapper to keep slides and courseItems in sync
   const setSlides = (newSlides: Slide[]) => {
@@ -242,6 +244,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     setAssessments([]);
     setCourseItems(buildCourseItemsFromSlides(defaultSlides));
     setCurrentStep('upload');
+    setCourseTitle('');
+    setCourseDescription('');
   };
 
   const deleteCourse = (id: string) => {
@@ -283,6 +287,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
           assessments,
           courseItems,
           currentStep,
+          courseTitle,
+          courseDescription,
         },
         setSlideFiles,
         setSupplementFiles,
@@ -294,6 +300,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         addQuestionToAssessment,
         removeQuestionFromAssessment,
         setCurrentStep,
+        setCourseTitle,
+        setCourseDescription,
         resetCurrentCourse,
         deleteCourse,
         updateCourseStatus,

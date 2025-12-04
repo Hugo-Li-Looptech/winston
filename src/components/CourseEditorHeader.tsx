@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { StepIndicator } from '@/components/StepIndicator';
-import { FileText, MessageSquare, Save, Upload, X } from 'lucide-react';
+import { FileText, MessageSquare, Save, Upload, X, Pencil } from 'lucide-react';
 import { WizardStep } from '@/types/course';
 
 interface CourseEditorHeaderProps {
@@ -11,6 +13,7 @@ interface CourseEditorHeaderProps {
   onClose: () => void;
   onStepClick?: (step: WizardStep) => void;
   showActions?: boolean;
+  onTitleChange?: (title: string) => void;
 }
 
 export function CourseEditorHeader({
@@ -21,7 +24,23 @@ export function CourseEditorHeader({
   onClose,
   onStepClick,
   showActions = true,
+  onTitleChange,
 }: CourseEditorHeaderProps) {
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(courseTitle);
+
+  const handleSaveTitle = () => {
+    if (onTitleChange) {
+      onTitleChange(editedTitle);
+    }
+    setIsEditingTitle(false);
+  };
+
+  const handleStartEdit = () => {
+    setEditedTitle(courseTitle);
+    setIsEditingTitle(true);
+  };
+
   return (
     <div className="bg-card border-b px-6 py-3 flex items-center justify-between">
       {/* Left - Step Indicator */}
@@ -39,7 +58,30 @@ export function CourseEditorHeader({
         <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
           <FileText className="h-4 w-4 text-primary" />
         </div>
-        <span className="font-medium text-foreground">{courseTitle}</span>
+        {isEditingTitle ? (
+          <Input
+            value={editedTitle}
+            onChange={(e) => setEditedTitle(e.target.value)}
+            onBlur={handleSaveTitle}
+            onKeyDown={(e) => e.key === 'Enter' && handleSaveTitle()}
+            className="w-64 font-medium"
+            autoFocus
+          />
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-foreground">{courseTitle}</span>
+            {onTitleChange && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={handleStartEdit}
+              >
+                <Pencil className="h-3 w-3 text-muted-foreground" />
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Right - Actions */}

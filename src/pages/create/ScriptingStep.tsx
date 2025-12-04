@@ -36,8 +36,8 @@ interface ScriptingStepProps {
 
 export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStepProps) {
   const navigate = useNavigate();
-  const { currentCourse, setSlides, insertAssessmentAtIndex, addQuestionToAssessment, removeQuestionFromAssessment, setCourseItems } = useCourse();
-  const { slides, courseItems } = currentCourse;
+  const { currentCourse, setSlides, insertAssessmentAtIndex, addQuestionToAssessment, removeQuestionFromAssessment, setCourseItems, setCourseTitle } = useCourse();
+  const { slides, courseItems, courseTitle } = currentCourse;
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [aiPrompt, setAiPrompt] = useState("");
@@ -213,12 +213,13 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
       {/* Header with Progress Bar */}
       <CourseEditorHeader
         currentStep="scripting"
-        courseTitle="How to Make a PBJ Sand - Intro"
+        courseTitle={courseTitle || 'Untitled Course'}
         isCollapsed={isHeaderCollapsed}
         onToggleCollapse={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
         onClose={() => navigate("/dashboard")}
         onStepClick={onStepClick}
         showActions={true}
+        onTitleChange={setCourseTitle}
       />
 
       {/* Main Content Area with Resizable Panels */}
