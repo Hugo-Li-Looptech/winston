@@ -18,6 +18,7 @@ interface CourseEditorHeaderProps {
   onSave?: () => void;
   onPublish?: () => void;
   hasUnsavedChanges?: boolean;
+  isEditMode?: boolean;
 }
 
 export function CourseEditorHeader({
@@ -33,6 +34,7 @@ export function CourseEditorHeader({
   onSave,
   onPublish,
   hasUnsavedChanges = true,
+  isEditMode = true, // Default to true since this header is typically used when editing
 }: CourseEditorHeaderProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(courseTitle);
@@ -58,6 +60,7 @@ export function CourseEditorHeader({
           isCollapsed={isCollapsed}
           onToggleCollapse={onToggleCollapse}
           onStepClick={onStepClick}
+          isEditMode={isEditMode}
         />
       </div>
 
