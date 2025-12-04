@@ -1,15 +1,20 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Sparkles, Play, X } from 'lucide-react';
+import { Sparkles, Send, X, Check, Loader2 } from 'lucide-react';
 
 interface QuickEditsPanelProps {
   isVerbose: boolean;
   isStreamlined: boolean;
   onVerboseChange: (checked: boolean) => void;
   onStreamlinedChange: (checked: boolean) => void;
-  onAskWinston: () => void;
+  onAskWinston: (prompt: string) => void;
   onApplyQuickEdit?: (type: 'verbose' | 'streamlined') => void;
+  suggestedTalkPoints?: string | null;
+  suggestionType?: 'verbose' | 'streamlined' | 'custom' | null;
+  isGenerating?: boolean;
+  onAcceptSuggestion?: () => void;
+  onRejectSuggestion?: () => void;
 }
 
 export function QuickEditsPanel({
@@ -19,24 +24,54 @@ export function QuickEditsPanel({
   onStreamlinedChange,
   onAskWinston,
   onApplyQuickEdit,
+  suggestedTalkPoints,
+  suggestionType,
+  isGenerating,
+  onAcceptSuggestion,
+  onRejectSuggestion,
 }: QuickEditsPanelProps) {
   const [showChatInput, setShowChatInput] = useState(false);
   const [chatInput, setChatInput] = useState('');
 
   const handleAskWinstonClick = () => {
     setShowChatInput(!showChatInput);
-    if (!showChatInput) {
-      onAskWinston();
+  };
+
+  const handleSendMessage = () => {
+    if (chatInput.trim()) {
+      onAskWinston(chatInput.trim());
+      setChatInput('');
     }
   };
 
-  const handleApplyQuickEdit = (type: 'verbose' | 'streamlined') => {
-    if (onApplyQuickEdit) {
-      onApplyQuickEdit(type);
+  const handleVerboseChange = (checked: boolean) => {
+    onVerboseChange(checked);
+    if (checked && onApplyQuickEdit) {
+      // Automatically trigger generation when checked
+      onApplyQuickEdit('verbose');
     }
   };
 
-  const hasQuickEditSelected = isVerbose || isStreamlined;
+  const handleStreamlinedChange = (checked: boolean) => {
+    onStreamlinedChange(checked);
+    if (checked && onApplyQuickEdit) {
+      // Automatically trigger generation when checked
+      onApplyQuickEdit('streamlined');
+    }
+  };
+
+  const getSuggestionTitle = () => {
+    switch (suggestionType) {
+      case 'verbose':
+        return 'More Verbose Version';
+      case 'streamlined':
+        return 'Streamlined Version';
+      case 'custom':
+        return "Winston's Suggestion";
+      default:
+        return 'Suggestion';
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -66,8 +101,9 @@ export function QuickEditsPanel({
           <Checkbox 
             id="verbose" 
             checked={isVerbose}
+            disabled={isGenerating}
             onCheckedChange={(checked) => {
-              onVerboseChange(checked as boolean);
+              handleVerboseChange(checked as boolean);
               if (checked) onStreamlinedChange(false);
             }}
           />
@@ -83,8 +119,9 @@ export function QuickEditsPanel({
           <Checkbox 
             id="streamlined" 
             checked={isStreamlined}
+            disabled={isGenerating}
             onCheckedChange={(checked) => {
-              onStreamlinedChange(checked as boolean);
+              handleStreamlinedChange(checked as boolean);
               if (checked) onVerboseChange(false);
             }}
           />
@@ -96,31 +133,72 @@ export function QuickEditsPanel({
           </label>
         </div>
 
-        {hasQuickEditSelected && (
-          <Button
-            onClick={() => handleApplyQuickEdit(isVerbose ? 'verbose' : 'streamlined')}
-            size="sm"
-            variant="outline"
-            className="rounded-xl gap-2"
-          >
-            <Play className="h-4 w-4" />
-            Go
-          </Button>
+        {isGenerating && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Generating...
+          </div>
         )}
       </div>
 
       {/* Chat Input - shown when Ask Winston is clicked */}
       {showChatInput && (
-        <div className="animate-fade-in space-y-2">
-          <textarea
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            placeholder="Ask Winston to help with your talk points..."
-            className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none min-h-[80px]"
-          />
-          <div className="flex justify-end">
-            <Button size="sm" className="rounded-xl">
-              Send
+        <div className="animate-fade-in">
+          <div className="relative">
+            <textarea
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="Ask Winston to help with your talk points..."
+              className="w-full px-4 py-3 pr-12 bg-muted/50 border border-border rounded-xl text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none min-h-[80px]"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+            />
+            <Button 
+              size="icon" 
+              className="absolute bottom-2 right-2 h-8 w-8 rounded-lg"
+              onClick={handleSendMessage}
+              disabled={!chatInput.trim() || isGenerating}
+            >
+              {isGenerating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Suggestion Preview */}
+      {suggestedTalkPoints && !isGenerating && (
+        <div className="animate-fade-in mt-4 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+          <p className="text-sm font-medium text-primary mb-2">
+            {getSuggestionTitle()}
+          </p>
+          <p className="text-sm text-primary/80 whitespace-pre-wrap">
+            {suggestedTalkPoints}
+          </p>
+          <div className="flex gap-2 mt-3">
+            <Button 
+              size="sm" 
+              onClick={onAcceptSuggestion}
+              className="gap-1 rounded-xl"
+            >
+              <Check className="h-3 w-3" />
+              Accept
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={onRejectSuggestion}
+              className="gap-1 rounded-xl"
+            >
+              <X className="h-3 w-3" />
+              Reject
             </Button>
           </div>
         </div>

@@ -1,5 +1,24 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Course, SlideFile, WizardSettings, Slide, Assessment, AssessmentQuestion, WizardStep, CourseItem } from '@/types/course';
+import { Comment, proxyComments } from '@/types/comment';
+
+interface CompletedSteps {
+  upload: boolean;
+  wizard: boolean;
+  scripting: boolean;
+}
+
+interface CourseMetadata {
+  duration: string;
+  totalSlides: number;
+  totalAssessments: number;
+  difficulty: string;
+  tags: string[];
+  learningObjectives: string[];
+  prerequisites: string[];
+  author: string;
+  lastModified: string;
+}
 
 interface CourseContextType {
   courses: Course[];
@@ -14,7 +33,10 @@ interface CourseContextType {
     currentStep: WizardStep;
     courseTitle: string;
     courseDescription: string;
+    metadata: CourseMetadata;
   };
+  completedSteps: CompletedSteps;
+  comments: Comment[];
   setSlideFiles: (files: SlideFile[]) => void;
   setSupplementFiles: (files: SlideFile[]) => void;
   setWizardSettings: (settings: WizardSettings) => void;
@@ -27,6 +49,11 @@ interface CourseContextType {
   setCurrentStep: (step: WizardStep) => void;
   setCourseTitle: (title: string) => void;
   setCourseDescription: (description: string) => void;
+  setCompletedSteps: React.Dispatch<React.SetStateAction<CompletedSteps>>;
+  markStepComplete: (step: 'upload' | 'wizard' | 'scripting') => void;
+  setMetadata: (metadata: Partial<CourseMetadata>) => void;
+  addComment: (content: string, slideId?: string) => void;
+  resolveComment: (commentId: string) => void;
   resetCurrentCourse: () => void;
   deleteCourse: (id: string) => void;
   updateCourseStatus: (id: string, status: Course['status']) => void;
@@ -151,6 +178,18 @@ const proxyCourses: Course[] = [
   },
 ];
 
+const defaultMetadata: CourseMetadata = {
+  duration: '45 minutes',
+  totalSlides: 10,
+  totalAssessments: 0,
+  difficulty: 'Beginner',
+  tags: ['cooking', 'basics', 'food'],
+  learningObjectives: ['Understand PBJ history', 'Select quality ingredients', 'Master assembly technique'],
+  prerequisites: ['None'],
+  author: 'Course Creator',
+  lastModified: new Date().toISOString(),
+};
+
 const CourseContext = createContext<CourseContextType | undefined>(undefined);
 
 // Build initial course items from default slides
@@ -174,6 +213,13 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   const [currentStep, setCurrentStep] = useState<WizardStep>('upload');
   const [courseTitle, setCourseTitle] = useState<string>('');
   const [courseDescription, setCourseDescription] = useState<string>('');
+  const [completedSteps, setCompletedSteps] = useState<CompletedSteps>({
+    upload: false,
+    wizard: false,
+    scripting: false,
+  });
+  const [metadata, setMetadataState] = useState<CourseMetadata>(defaultMetadata);
+  const [comments, setComments] = useState<Comment[]>(proxyComments);
 
   // Wrapper to keep slides and courseItems in sync
   const setSlides = (newSlides: Slide[]) => {
@@ -190,6 +236,33 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       // For now, just rebuild based on slides (assessments handled separately)
       return [...newSlideItems, ...assessmentItems];
     });
+  };
+
+  const markStepComplete = (step: 'upload' | 'wizard' | 'scripting') => {
+    setCompletedSteps((prev) => ({ ...prev, [step]: true }));
+  };
+
+  const setMetadata = (updates: Partial<CourseMetadata>) => {
+    setMetadataState((prev) => ({ ...prev, ...updates, lastModified: new Date().toISOString() }));
+  };
+
+  const addComment = (content: string, slideId?: string) => {
+    const newComment: Comment = {
+      id: `comment-${Date.now()}`,
+      userId: 'current-user',
+      userName: 'You',
+      content,
+      timestamp: new Date(),
+      slideId,
+      resolved: false,
+    };
+    setComments((prev) => [newComment, ...prev]);
+  };
+
+  const resolveComment = (commentId: string) => {
+    setComments((prev) =>
+      prev.map((c) => (c.id === commentId ? { ...c, resolved: !c.resolved } : c))
+    );
   };
 
   const createDefaultQuestion = (): AssessmentQuestion => ({
@@ -273,6 +346,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     setCurrentStep('upload');
     setCourseTitle('');
     setCourseDescription('');
+    setCompletedSteps({ upload: false, wizard: false, scripting: false });
+    setMetadataState(defaultMetadata);
   };
 
   const deleteCourse = (id: string) => {
@@ -338,7 +413,10 @@ export function CourseProvider({ children }: { children: ReactNode }) {
           currentStep,
           courseTitle,
           courseDescription,
+          metadata,
         },
+        completedSteps,
+        comments,
         setSlideFiles,
         setSupplementFiles,
         setWizardSettings,
@@ -351,6 +429,11 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         setCurrentStep,
         setCourseTitle,
         setCourseDescription,
+        setCompletedSteps,
+        markStepComplete,
+        setMetadata,
+        addComment,
+        resolveComment,
         resetCurrentCourse,
         deleteCourse,
         updateCourseStatus,

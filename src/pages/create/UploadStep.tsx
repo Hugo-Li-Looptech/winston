@@ -12,7 +12,12 @@ interface UploadStepProps {
 }
 
 export function UploadStep({ onContinue }: UploadStepProps) {
-  const { currentCourse, setSlideFiles, setSupplementFiles, setCourseTitle, setCourseDescription } = useCourse();
+  const { currentCourse, setSlideFiles, setSupplementFiles, setCourseTitle, setCourseDescription, markStepComplete } = useCourse();
+
+  const handleContinue = () => {
+    markStepComplete('upload');
+    onContinue();
+  };
   const [isDraggingSlide, setIsDraggingSlide] = useState(false);
   const [isDraggingSupp, setIsDraggingSupp] = useState(false);
 

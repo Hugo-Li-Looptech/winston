@@ -38,7 +38,7 @@ const learningGoals = [
 ];
 
 export function WizardStep({ onContinue, onBack }: WizardStepProps) {
-  const { currentCourse, setWizardSettings, setCourseTitle } = useCourse();
+  const { currentCourse, setWizardSettings, setCourseTitle, markStepComplete } = useCourse();
   const [settings, setSettings] = useState(currentCourse.wizardSettings);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(currentCourse.courseTitle);

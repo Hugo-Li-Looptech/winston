@@ -14,26 +14,53 @@ import { WizardStep as WizardStepType } from '@/types/course';
 
 type SubStep = 'upload' | 'wizard-input' | 'wizard-confirm' | 'scripting' | 'preview';
 
+// Map URL step param to SubStep
+const stepParamToSubStep = (stepParam: string | null): SubStep | null => {
+  switch (stepParam) {
+    case 'upload':
+      return 'upload';
+    case 'wizard':
+      return 'wizard-input';
+    case 'scripting':
+      return 'scripting';
+    case 'preview':
+      return 'preview';
+    default:
+      return null;
+  }
+};
+
 export default function CreateCourse() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { setCurrentStep } = useCourse();
+  const { currentCourse, completedSteps } = useCourse();
   const mode = searchParams.get('mode');
+  const stepParam = searchParams.get('step');
   const isPreviewOnly = mode === 'preview';
   const isEditMode = mode === 'edit';
-  const [subStep, setSubStep] = useState<SubStep>(
-    isPreviewOnly ? 'preview' : isEditMode ? 'scripting' : 'upload'
-  );
+  
+  // Determine initial subStep based on URL params
+  const getInitialSubStep = (): SubStep => {
+    if (isPreviewOnly) return 'preview';
+    if (isEditMode && stepParam) {
+      const mappedStep = stepParamToSubStep(stepParam);
+      if (mappedStep) return mappedStep;
+    }
+    return 'upload';
+  };
+  
+  const [subStep, setSubStep] = useState<SubStep>(getInitialSubStep);
   const [isStepIndicatorCollapsed, setIsStepIndicatorCollapsed] = useState(false);
 
   // Sync subStep with URL mode changes
   useEffect(() => {
     if (mode === 'preview') {
       setSubStep('preview');
-    } else if (mode === 'edit') {
-      setSubStep('scripting');
+    } else if (mode === 'edit' && stepParam) {
+      const mappedStep = stepParamToSubStep(stepParam);
+      if (mappedStep) setSubStep(mappedStep);
     }
-  }, [mode]);
+  }, [mode, stepParam]);
 
   const getWizardStep = (): WizardStepType => {
     switch (subStep) {
@@ -51,11 +78,33 @@ export default function CreateCourse() {
     }
   };
 
+  // Check if a step is accessible (for new courses, must complete in sequence)
+  const isStepAccessible = (step: WizardStepType): boolean => {
+    // In edit mode, allow access based on completed steps
+    if (isEditMode) return true;
+    
+    switch (step) {
+      case 'upload':
+        return true;
+      case 'wizard':
+        return completedSteps.upload;
+      case 'scripting':
+        return completedSteps.upload && completedSteps.wizard;
+      case 'preview':
+        return completedSteps.upload && completedSteps.wizard && completedSteps.scripting;
+      default:
+        return false;
+    }
+  };
+
   const handleClose = () => {
     navigate('/dashboard');
   };
 
   const handleStepClick = (step: WizardStepType) => {
+    // Check if step is accessible before navigating
+    if (!isStepAccessible(step)) return;
+    
     switch (step) {
       case 'upload':
         setSubStep('upload');
@@ -130,6 +179,7 @@ export default function CreateCourse() {
               isCollapsed={isStepIndicatorCollapsed}
               onToggleCollapse={() => setIsStepIndicatorCollapsed(!isStepIndicatorCollapsed)}
               onStepClick={handleStepClick}
+              completedSteps={completedSteps}
             />
             <Button
               variant="ghost"
