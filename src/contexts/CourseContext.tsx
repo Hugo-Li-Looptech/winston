@@ -31,6 +31,8 @@ interface CourseContextType {
   deleteCourse: (id: string) => void;
   updateCourseStatus: (id: string, status: Course['status']) => void;
   duplicateCourse: (id: string) => void;
+  publishCourse: () => void;
+  saveCourseAsDraft: () => void;
 }
 
 const defaultWizardSettings: WizardSettings = {
@@ -124,6 +126,31 @@ const defaultSlides: Slide[] = [
   },
 ];
 
+// Proxy courses for initial state
+const proxyCourses: Course[] = [
+  {
+    id: 'proxy-1',
+    title: 'Introduction to Machine Learning',
+    date: 'Dec 1, 2024',
+    status: 'published',
+    progress: '100%',
+  },
+  {
+    id: 'proxy-2',
+    title: 'Advanced React Patterns',
+    date: 'Nov 28, 2024',
+    status: 'in_progress',
+    progress: 'setting_talk_points',
+  },
+  {
+    id: 'proxy-3',
+    title: 'UI/UX Design Fundamentals',
+    date: 'Nov 25, 2024',
+    status: 'pending',
+    progress: 'slides_uploaded',
+  },
+];
+
 const CourseContext = createContext<CourseContextType | undefined>(undefined);
 
 // Build initial course items from default slides
@@ -136,7 +163,7 @@ const buildCourseItemsFromSlides = (slides: Slide[]): CourseItem[] => {
 };
 
 export function CourseProvider({ children }: { children: ReactNode }) {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<Course[]>(proxyCourses);
 
   const [slideFiles, setSlideFiles] = useState<SlideFile[]>([]);
   const [supplementFiles, setSupplementFiles] = useState<SlideFile[]>([]);
@@ -274,6 +301,28 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const publishCourse = () => {
+    const newCourse: Course = {
+      id: Date.now().toString(),
+      title: courseTitle || 'Untitled Course',
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      status: 'published',
+      progress: '100%',
+    };
+    setCourses((prev) => [...prev, newCourse]);
+  };
+
+  const saveCourseAsDraft = () => {
+    const newCourse: Course = {
+      id: Date.now().toString(),
+      title: courseTitle || 'Untitled Course',
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      status: 'in_progress',
+      progress: 'setting_talk_points',
+    };
+    setCourses((prev) => [...prev, newCourse]);
+  };
+
   return (
     <CourseContext.Provider
       value={{
@@ -306,6 +355,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         deleteCourse,
         updateCourseStatus,
         duplicateCourse,
+        publishCourse,
+        saveCourseAsDraft,
       }}
     >
       {children}

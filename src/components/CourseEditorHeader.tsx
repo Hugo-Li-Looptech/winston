@@ -14,6 +14,10 @@ interface CourseEditorHeaderProps {
   onStepClick?: (step: WizardStep) => void;
   showActions?: boolean;
   onTitleChange?: (title: string) => void;
+  onComment?: () => void;
+  onSave?: () => void;
+  onPublish?: () => void;
+  hasUnsavedChanges?: boolean;
 }
 
 export function CourseEditorHeader({
@@ -25,6 +29,10 @@ export function CourseEditorHeader({
   onStepClick,
   showActions = true,
   onTitleChange,
+  onComment,
+  onSave,
+  onPublish,
+  hasUnsavedChanges = true,
 }: CourseEditorHeaderProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(courseTitle);
@@ -88,18 +96,20 @@ export function CourseEditorHeader({
       <div className="flex items-center gap-2">
         {showActions && (
           <>
-            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-              unsaved
-            </span>
-            <Button variant="ghost" size="sm" className="gap-1">
+            {hasUnsavedChanges && (
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                unsaved
+              </span>
+            )}
+            <Button variant="ghost" size="sm" className="gap-1" onClick={onComment}>
               <MessageSquare className="h-4 w-4" />
               Comments
             </Button>
-            <Button variant="ghost" size="sm" className="gap-1">
+            <Button variant="ghost" size="sm" className="gap-1" onClick={onSave}>
               <Save className="h-4 w-4" />
               Save
             </Button>
-            <Button variant="default" size="sm" className="gap-1">
+            <Button variant="default" size="sm" className="gap-1" onClick={onPublish}>
               <Upload className="h-4 w-4" />
               Publish
             </Button>
