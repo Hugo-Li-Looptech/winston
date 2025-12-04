@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { StepIndicator } from '@/components/StepIndicator';
-import { FileText, MessageSquare, Save, Upload, X, Pencil } from 'lucide-react';
+import { FileText, MessageSquare, Save, Upload, X, Pencil, Eye, EyeOff } from 'lucide-react';
 import { WizardStep } from '@/types/course';
+import { toast } from '@/hooks/use-toast';
 
 interface CourseEditorHeaderProps {
   currentStep: WizardStep;
@@ -33,11 +34,13 @@ export function CourseEditorHeader({
   onComment,
   onSave,
   onPublish,
-  hasUnsavedChanges = true,
-  isEditMode = true, // Default to true since this header is typically used when editing
+  hasUnsavedChanges: initialUnsavedChanges = true,
+  isEditMode = true,
 }: CourseEditorHeaderProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(courseTitle);
+  const [isSaved, setIsSaved] = useState(!initialUnsavedChanges);
+  const [isPublished, setIsPublished] = useState(false);
 
   const handleSaveTitle = () => {
     if (onTitleChange) {
@@ -49,6 +52,27 @@ export function CourseEditorHeader({
   const handleStartEdit = () => {
     setEditedTitle(courseTitle);
     setIsEditingTitle(true);
+  };
+
+  const handleSave = () => {
+    onSave?.();
+    setIsSaved(true);
+    toast({
+      title: 'Course Saved',
+      description: 'Your changes have been saved successfully.',
+    });
+  };
+
+  const handlePublishToggle = () => {
+    const newPublishedState = !isPublished;
+    setIsPublished(newPublishedState);
+    onPublish?.();
+    toast({
+      title: newPublishedState ? 'Course Published' : 'Course Unpublished',
+      description: newPublishedState 
+        ? 'Your course is now live and available to learners.'
+        : 'The course is no longer visible to learners.',
+    });
   };
 
   return (
@@ -99,22 +123,48 @@ export function CourseEditorHeader({
       <div className="flex items-center gap-2">
         {showActions && (
           <>
-            {hasUnsavedChanges && (
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                unsaved
+            {/* Status Tags */}
+            <div className="flex items-center gap-2 mr-2">
+              <span className={`text-xs px-2 py-1 rounded ${
+                isSaved 
+                  ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30' 
+                  : 'text-muted-foreground bg-muted'
+              }`}>
+                {isSaved ? 'saved' : 'unsaved'}
               </span>
-            )}
+              <span className={`text-xs px-2 py-1 rounded ${
+                isPublished 
+                  ? 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30' 
+                  : 'text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30'
+              }`}>
+                {isPublished ? 'published' : 'draft'}
+              </span>
+            </div>
             <Button variant="ghost" size="sm" className="gap-1" onClick={onComment}>
               <MessageSquare className="h-4 w-4" />
               Comments
             </Button>
-            <Button variant="ghost" size="sm" className="gap-1" onClick={onSave}>
+            <Button variant="ghost" size="sm" className="gap-1" onClick={handleSave}>
               <Save className="h-4 w-4" />
               Save
             </Button>
-            <Button variant="default" size="sm" className="gap-1" onClick={onPublish}>
-              <Upload className="h-4 w-4" />
-              Publish
+            <Button 
+              variant={isPublished ? "outline" : "default"} 
+              size="sm" 
+              className="gap-1" 
+              onClick={handlePublishToggle}
+            >
+              {isPublished ? (
+                <>
+                  <EyeOff className="h-4 w-4" />
+                  Unpublish
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4" />
+                  Publish
+                </>
+              )}
             </Button>
           </>
         )}

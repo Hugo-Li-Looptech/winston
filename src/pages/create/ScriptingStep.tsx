@@ -162,16 +162,16 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
     addComment(content, currentSlide?.id);
   };
 
-  const handleSaveAndLeave = () => {
+  const handleSave = () => {
     markStepComplete('scripting');
     saveCourseAsDraft();
-    navigate("/dashboard");
+    // Don't navigate - just save in place
   };
 
   const handlePublish = () => {
     markStepComplete('scripting');
     publishCourse();
-    navigate("/dashboard");
+    // Don't navigate - let header handle publish state
   };
 
   const handleAddAssessment = () => {
@@ -316,7 +316,7 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
         showActions={true}
         onTitleChange={setCourseTitle}
         onComment={handleComment}
-        onSave={handleSaveAndLeave}
+        onSave={handleSave}
         onPublish={handlePublish}
         hasUnsavedChanges={hasUnsavedChanges}
       />
