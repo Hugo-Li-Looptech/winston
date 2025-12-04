@@ -37,6 +37,12 @@ export function StepIndicator({
     // In edit mode, all steps are accessible
     if (isEditMode) return true;
     
+    const stepIndex = steps.findIndex((s) => s.key === stepKey);
+    
+    // Always allow going to previous steps
+    if (stepIndex <= currentIndex) return true;
+    
+    // For future steps, check if prerequisites are completed
     switch (stepKey) {
       case 'upload':
         return true;

@@ -83,6 +83,14 @@ export default function CreateCourse() {
     // In edit mode (existing course), all steps are accessible
     if (isEditMode) return true;
     
+    const stepOrder: WizardStepType[] = ['upload', 'wizard', 'scripting', 'preview'];
+    const targetIndex = stepOrder.indexOf(step);
+    const currentStepIndex = stepOrder.indexOf(getWizardStep());
+    
+    // Always allow going to previous steps
+    if (targetIndex <= currentStepIndex) return true;
+    
+    // For future steps, check if prerequisites are completed
     switch (step) {
       case 'upload':
         return true;
