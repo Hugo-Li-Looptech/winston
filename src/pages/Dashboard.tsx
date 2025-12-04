@@ -55,12 +55,34 @@ export default function Dashboard() {
     navigate("/create");
   };
 
-  const handleEditCourse = (courseId: string) => {
-    navigate("/create");
+  // Navigate to the correct step based on course progress
+  const handleEditCourse = (course: Course) => {
+    let step = 'upload';
+    
+    switch (course.progress) {
+      case 'slides_uploaded':
+        step = 'upload';
+        break;
+      case 'wizard_complete':
+        step = 'wizard';
+        break;
+      case 'setting_talk_points':
+        step = 'scripting';
+        break;
+      case 'awaiting_preview':
+      case '100%':
+        step = 'preview';
+        break;
+      case '0%':
+        step = 'upload';
+        break;
+    }
+    
+    navigate(`/create?mode=edit&step=${step}&courseId=${course.id}`);
   };
 
   const handlePreviewCourse = (courseId: string) => {
-    navigate("/create?mode=preview");
+    navigate(`/create?mode=preview&courseId=${courseId}`);
   };
 
   const handleDuplicateCourse = (courseId: string) => {
@@ -226,7 +248,7 @@ export default function Dashboard() {
                             <Play className="h-4 w-4 mr-2" />
                             Preview
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditCourse(course.id)}>
+                          <DropdownMenuItem onClick={() => handleEditCourse(course)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                           </DropdownMenuItem>

@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Plus, Trash2, Clock, User, Tag, BookOpen } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
 import { QuickEditsPanel } from "@/components/QuickEditsPanel";
 import { RichTextToolbar } from "@/components/RichTextToolbar";
 import { SlideDetailsPanel } from "@/components/SlideDetailsPanel";
+import { CommentsPanel } from "@/components/CommentsPanel";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { CourseEditorHeader } from "@/components/CourseEditorHeader";
 import { useNavigate } from "react-router-dom";
@@ -27,6 +28,7 @@ import { Slider } from "@/components/ui/slider";
 import { ClipboardList } from "lucide-react";
 import { WizardStep, QuestionType, Assessment, AssessmentQuestion } from "@/types/course";
 import { RubricEditor } from "@/components/RubricEditor";
+import { Badge } from "@/components/ui/badge";
 
 interface ScriptingStepProps {
   onContinue: () => void;
@@ -36,8 +38,23 @@ interface ScriptingStepProps {
 
 export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStepProps) {
   const navigate = useNavigate();
-  const { currentCourse, setSlides, insertAssessmentAtIndex, addQuestionToAssessment, removeQuestionFromAssessment, setCourseItems, setCourseTitle, publishCourse, saveCourseAsDraft } = useCourse();
-  const { slides, courseItems, courseTitle } = currentCourse;
+  const { 
+    currentCourse, 
+    setSlides, 
+    insertAssessmentAtIndex, 
+    addQuestionToAssessment, 
+    removeQuestionFromAssessment, 
+    setCourseItems, 
+    setCourseTitle, 
+    publishCourse, 
+    saveCourseAsDraft,
+    markStepComplete,
+    comments,
+    addComment,
+    resolveComment,
+    setMetadata
+  } = useCourse();
+  const { slides, courseItems, courseTitle, metadata } = currentCourse;
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isVerbose, setIsVerbose] = useState(false);
@@ -45,6 +62,12 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
   const [activeTab, setActiveTab] = useState<"scripting" | "metadata">("scripting");
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
+  const [isCommentsPanelOpen, setIsCommentsPanelOpen] = useState(false);
+  
+  // AI Suggestion states
+  const [suggestedTalkPoints, setSuggestedTalkPoints] = useState<string | null>(null);
+  const [suggestionType, setSuggestionType] = useState<'verbose' | 'streamlined' | 'custom' | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Get current item (slide or assessment)
   const currentItem = courseItems[currentItemIndex];
@@ -65,34 +88,88 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
         : slide,
     );
     setSlides(updatedSlides);
+    setHasUnsavedChanges(true);
   };
 
   const goToItem = (index: number) => {
     if (index >= 0 && index < courseItems.length) {
       setCurrentItemIndex(index);
+      // Clear suggestions when changing items
+      setSuggestedTalkPoints(null);
+      setSuggestionType(null);
+      setIsVerbose(false);
+      setIsStreamlined(false);
     }
   };
 
-  const handleAskWinston = () => {
-    console.log("Ask Winston clicked");
+  // Mock AI generation for suggestions
+  const generateSuggestion = (type: 'verbose' | 'streamlined' | 'custom', prompt?: string) => {
+    if (!currentSlide) return;
+    
+    setIsGenerating(true);
+    setSuggestionType(type);
+    
+    // Simulate AI generation delay
+    setTimeout(() => {
+      let suggestion = '';
+      const currentText = currentSlide.talkPoints;
+      
+      if (type === 'verbose') {
+        suggestion = `${currentText}\n\nLet me elaborate further on this topic. This is an important concept that deserves more detailed explanation. We should consider multiple perspectives and provide concrete examples to help learners fully grasp the material. Additionally, it's worth noting the historical context and practical applications of these ideas.`;
+      } else if (type === 'streamlined') {
+        // Create a shortened version
+        const sentences = currentText.split('. ');
+        suggestion = sentences.slice(0, Math.ceil(sentences.length / 2)).join('. ') + '.';
+      } else if (type === 'custom' && prompt) {
+        suggestion = `Based on your request "${prompt}": ${currentText}\n\n[Winston's customized modification based on your instructions would appear here.]`;
+      }
+      
+      setSuggestedTalkPoints(suggestion);
+      setIsGenerating(false);
+    }, 1500);
+  };
+
+  const handleAskWinston = (prompt: string) => {
+    generateSuggestion('custom', prompt);
   };
 
   const handleApplyQuickEdit = (type: 'verbose' | 'streamlined') => {
-    console.log(`Applying ${type} edit to talk points`);
-    // TODO: Implement AI-powered talk point modification
+    generateSuggestion(type);
+  };
+
+  const handleAcceptSuggestion = () => {
+    if (suggestedTalkPoints && currentSlide) {
+      updateTalkPoints(suggestedTalkPoints);
+      setSuggestedTalkPoints(null);
+      setSuggestionType(null);
+      setIsVerbose(false);
+      setIsStreamlined(false);
+    }
+  };
+
+  const handleRejectSuggestion = () => {
+    setSuggestedTalkPoints(null);
+    setSuggestionType(null);
+    setIsVerbose(false);
+    setIsStreamlined(false);
   };
 
   const handleComment = () => {
-    console.log("Comments clicked");
-    // TODO: Open comments panel
+    setIsCommentsPanelOpen(true);
+  };
+
+  const handleAddComment = (content: string) => {
+    addComment(content, currentSlide?.id);
   };
 
   const handleSaveAndLeave = () => {
+    markStepComplete('scripting');
     saveCourseAsDraft();
     navigate("/dashboard");
   };
 
   const handlePublish = () => {
+    markStepComplete('scripting');
     publishCourse();
     navigate("/dashboard");
   };
@@ -204,6 +281,7 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
     if (currentItemIndex < courseItems.length - 1) {
       goToItem(currentItemIndex + 1);
     } else {
+      markStepComplete('scripting');
       onContinue();
     }
   };
@@ -220,6 +298,10 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
   const visibleCount = 5;
   const startIndex = Math.max(0, Math.min(currentItemIndex - 2, courseItems.length - visibleCount));
   const visibleItems = courseItems.slice(startIndex, startIndex + visibleCount);
+
+  // Calculate metadata
+  const totalSlides = courseItems.filter(i => i.type === 'slide').length;
+  const totalAssessments = courseItems.filter(i => i.type === 'assessment').length;
 
   return (
     <div className="h-full flex flex-col">
@@ -264,126 +346,323 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                {/* Show different content based on item type */}
-                {currentItem?.type === "slide" && currentSlide && (
+                {activeTab === "scripting" && (
                   <>
-                    {/* Talk Points Header */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-foreground mb-1">Talk Points</h3>
-                      <div className="h-0.5 w-20 bg-primary rounded-full" />
-                    </div>
+                    {/* Show different content based on item type */}
+                    {currentItem?.type === "slide" && currentSlide && (
+                      <>
+                        {/* Talk Points Header */}
+                        <div>
+                          <h3 className="text-lg font-semibold text-foreground mb-1">Talk Points</h3>
+                          <div className="h-0.5 w-20 bg-primary rounded-full" />
+                        </div>
 
-                    {/* Quick Edits - Horizontal Layout */}
-                    <QuickEditsPanel
-                      isVerbose={isVerbose}
-                      isStreamlined={isStreamlined}
-                      onVerboseChange={setIsVerbose}
-                      onStreamlinedChange={setIsStreamlined}
-                      onAskWinston={handleAskWinston}
-                      onApplyQuickEdit={handleApplyQuickEdit}
-                    />
+                        {/* Quick Edits - Horizontal Layout */}
+                        <QuickEditsPanel
+                          isVerbose={isVerbose}
+                          isStreamlined={isStreamlined}
+                          onVerboseChange={setIsVerbose}
+                          onStreamlinedChange={setIsStreamlined}
+                          onAskWinston={handleAskWinston}
+                          onApplyQuickEdit={handleApplyQuickEdit}
+                          suggestedTalkPoints={suggestedTalkPoints}
+                          suggestionType={suggestionType}
+                          isGenerating={isGenerating}
+                          onAcceptSuggestion={handleAcceptSuggestion}
+                          onRejectSuggestion={handleRejectSuggestion}
+                        />
 
-                    {/* Rich Text Toolbar */}
-                    <RichTextToolbar />
+                        {/* Rich Text Toolbar */}
+                        <RichTextToolbar />
 
-                    {/* Talk Points Textarea */}
-                    <Textarea
-                      value={currentSlide?.talkPoints || ""}
-                      onChange={(e) => updateTalkPoints(e.target.value)}
-                      placeholder="Enter talk points for this slide..."
-                      className="min-h-[280px] resize-none text-sm leading-relaxed"
-                    />
+                        {/* Talk Points Textarea */}
+                        <Textarea
+                          value={currentSlide?.talkPoints || ""}
+                          onChange={(e) => updateTalkPoints(e.target.value)}
+                          placeholder="Enter talk points for this slide..."
+                          className="min-h-[280px] resize-none text-sm leading-relaxed"
+                        />
 
-                    {/* Preview Button */}
-                    <Button variant="outline" className="w-full rounded-xl">
-                      Preview
-                    </Button>
+                        {/* Preview Button */}
+                        <Button variant="outline" className="w-full rounded-xl">
+                          Preview
+                        </Button>
+                      </>
+                    )}
+
+                    {currentItem?.type === "assessment" && currentAssessment && currentQuestion && (
+                      <>
+                        {/* Question Header */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
+                              <ClipboardList className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-medium text-primary">
+                                Q{currentQuestionIndex + 1} - {currentQuestion.type === 'multi_selection' ? 'Multiple Choice' : currentQuestion.type === 'checkbox' ? 'Checkbox' : 'Open Ended'}
+                              </span>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleDeleteQuestion}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            {currentAssessment.questions.length <= 1 ? 'Delete Assessment' : 'Delete Question'}
+                          </Button>
+                        </div>
+
+                        {/* Question Type */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-foreground">Question Type</label>
+                          <Select
+                            value={currentQuestion.type}
+                            onValueChange={(val) => updateQuestionType(val as QuestionType)}
+                          >
+                            <SelectTrigger className="rounded-xl">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="multi_selection">Multiple Choice (Single Answer)</SelectItem>
+                              <SelectItem value="checkbox">Multiple Choice (Multiple Answers)</SelectItem>
+                              <SelectItem value="open_ended">Open Ended</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Question Text */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-foreground">Question</label>
+                          <Textarea
+                            value={currentQuestion.question}
+                            onChange={(e) => updateCurrentQuestion({ question: e.target.value })}
+                            placeholder="Enter your question..."
+                            className="min-h-[100px] resize-none rounded-xl"
+                          />
+                        </div>
+
+                        {/* Options for multi_selection and checkbox */}
+                        {(currentQuestion.type === 'multi_selection' || currentQuestion.type === 'checkbox') && (
+                          <div className="space-y-3">
+                            <label className="text-sm font-medium text-foreground">
+                              Answer Options {currentQuestion.type === 'checkbox' && '(select all correct)'}
+                            </label>
+                            {currentQuestion.options?.map((option, index) => (
+                              <div key={index} className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleCorrectAnswer(index)}
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                    option.isCorrect
+                                      ? 'border-primary bg-primary text-primary-foreground'
+                                      : 'border-muted-foreground'
+                                  }`}
+                                >
+                                  {option.isCorrect && <span className="text-xs">✓</span>}
+                                </button>
+                                <Input
+                                  value={option.label}
+                                  onChange={(e) => updateOptionLabel(index, e.target.value)}
+                                  placeholder={`Option ${index + 1}`}
+                                  className="flex-1 rounded-xl"
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeOption(index)}
+                                  disabled={currentQuestion.options!.length <= 2}
+                                  className="h-8 w-8"
+                                >
+                                  <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={addOption}
+                              className="gap-1 rounded-xl"
+                            >
+                              <Plus className="h-3 w-3" />
+                              Add Option
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Rubric for open_ended */}
+                        {currentQuestion.type === 'open_ended' && (
+                          <RubricEditor
+                            criteria={currentQuestion.rubricCriteria || []}
+                            cells={currentQuestion.rubricCells || []}
+                            onCriteriaChange={(criteria) => updateCurrentQuestion({ rubricCriteria: criteria })}
+                            onCellsChange={(cells) => updateCurrentQuestion({ rubricCells: cells })}
+                          />
+                        )}
+
+                        {/* Weight & Threshold (Assessment level) */}
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-foreground">
+                              Assessment Weight: {currentAssessment.weight}%
+                            </label>
+                            <Slider
+                              value={[currentAssessment.weight]}
+                              onValueChange={([val]) => updateAssessment({ weight: val })}
+                              min={0}
+                              max={100}
+                              step={5}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-foreground">
+                              Passing: {currentAssessment.passingThreshold}%
+                            </label>
+                            <Slider
+                              value={[currentAssessment.passingThreshold]}
+                              onValueChange={([val]) => updateAssessment({ passingThreshold: val })}
+                              min={0}
+                              max={100}
+                              step={5}
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
 
-                {currentItem?.type === "assessment" && currentAssessment && currentQuestion && (
-                  <>
-                    {/* Question Header */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
-                          <ClipboardList className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-medium text-primary">
-                            Q{currentQuestionIndex + 1} - {currentQuestion.type === 'multi_selection' ? 'Multiple Choice' : currentQuestion.type === 'checkbox' ? 'Checkbox' : 'Open Ended'}
-                          </span>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleDeleteQuestion}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        {currentAssessment.questions.length <= 1 ? 'Delete Assessment' : 'Delete Question'}
-                      </Button>
+                {activeTab === "metadata" && (
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground mb-1">Course Metadata</h3>
+                      <div className="h-0.5 w-20 bg-primary rounded-full" />
                     </div>
 
-                    {/* Question Type */}
+                    {/* Auto-calculated stats */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 bg-muted/50 rounded-xl">
+                        <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                          <BookOpen className="h-4 w-4" />
+                          <span className="text-xs font-medium">Total Slides</span>
+                        </div>
+                        <p className="text-2xl font-bold text-foreground">{totalSlides}</p>
+                      </div>
+                      <div className="p-4 bg-muted/50 rounded-xl">
+                        <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                          <ClipboardList className="h-4 w-4" />
+                          <span className="text-xs font-medium">Assessments</span>
+                        </div>
+                        <p className="text-2xl font-bold text-foreground">{totalAssessments}</p>
+                      </div>
+                    </div>
+
+                    {/* Duration */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Question Type</label>
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Estimated Duration
+                      </label>
+                      <Input
+                        value={metadata.duration}
+                        onChange={(e) => setMetadata({ duration: e.target.value })}
+                        placeholder="e.g., 45 minutes"
+                        className="rounded-xl"
+                      />
+                    </div>
+
+                    {/* Difficulty */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Difficulty Level</label>
                       <Select
-                        value={currentQuestion.type}
-                        onValueChange={(val) => updateQuestionType(val as QuestionType)}
+                        value={metadata.difficulty}
+                        onValueChange={(val) => setMetadata({ difficulty: val })}
                       >
                         <SelectTrigger className="rounded-xl">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="multi_selection">Multiple Choice (Single Answer)</SelectItem>
-                          <SelectItem value="checkbox">Multiple Choice (Multiple Answers)</SelectItem>
-                          <SelectItem value="open_ended">Open Ended</SelectItem>
+                          <SelectItem value="Beginner">Beginner</SelectItem>
+                          <SelectItem value="Intermediate">Intermediate</SelectItem>
+                          <SelectItem value="Advanced">Advanced</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
-                    {/* Question Text */}
+                    {/* Author */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Question</label>
-                      <Textarea
-                        value={currentQuestion.question}
-                        onChange={(e) => updateCurrentQuestion({ question: e.target.value })}
-                        placeholder="Enter your question..."
-                        className="min-h-[100px] resize-none rounded-xl"
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        Author
+                      </label>
+                      <Input
+                        value={metadata.author}
+                        onChange={(e) => setMetadata({ author: e.target.value })}
+                        placeholder="Course author name"
+                        className="rounded-xl"
                       />
                     </div>
 
-                    {/* Options for multi_selection and checkbox */}
-                    {(currentQuestion.type === 'multi_selection' || currentQuestion.type === 'checkbox') && (
-                      <div className="space-y-3">
-                        <label className="text-sm font-medium text-foreground">
-                          Answer Options {currentQuestion.type === 'checkbox' && '(select all correct)'}
-                        </label>
-                        {currentQuestion.options?.map((option, index) => (
-                          <div key={index} className="flex items-center gap-2">
+                    {/* Tags */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Tag className="h-4 w-4" />
+                        Tags
+                      </label>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {metadata.tags.map((tag, index) => (
+                          <Badge key={index} variant="secondary" className="gap-1">
+                            {tag}
                             <button
-                              type="button"
-                              onClick={() => toggleCorrectAnswer(index)}
-                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                option.isCorrect
-                                  ? 'border-primary bg-primary text-primary-foreground'
-                                  : 'border-muted-foreground'
-                              }`}
+                              onClick={() => setMetadata({ tags: metadata.tags.filter((_, i) => i !== index) })}
+                              className="ml-1 hover:text-destructive"
                             >
-                              {option.isCorrect && <span className="text-xs">✓</span>}
+                              ×
                             </button>
+                          </Badge>
+                        ))}
+                      </div>
+                      <Input
+                        placeholder="Add a tag and press Enter"
+                        className="rounded-xl"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const input = e.currentTarget;
+                            const value = input.value.trim();
+                            if (value && !metadata.tags.includes(value)) {
+                              setMetadata({ tags: [...metadata.tags, value] });
+                              input.value = '';
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+
+                    {/* Learning Objectives */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Learning Objectives</label>
+                      <div className="space-y-2">
+                        {metadata.learningObjectives.map((obj, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">{index + 1}.</span>
                             <Input
-                              value={option.label}
-                              onChange={(e) => updateOptionLabel(index, e.target.value)}
-                              placeholder={`Option ${index + 1}`}
+                              value={obj}
+                              onChange={(e) => {
+                                const newObjectives = [...metadata.learningObjectives];
+                                newObjectives[index] = e.target.value;
+                                setMetadata({ learningObjectives: newObjectives });
+                              }}
                               className="flex-1 rounded-xl"
                             />
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => removeOption(index)}
-                              disabled={currentQuestion.options!.length <= 2}
                               className="h-8 w-8"
+                              onClick={() => {
+                                setMetadata({
+                                  learningObjectives: metadata.learningObjectives.filter((_, i) => i !== index)
+                                });
+                              }}
                             >
                               <Trash2 className="h-4 w-4 text-muted-foreground" />
                             </Button>
@@ -392,53 +671,47 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={addOption}
+                          onClick={() => setMetadata({ learningObjectives: [...metadata.learningObjectives, ''] })}
                           className="gap-1 rounded-xl"
                         >
                           <Plus className="h-3 w-3" />
-                          Add Option
+                          Add Objective
                         </Button>
                       </div>
-                    )}
-
-                    {/* Rubric for open_ended */}
-                    {currentQuestion.type === 'open_ended' && (
-                      <RubricEditor
-                        criteria={currentQuestion.rubricCriteria || []}
-                        cells={currentQuestion.rubricCells || []}
-                        onCriteriaChange={(criteria) => updateCurrentQuestion({ rubricCriteria: criteria })}
-                        onCellsChange={(cells) => updateCurrentQuestion({ rubricCells: cells })}
-                      />
-                    )}
-
-                    {/* Weight & Threshold (Assessment level) */}
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">
-                          Assessment Weight: {currentAssessment.weight}%
-                        </label>
-                        <Slider
-                          value={[currentAssessment.weight]}
-                          onValueChange={([val]) => updateAssessment({ weight: val })}
-                          min={0}
-                          max={100}
-                          step={5}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">
-                          Passing: {currentAssessment.passingThreshold}%
-                        </label>
-                        <Slider
-                          value={[currentAssessment.passingThreshold]}
-                          onValueChange={([val]) => updateAssessment({ passingThreshold: val })}
-                          min={0}
-                          max={100}
-                          step={5}
-                        />
-                      </div>
                     </div>
-                  </>
+
+                    {/* Prerequisites */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Prerequisites</label>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {metadata.prerequisites.map((prereq, index) => (
+                          <Badge key={index} variant="outline" className="gap-1">
+                            {prereq}
+                            <button
+                              onClick={() => setMetadata({ prerequisites: metadata.prerequisites.filter((_, i) => i !== index) })}
+                              className="ml-1 hover:text-destructive"
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                      <Input
+                        placeholder="Add prerequisite and press Enter"
+                        className="rounded-xl"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const input = e.currentTarget;
+                            const value = input.value.trim();
+                            if (value && !metadata.prerequisites.includes(value)) {
+                              setMetadata({ prerequisites: [...metadata.prerequisites, value] });
+                              input.value = '';
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -681,6 +954,16 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Comments Panel */}
+      <CommentsPanel
+        isOpen={isCommentsPanelOpen}
+        onClose={() => setIsCommentsPanelOpen(false)}
+        comments={comments}
+        onAddComment={handleAddComment}
+        onResolveComment={resolveComment}
+        currentSlideId={currentSlide?.id}
+      />
     </div>
   );
 }
