@@ -13,6 +13,7 @@ interface StepIndicatorProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
   completedSteps?: CompletedSteps;
+  isEditMode?: boolean; // When true, all steps are accessible
 }
 
 const steps: { key: WizardStep; label: string }[] = [
@@ -27,11 +28,15 @@ export function StepIndicator({
   onStepClick, 
   isCollapsed = false,
   onToggleCollapse,
-  completedSteps = { upload: false, wizard: false, scripting: false }
+  completedSteps = { upload: false, wizard: false, scripting: false },
+  isEditMode = false
 }: StepIndicatorProps) {
   const currentIndex = steps.findIndex((s) => s.key === currentStep);
 
   const isStepAccessible = (stepKey: WizardStep): boolean => {
+    // In edit mode, all steps are accessible
+    if (isEditMode) return true;
+    
     switch (stepKey) {
       case 'upload':
         return true;
