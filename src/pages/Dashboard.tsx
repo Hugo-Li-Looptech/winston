@@ -15,6 +15,7 @@ import {
   Eye,
   Trash2,
   Play,
+  Sparkles,
 } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
 import { AIAssistant } from "@/components/AIAssistant";
@@ -37,6 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
+import { TutorialSlideshow } from "@/components/TutorialSlideshow";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -44,6 +46,9 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  const hasNoCourses = courses.length === 0;
 
   const handleCreateCourse = () => {
     resetCurrentCourse();
@@ -159,10 +164,19 @@ export default function Dashboard() {
               <FolderOpen className="h-8 w-8 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-medium text-foreground mb-2">No courses yet</h3>
-            <p className="text-muted-foreground mb-6">Create your first course to get started</p>
-            <Button onClick={handleCreateCourse} className="rounded-xl">
-              Create Course
-            </Button>
+            <p className="text-muted-foreground mb-6">
+              {hasNoCourses ? "Learn how to create engaging courses with Winston" : "No courses match your search"}
+            </p>
+            {hasNoCourses ? (
+              <Button onClick={() => setShowTutorial(true)} className="rounded-xl gap-2">
+                <Sparkles className="h-4 w-4" />
+                Start Tutorial
+              </Button>
+            ) : (
+              <Button onClick={handleCreateCourse} className="rounded-xl">
+                Create Course
+              </Button>
+            )}
           </div>
         ) : (
           <div className="bg-card rounded-2xl shadow-sm overflow-hidden animate-fade-in">
@@ -270,6 +284,8 @@ export default function Dashboard() {
       </AlertDialog>
 
       <AIAssistant />
+
+      <TutorialSlideshow open={showTutorial} onOpenChange={setShowTutorial} />
     </div>
   );
 }
