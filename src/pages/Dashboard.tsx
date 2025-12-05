@@ -16,10 +16,14 @@ import {
   Trash2,
   Play,
   Sparkles,
+  LayoutGrid,
+  List,
+  Filter,
 } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
 import { AIAssistant } from "@/components/AIAssistant";
 import { Course } from "@/types/course";
+import { CourseCard } from "@/components/CourseCard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +44,9 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { TutorialSlideshow } from "@/components/TutorialSlideshow";
 
+type ViewMode = "card" | "list";
+type StatusTab = "all" | "pending" | "in_progress" | "published";
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { courses, resetCurrentCourse, deleteCourse, updateCourseStatus, duplicateCourse } = useCourse();
@@ -47,6 +54,8 @@ export default function Dashboard() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("card");
+  const [activeTab, setActiveTab] = useState<StatusTab>("all");
 
   const hasNoCourses = courses.length === 0;
 
@@ -55,7 +64,6 @@ export default function Dashboard() {
     navigate("/create");
   };
 
-  // Navigate to the correct step based on course progress
   const handleEditCourse = (course: Course) => {
     let step = 'upload';
     
@@ -122,7 +130,11 @@ export default function Dashboard() {
     setCourseToDelete(null);
   };
 
-  const filteredCourses = courses.filter((course) => course.title.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredCourses = courses.filter((course) => {
+    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTab = activeTab === "all" || course.status === activeTab;
+    return matchesSearch && matchesTab;
+  });
 
   const getStatusBadge = (status: Course["status"]) => {
     const styles: Record<Course["status"], string> = {
@@ -141,6 +153,13 @@ export default function Dashboard() {
       </span>
     );
   };
+
+  const tabs: { key: StatusTab; label: string }[] = [
+    { key: "all", label: "All" },
+    { key: "pending", label: "Pending" },
+    { key: "in_progress", label: "In Progress" },
+    { key: "published", label: "Published" },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -170,14 +189,55 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        <div className="relative mb-6">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input
-            placeholder="Search courses..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 h-12 rounded-xl"
-          />
+        {/* Search and Controls Row */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Search courses..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 h-12 rounded-xl"
+            />
+          </div>
+          <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl">
+            <Filter className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center border rounded-xl overflow-hidden">
+            <Button
+              variant={viewMode === "card" ? "default" : "ghost"}
+              size="icon"
+              className="h-12 w-12 rounded-none"
+              onClick={() => setViewMode("card")}
+            >
+              <LayoutGrid className="h-5 w-5" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="icon"
+              className="h-12 w-12 rounded-none"
+              onClick={() => setViewMode("list")}
+            >
+              <List className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Status Tabs */}
+        <div className="flex items-center gap-2 mb-6">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                activeTab === tab.key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {filteredCourses.length === 0 ? (
@@ -200,7 +260,23 @@ export default function Dashboard() {
               </Button>
             )}
           </div>
+        ) : viewMode === "card" ? (
+          /* Card View */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fade-in">
+            {filteredCourses.map((course) => (
+              <CourseCard
+                key={course.id}
+                course={course}
+                onEdit={handleEditCourse}
+                onPreview={handlePreviewCourse}
+                onDuplicate={handleDuplicateCourse}
+                onTogglePublish={handleTogglePublish}
+                onDelete={handleDeleteClick}
+              />
+            ))}
+          </div>
         ) : (
+          /* List View */
           <div className="bg-card rounded-2xl shadow-sm overflow-hidden animate-fade-in">
             <table className="w-full">
               <thead>
