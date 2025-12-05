@@ -18,16 +18,23 @@ interface CourseCardProps {
   onDelete: (courseId: string) => void;
 }
 
-const getProgressLabel = (progress: Course["progress"]) => {
-  const labels: Record<string, string> = {
-    "slides_uploaded": "Slides Uploaded",
-    "wizard_complete": "Wizard Complete",
-    "setting_talk_points": "Setting Talk Points",
-    "awaiting_preview": "Awaiting Preview",
-    "0%": "Not Started",
-    "100%": "Complete",
+const getProgressPercent = (progress: Course["progress"]) => {
+  const percentages: Record<string, number> = {
+    "slides_uploaded": 20,
+    "wizard_complete": 40,
+    "setting_talk_points": 60,
+    "awaiting_preview": 80,
+    "0%": 0,
+    "100%": 100,
   };
-  return labels[progress] || progress;
+  return percentages[progress] ?? 0;
+};
+
+const getProgressColor = (percent: number) => {
+  if (percent === 100) return "bg-green-500";
+  if (percent >= 60) return "bg-amber-500";
+  if (percent >= 20) return "bg-blue-500";
+  return "bg-muted-foreground";
 };
 
 export function CourseCard({
@@ -98,8 +105,18 @@ export function CourseCard({
         </Button>
       </div>
       
-      <div className="bg-muted/50 px-5 py-3 border-t">
-        <span className="text-sm text-muted-foreground">{getProgressLabel(course.progress)}</span>
+      <div className="px-5 py-3 border-t">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+            <div 
+              className={`h-full ${getProgressColor(getProgressPercent(course.progress))} transition-all`}
+              style={{ width: `${getProgressPercent(course.progress)}%` }}
+            />
+          </div>
+          <span className="text-sm font-medium text-muted-foreground min-w-[3rem] text-right">
+            {getProgressPercent(course.progress)}%
+          </span>
+        </div>
       </div>
     </div>
   );
