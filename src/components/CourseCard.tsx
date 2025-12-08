@@ -47,8 +47,8 @@ export function CourseCard({
 }: CourseCardProps) {
   return (
     <div className="bg-card rounded-2xl shadow-sm border overflow-hidden flex flex-col">
-      <div className="p-4 flex-1 flex flex-col">
-        <div className="flex items-start justify-between mb-2">
+      <div className="p-5 flex-1 flex flex-col">
+        <div className="flex items-start justify-between mb-1">
           <span className="text-xs text-muted-foreground">{course.date}</span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -94,12 +94,14 @@ export function CourseCard({
           </DropdownMenu>
         </div>
         
-        <h3 className="font-medium text-foreground mb-3 line-clamp-2 text-sm">{course.title}</h3>
+        <h3 className="font-medium text-foreground line-clamp-2 text-sm">{course.title}</h3>
+        
+        <div className="flex-1 min-h-[3rem]" />
         
         <Button 
           variant="outline" 
           size="sm"
-          className="w-full rounded-lg text-xs h-8"
+          className="w-full rounded-xl text-xs h-7"
           onClick={() => onEdit(course)}
         >
           Edit
