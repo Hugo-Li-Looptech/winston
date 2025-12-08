@@ -19,11 +19,16 @@ import {
   LayoutGrid,
   List,
   Filter,
+  FolderPlus,
 } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
 import { AIAssistant } from "@/components/AIAssistant";
 import { Course } from "@/types/course";
+import { CourseGroup } from "@/types/courseGroup";
 import { CourseCard } from "@/components/CourseCard";
+import { CourseGroupCard } from "@/components/CourseGroupCard";
+import { GroupDetailPanel } from "@/components/GroupDetailPanel";
+import { CreateGroupDialog } from "@/components/CreateGroupDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +61,13 @@ export default function Dashboard() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("card");
   const [activeTab, setActiveTab] = useState<StatusTab>("all");
+
+  // Groups state
+  const [groups, setGroups] = useState<CourseGroup[]>([]);
+  const [createGroupOpen, setCreateGroupOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<CourseGroup | null>(null);
+  const [groupDetailOpen, setGroupDetailOpen] = useState(false);
+  const [draggedCourseId, setDraggedCourseId] = useState<string | null>(null);
 
   const hasNoCourses = courses.length === 0;
 
@@ -121,6 +133,13 @@ export default function Dashboard() {
   const handleConfirmDelete = () => {
     if (courseToDelete) {
       deleteCourse(courseToDelete);
+      // Also remove from any groups
+      setGroups((prev) =>
+        prev.map((g) => ({
+          ...g,
+          courseIds: g.courseIds.filter((id) => id !== courseToDelete),
+        }))
+      );
       toast({
         title: "Course deleted",
         description: "The course has been permanently deleted.",
@@ -130,11 +149,117 @@ export default function Dashboard() {
     setCourseToDelete(null);
   };
 
+  // Group handlers
+  const handleCreateGroup = (groupData: Omit<CourseGroup, "id" | "createdAt">) => {
+    const newGroup: CourseGroup = {
+      ...groupData,
+      id: `group-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    setGroups((prev) => [...prev, newGroup]);
+    toast({
+      title: "Group created",
+      description: `"${newGroup.title}" has been created.`,
+    });
+  };
+
+  const handleOpenGroup = (group: CourseGroup) => {
+    setSelectedGroup(group);
+    setGroupDetailOpen(true);
+  };
+
+  const handleEditGroup = (group: CourseGroup) => {
+    setSelectedGroup(group);
+    setGroupDetailOpen(true);
+  };
+
+  const handleUpdateGroup = (updatedGroup: CourseGroup) => {
+    setGroups((prev) =>
+      prev.map((g) => (g.id === updatedGroup.id ? updatedGroup : g))
+    );
+    setSelectedGroup(updatedGroup);
+  };
+
+  const handleDeleteGroup = (groupId: string) => {
+    setGroups((prev) => prev.filter((g) => g.id !== groupId));
+    toast({
+      title: "Group deleted",
+      description: "The group has been deleted. Courses remain unchanged.",
+    });
+  };
+
+  const handleRemoveCourseFromGroup = (courseId: string, groupId: string) => {
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === groupId
+          ? { ...g, courseIds: g.courseIds.filter((id) => id !== courseId) }
+          : g
+      )
+    );
+    if (selectedGroup?.id === groupId) {
+      setSelectedGroup((prev) =>
+        prev
+          ? { ...prev, courseIds: prev.courseIds.filter((id) => id !== courseId) }
+          : null
+      );
+    }
+    toast({
+      title: "Course removed",
+      description: "Course removed from group.",
+    });
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, courseId: string) => {
+    setDraggedCourseId(courseId);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e: React.DragEvent, groupId: string) => {
+    e.preventDefault();
+    if (!draggedCourseId) return;
+
+    // Check if course already in group
+    const group = groups.find((g) => g.id === groupId);
+    if (group?.courseIds.includes(draggedCourseId)) {
+      toast({
+        title: "Already in group",
+        description: "This course is already in this group.",
+      });
+      setDraggedCourseId(null);
+      return;
+    }
+
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === groupId
+          ? { ...g, courseIds: [...g.courseIds, draggedCourseId] }
+          : g
+      )
+    );
+
+    toast({
+      title: "Course added",
+      description: "Course added to group.",
+    });
+
+    setDraggedCourseId(null);
+  };
+
   const filteredCourses = courses.filter((course) => {
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesTab = activeTab === "all" || course.status === activeTab;
     return matchesSearch && matchesTab;
   });
+
+  const filteredGroups = groups.filter((group) =>
+    group.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const getStatusBadge = (status: Course["status"]) => {
     const styles: Record<Course["status"], string> = {
@@ -183,10 +308,20 @@ export default function Dashboard() {
             <h1 className="text-2xl font-semibold text-foreground">My Courses</h1>
             <p className="text-muted-foreground mt-1">Create and manage your courses</p>
           </div>
-          <Button onClick={handleCreateCourse} size="lg" className="rounded-xl gap-2">
-            <Plus className="h-5 w-5" />
-            New Course
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setCreateGroupOpen(true)}
+              className="rounded-xl gap-2"
+            >
+              <FolderPlus className="h-5 w-5" />
+              New Group
+            </Button>
+            <Button onClick={handleCreateCourse} size="lg" className="rounded-xl gap-2">
+              <Plus className="h-5 w-5" />
+              New Course
+            </Button>
+          </div>
         </div>
 
         {/* Search and Controls Row */}
@@ -194,7 +329,7 @@ export default function Dashboard() {
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
-              placeholder="Search courses..."
+              placeholder="Search courses and groups..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-12 h-12 rounded-xl"
@@ -240,7 +375,32 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {filteredCourses.length === 0 ? (
+        {/* Groups Section */}
+        {filteredGroups.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <FolderOpen className="h-5 w-5" />
+              Groups
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fade-in">
+              {filteredGroups.map((group) => (
+                <CourseGroupCard
+                  key={group.id}
+                  group={group}
+                  courses={courses}
+                  onOpen={handleOpenGroup}
+                  onEdit={handleEditGroup}
+                  onDelete={handleDeleteGroup}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Courses Section */}
+        {filteredCourses.length === 0 && filteredGroups.length === 0 ? (
           <div className="text-center py-16 animate-fade-in">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted mb-4">
               <FolderOpen className="h-8 w-8 text-muted-foreground" />
@@ -260,107 +420,122 @@ export default function Dashboard() {
               </Button>
             )}
           </div>
-        ) : viewMode === "card" ? (
-          /* Card View */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fade-in">
-            {filteredCourses.map((course) => (
-              <CourseCard
-                key={course.id}
-                course={course}
-                onEdit={handleEditCourse}
-                onPreview={handlePreviewCourse}
-                onDuplicate={handleDuplicateCourse}
-                onTogglePublish={handleTogglePublish}
-                onDelete={handleDeleteClick}
-              />
-            ))}
-          </div>
-        ) : (
-          /* List View */
-          <div className="bg-card rounded-2xl shadow-sm overflow-hidden animate-fade-in">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="text-left py-4 px-6 text-sm font-medium text-muted-foreground">Course Name</th>
-                  <th className="text-left py-4 px-6 text-sm font-medium text-muted-foreground">Date</th>
-                  <th className="text-left py-4 px-6 text-sm font-medium text-muted-foreground">Status</th>
-                  <th className="text-left py-4 px-6 text-sm font-medium text-muted-foreground">Progress</th>
-                  <th className="py-4 px-6"></th>
-                </tr>
-              </thead>
-              <tbody>
+        ) : filteredCourses.length > 0 && (
+          <>
+            {filteredGroups.length > 0 && (
+              <h2 className="text-lg font-semibold text-foreground mb-4">All Courses</h2>
+            )}
+            {viewMode === "card" ? (
+              /* Card View */
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fade-in">
                 {filteredCourses.map((course) => (
-                  <tr 
-                    key={course.id} 
-                    className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                  <div
+                    key={course.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, course.id)}
+                    className="cursor-grab active:cursor-grabbing"
                   >
-                    <td className="py-4 px-6">
-                      <span className="font-medium text-foreground">{course.title}</span>
-                    </td>
-                    <td className="py-4 px-6 text-muted-foreground">{course.date}</td>
-                    <td className="py-4 px-6">{getStatusBadge(course.status)}</td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <div className="h-2 w-24 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-primary rounded-full transition-all"
-                            style={{
-                              width: course.progress === "100%" ? "100%" : course.progress === "0%" ? "0%" : "50%",
-                            }}
-                          />
-                        </div>
-                        <span className="text-sm text-muted-foreground">{course.progress}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-5 w-5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem onClick={() => handlePreviewCourse(course.id)}>
-                            <Play className="h-4 w-4 mr-2" />
-                            Preview
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditCourse(course)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDuplicateCourse(course.id)}>
-                            <Copy className="h-4 w-4 mr-2" />
-                            Duplicate
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleTogglePublish(course)}>
-                            {course.status === "published" ? (
-                              <>
-                                <EyeOff className="h-4 w-4 mr-2" />
-                                Unpublish
-                              </>
-                            ) : (
-                              <>
-                                <Eye className="h-4 w-4 mr-2" />
-                                Publish
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteClick(course.id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
+                    <CourseCard
+                      course={course}
+                      onEdit={handleEditCourse}
+                      onPreview={handlePreviewCourse}
+                      onDuplicate={handleDuplicateCourse}
+                      onTogglePublish={handleTogglePublish}
+                      onDelete={handleDeleteClick}
+                    />
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            ) : (
+              /* List View */
+              <div className="bg-card rounded-2xl shadow-sm overflow-hidden animate-fade-in">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left py-4 px-6 text-sm font-medium text-muted-foreground">Course Name</th>
+                      <th className="text-left py-4 px-6 text-sm font-medium text-muted-foreground">Date</th>
+                      <th className="text-left py-4 px-6 text-sm font-medium text-muted-foreground">Status</th>
+                      <th className="text-left py-4 px-6 text-sm font-medium text-muted-foreground">Progress</th>
+                      <th className="py-4 px-6"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCourses.map((course) => (
+                      <tr 
+                        key={course.id} 
+                        className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, course.id)}
+                      >
+                        <td className="py-4 px-6">
+                          <span className="font-medium text-foreground">{course.title}</span>
+                        </td>
+                        <td className="py-4 px-6 text-muted-foreground">{course.date}</td>
+                        <td className="py-4 px-6">{getStatusBadge(course.status)}</td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-3">
+                            <div className="h-2 w-24 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-primary rounded-full transition-all"
+                                style={{
+                                  width: course.progress === "100%" ? "100%" : course.progress === "0%" ? "0%" : "50%",
+                                }}
+                              />
+                            </div>
+                            <span className="text-sm text-muted-foreground">{course.progress}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-5 w-5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem onClick={() => handlePreviewCourse(course.id)}>
+                                <Play className="h-4 w-4 mr-2" />
+                                Preview
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEditCourse(course)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDuplicateCourse(course.id)}>
+                                <Copy className="h-4 w-4 mr-2" />
+                                Duplicate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleTogglePublish(course)}>
+                                {course.status === "published" ? (
+                                  <>
+                                    <EyeOff className="h-4 w-4 mr-2" />
+                                    Unpublish
+                                  </>
+                                ) : (
+                                  <>
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Publish
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteClick(course.id)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
       </main>
 
@@ -387,6 +562,27 @@ export default function Dashboard() {
       <AIAssistant />
 
       <TutorialSlideshow open={showTutorial} onOpenChange={setShowTutorial} />
+
+      {/* Group Dialogs */}
+      <CreateGroupDialog
+        open={createGroupOpen}
+        onOpenChange={setCreateGroupOpen}
+        onCreateGroup={handleCreateGroup}
+      />
+
+      <GroupDetailPanel
+        group={selectedGroup}
+        courses={courses}
+        open={groupDetailOpen}
+        onOpenChange={setGroupDetailOpen}
+        onUpdateGroup={handleUpdateGroup}
+        onRemoveCourseFromGroup={handleRemoveCourseFromGroup}
+        onEditCourse={handleEditCourse}
+        onPreviewCourse={handlePreviewCourse}
+        onDuplicateCourse={handleDuplicateCourse}
+        onTogglePublish={handleTogglePublish}
+        onDeleteCourse={handleDeleteClick}
+      />
     </div>
   );
 }
