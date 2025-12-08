@@ -47,12 +47,12 @@ export function CourseCard({
 }: CourseCardProps) {
   return (
     <div className="bg-card rounded-2xl shadow-sm border overflow-hidden flex flex-col">
-      <div className="p-5 flex-1">
-        <div className="flex items-start justify-between mb-3">
-          <span className="text-sm text-muted-foreground">{course.date}</span>
+      <div className="p-4 flex-1 flex flex-col">
+        <div className="flex items-start justify-between mb-2">
+          <span className="text-xs text-muted-foreground">{course.date}</span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" className="h-6 w-6 -mt-1 -mr-1">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -94,11 +94,12 @@ export function CourseCard({
           </DropdownMenu>
         </div>
         
-        <h3 className="font-semibold text-foreground mb-4 line-clamp-2">{course.title}</h3>
+        <h3 className="font-medium text-foreground mb-3 line-clamp-2 text-sm">{course.title}</h3>
         
         <Button 
           variant="outline" 
-          className="w-full rounded-xl"
+          size="sm"
+          className="w-full rounded-lg text-xs h-8"
           onClick={() => onEdit(course)}
         >
           Edit
