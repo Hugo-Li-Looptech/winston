@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Plus, Trash2, Clock, User, Tag, BookOpen } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Plus, Trash2, Clock, User, Tag, BookOpen, LayoutList } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
 import { QuickEditsPanel } from "@/components/QuickEditsPanel";
 import { RichTextToolbar } from "@/components/RichTextToolbar";
@@ -63,6 +63,7 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
   const [isCommentsPanelOpen, setIsCommentsPanelOpen] = useState(false);
+  const [viewAllQuestions, setViewAllQuestions] = useState(false);
   
   // AI Suggestion states
   const [suggestedTalkPoints, setSuggestedTalkPoints] = useState<string | null>(null);
@@ -499,19 +500,20 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                           />
                         )}
 
-                        {/* Weight & Threshold (Assessment level) */}
+                        {/* Auto-calculated Weight & Threshold */}
                         <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                           <div className="space-y-2">
                             <label className="text-sm font-medium text-foreground">
-                              Assessment Weight: {currentAssessment.weight}%
+                              Question Weight
                             </label>
-                            <Slider
-                              value={[currentAssessment.weight]}
-                              onValueChange={([val]) => updateAssessment({ weight: val })}
-                              min={0}
-                              max={100}
-                              step={5}
-                            />
+                            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-xl">
+                              <span className="text-lg font-semibold text-primary">
+                                {(100 / currentAssessment.questions.length).toFixed(1)}%
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                (auto-calculated: {currentAssessment.questions.length} question{currentAssessment.questions.length > 1 ? 's' : ''})
+                              </span>
+                            </div>
                           </div>
                           <div className="space-y-2">
                             <label className="text-sm font-medium text-foreground">
@@ -799,7 +801,7 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                       size="icon"
                       className="h-7 w-7 rounded-full"
                       onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
-                      disabled={currentQuestionIndex === 0}
+                      disabled={currentQuestionIndex === 0 || viewAllQuestions}
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
@@ -808,9 +810,12 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                       {currentAssessment.questions.map((q, idx) => (
                         <button
                           key={q.id}
-                          onClick={() => setCurrentQuestionIndex(idx)}
+                          onClick={() => {
+                            setViewAllQuestions(false);
+                            setCurrentQuestionIndex(idx);
+                          }}
                           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                            idx === currentQuestionIndex
+                            idx === currentQuestionIndex && !viewAllQuestions
                               ? "bg-primary/10 border border-primary text-primary"
                               : "bg-background text-muted-foreground hover:bg-background/80"
                           }`}
@@ -825,7 +830,7 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                       size="icon"
                       className="h-7 w-7 rounded-full"
                       onClick={() => setCurrentQuestionIndex(Math.min(currentAssessment.questions.length - 1, currentQuestionIndex + 1))}
-                      disabled={currentQuestionIndex === currentAssessment.questions.length - 1}
+                      disabled={currentQuestionIndex === currentAssessment.questions.length - 1 || viewAllQuestions}
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
@@ -837,6 +842,17 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                       onClick={handleAddQuestion}
                     >
                       <Plus className="h-4 w-4" />
+                    </Button>
+
+                    {/* View All Questions Toggle */}
+                    <Button
+                      variant={viewAllQuestions ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 rounded-full ml-2 gap-1.5"
+                      onClick={() => setViewAllQuestions(!viewAllQuestions)}
+                    >
+                      <LayoutList className="h-4 w-4" />
+                      <span className="text-xs">View All</span>
                     </Button>
                   </div>
                 </div>
@@ -887,53 +903,149 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                   </>
                 )}
 
-                {currentItem?.type === "assessment" && currentAssessment && currentQuestion && (
-                  <div className="bg-card rounded-2xl p-6 border">
-                    <div className="flex items-center gap-2 mb-4">
-                      <ClipboardList className="h-5 w-5 text-primary" />
-                      <h3 className="text-lg font-semibold text-foreground">
-                        Q{currentQuestionIndex + 1} Preview
-                      </h3>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="p-4 bg-muted/50 rounded-xl">
-                        <p className="font-medium text-foreground mb-3">
-                          {currentQuestion.question || "No question text yet"}
-                        </p>
+                {currentItem?.type === "assessment" && currentAssessment && (
+                  <>
+                    {viewAllQuestions ? (
+                      /* View All Questions - Scrollable List */
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <ClipboardList className="h-5 w-5 text-primary" />
+                          <h3 className="text-lg font-semibold text-foreground">
+                            All Questions ({currentAssessment.questions.length})
+                          </h3>
+                        </div>
                         
-                        {(currentQuestion.type === 'multi_selection' || currentQuestion.type === 'checkbox') && 
-                          currentQuestion.options && (
-                          <div className="space-y-2">
-                            {currentQuestion.options.map((opt, i) => (
-                              <div
-                                key={i}
-                                className={`flex items-center gap-2 p-2 rounded-lg ${
-                                  opt.isCorrect ? 'bg-primary/10 border border-primary/30' : 'bg-background'
-                                }`}
-                              >
-                                <div className={`w-4 h-4 rounded-full border ${
-                                  opt.isCorrect ? 'bg-primary border-primary' : 'border-muted-foreground'
-                                }`} />
-                                <span className="text-sm">{opt.label || `Option ${i + 1}`}</span>
+                        {currentAssessment.questions.map((question, qIdx) => {
+                          const questionWeight = (100 / currentAssessment.questions.length).toFixed(1);
+                          return (
+                            <div key={question.id} className="bg-card rounded-2xl p-5 border">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="text-xs">Q{qIdx + 1}</Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {question.type === 'multi_selection' ? 'Multiple Choice' : question.type === 'checkbox' ? 'Checkbox' : 'Open Ended'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-xs">Weight: {questionWeight}%</Badge>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={() => {
+                                      if (currentAssessment.questions.length <= 1) {
+                                        deleteAssessment();
+                                      } else {
+                                        removeQuestionFromAssessment(currentAssessment.id, question.id);
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 className="h-3 w-3 text-destructive" />
+                                  </Button>
+                                </div>
                               </div>
-                            ))}
-                          </div>
-                        )}
+                              
+                              <div className="p-4 bg-muted/50 rounded-xl">
+                                <p className="font-medium text-foreground mb-3">
+                                  {question.question || "No question text yet"}
+                                </p>
+                                
+                                {(question.type === 'multi_selection' || question.type === 'checkbox') && 
+                                  question.options && (
+                                  <div className="space-y-2">
+                                    {question.options.map((opt, i) => (
+                                      <div
+                                        key={i}
+                                        className={`flex items-center gap-2 p-2 rounded-lg ${
+                                          opt.isCorrect ? 'bg-primary/10 border border-primary/30' : 'bg-background'
+                                        }`}
+                                      >
+                                        <div className={`w-4 h-4 rounded-full border ${
+                                          opt.isCorrect ? 'bg-primary border-primary' : 'border-muted-foreground'
+                                        }`} />
+                                        <span className="text-sm">{opt.label || `Option ${i + 1}`}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                
+                                {question.type === 'open_ended' && (
+                                  <div className="bg-background rounded-lg p-3 border border-dashed border-muted-foreground">
+                                    <p className="text-sm text-muted-foreground">Open-ended response area</p>
+                                    {question.rubricCriteria && question.rubricCriteria.length > 0 && (
+                                      <p className="text-xs text-muted-foreground mt-2">
+                                        Rubric: {question.rubricCriteria.length} criteria configured
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                         
-                        {currentQuestion.type === 'open_ended' && (
-                          <div className="bg-background rounded-lg p-3 border border-dashed border-muted-foreground">
-                            <p className="text-sm text-muted-foreground">Open-ended response area</p>
+                        <div className="flex items-center justify-between text-sm text-muted-foreground pt-2">
+                          <span>Total Questions: {currentAssessment.questions.length}</span>
+                          <span>Passing Threshold: {currentAssessment.passingThreshold}%</span>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Single Question Preview */
+                      currentQuestion && (
+                        <div className="bg-card rounded-2xl p-6 border">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                              <ClipboardList className="h-5 w-5 text-primary" />
+                              <h3 className="text-lg font-semibold text-foreground">
+                                Q{currentQuestionIndex + 1} Preview
+                              </h3>
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              Weight: {(100 / currentAssessment.questions.length).toFixed(1)}%
+                            </Badge>
                           </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <span>Questions: {currentAssessment.questions.length}</span>
-                        <span>Weight: {currentAssessment.weight}% | Passing: {currentAssessment.passingThreshold}%</span>
-                      </div>
-                    </div>
-                  </div>
+                          
+                          <div className="space-y-4">
+                            <div className="p-4 bg-muted/50 rounded-xl">
+                              <p className="font-medium text-foreground mb-3">
+                                {currentQuestion.question || "No question text yet"}
+                              </p>
+                              
+                              {(currentQuestion.type === 'multi_selection' || currentQuestion.type === 'checkbox') && 
+                                currentQuestion.options && (
+                                <div className="space-y-2">
+                                  {currentQuestion.options.map((opt, i) => (
+                                    <div
+                                      key={i}
+                                      className={`flex items-center gap-2 p-2 rounded-lg ${
+                                        opt.isCorrect ? 'bg-primary/10 border border-primary/30' : 'bg-background'
+                                      }`}
+                                    >
+                                      <div className={`w-4 h-4 rounded-full border ${
+                                        opt.isCorrect ? 'bg-primary border-primary' : 'border-muted-foreground'
+                                      }`} />
+                                      <span className="text-sm">{opt.label || `Option ${i + 1}`}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              {currentQuestion.type === 'open_ended' && (
+                                <div className="bg-background rounded-lg p-3 border border-dashed border-muted-foreground">
+                                  <p className="text-sm text-muted-foreground">Open-ended response area</p>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center justify-between text-sm text-muted-foreground">
+                              <span>Questions: {currentAssessment.questions.length}</span>
+                              <span>Passing: {currentAssessment.passingThreshold}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </>
                 )}
               </div>
             </div>
