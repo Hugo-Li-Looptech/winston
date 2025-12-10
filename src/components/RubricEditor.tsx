@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2 } from 'lucide-react';
 import { RubricCriteria, RubricCell, RUBRIC_LEVELS, RubricLevel } from '@/types/course';
+import { AddCriteriaDialog } from './AddCriteriaDialog';
 
 interface RubricEditorProps {
   criteria: RubricCriteria[];
@@ -10,24 +12,35 @@ interface RubricEditorProps {
   onCellsChange: (cells: RubricCell[]) => void;
 }
 
+const SCORE_PERCENTAGES: Record<RubricLevel, string> = {
+  beginning: '20%',
+  approaching: '40%',
+  meeting: '60%',
+  exceeding: '≥80%',
+};
+
 export function RubricEditor({
   criteria,
   cells,
   onCriteriaChange,
   onCellsChange,
 }: RubricEditorProps) {
-  const addCriteria = () => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleAddCriteria = (
+    criteriaName: string,
+    cellData: { level: RubricLevel; description: string }[]
+  ) => {
     const newCriteria: RubricCriteria = {
       id: Date.now().toString(),
-      name: '',
+      name: criteriaName,
     };
     onCriteriaChange([...criteria, newCriteria]);
-    
-    // Add cells for each level for the new criteria
-    const newCells = RUBRIC_LEVELS.map((level) => ({
+
+    const newCells = cellData.map(({ level, description }) => ({
       criteriaId: newCriteria.id,
-      level: level.level,
-      description: '',
+      level,
+      description,
     }));
     onCellsChange([...cells, ...newCells]);
   };
@@ -37,17 +50,11 @@ export function RubricEditor({
     onCellsChange(cells.filter((c) => c.criteriaId !== criteriaId));
   };
 
-  const updateCriteriaName = (criteriaId: string, name: string) => {
-    onCriteriaChange(
-      criteria.map((c) => (c.id === criteriaId ? { ...c, name } : c))
-    );
-  };
-
   const updateCellDescription = (criteriaId: string, level: RubricLevel, description: string) => {
     const existingCell = cells.find(
       (c) => c.criteriaId === criteriaId && c.level === level
     );
-    
+
     if (existingCell) {
       onCellsChange(
         cells.map((c) =>
@@ -72,7 +79,7 @@ export function RubricEditor({
         <Button
           variant="outline"
           size="sm"
-          onClick={addCriteria}
+          onClick={() => setDialogOpen(true)}
           className="gap-1 rounded-xl"
         >
           <Plus className="h-3 w-3" />
@@ -86,63 +93,62 @@ export function RubricEditor({
         </p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                <th className="text-left text-xs font-medium text-muted-foreground p-2 border-b">
-                  Level / Points
-                </th>
-                {criteria.map((c) => (
-                  <th key={c.id} className="text-left p-2 border-b min-w-[150px]">
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={c.name}
-                        onChange={(e) => updateCriteriaName(c.id, e.target.value)}
-                        placeholder="Criteria name"
-                        className="text-xs h-8 rounded-lg"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 shrink-0"
-                        onClick={() => removeCriteria(c.id)}
-                      >
-                        <Trash2 className="h-3 w-3 text-destructive" />
-                      </Button>
-                    </div>
+          <div className="border border-border rounded-lg overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-muted/50">
+                  <th className="text-left text-xs font-medium text-foreground p-3 w-32 border-r border-border">
+                    Criteria
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {RUBRIC_LEVELS.map((level) => (
-                <tr key={level.level}>
-                  <td className="p-2 border-b">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-foreground">
-                        {level.label}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {level.points} pts
-                      </span>
-                    </div>
-                  </td>
                   {criteria.map((c) => (
-                    <td key={`${c.id}-${level.level}`} className="p-2 border-b">
-                      <Input
-                        value={getCellDescription(c.id, level.level)}
-                        onChange={(e) =>
-                          updateCellDescription(c.id, level.level, e.target.value)
-                        }
-                        placeholder={`${level.label} criteria...`}
-                        className="text-xs h-8 rounded-lg"
-                      />
-                    </td>
+                    <th key={c.id} className="text-left p-3 min-w-[180px] border-r border-border last:border-r-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-foreground truncate">
+                          {c.name || 'Add Criteria Item'}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 shrink-0"
+                          onClick={() => removeCriteria(c.id)}
+                        >
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </Button>
+                      </div>
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {RUBRIC_LEVELS.map((level) => (
+                  <tr key={level.level} className="border-t border-border">
+                    <td className="p-3 border-r border-border bg-muted/30">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-foreground">
+                          {level.label}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {SCORE_PERCENTAGES[level.level]}
+                        </span>
+                      </div>
+                    </td>
+                    {criteria.map((c) => (
+                      <td key={`${c.id}-${level.level}`} className="p-3 border-r border-border last:border-r-0">
+                        <Textarea
+                          value={getCellDescription(c.id, level.level)}
+                          onChange={(e) =>
+                            updateCellDescription(c.id, level.level, e.target.value)
+                          }
+                          placeholder="Type in the criteria description..."
+                          className="min-h-[80px] text-xs rounded-lg resize-none"
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -150,11 +156,16 @@ export function RubricEditor({
       <div className="bg-muted/50 rounded-xl p-3 text-xs text-muted-foreground">
         <p className="font-medium text-foreground mb-1">Scoring Logic:</p>
         <p>
-          Each criteria is scored independently. The total score is the sum of points
-          earned across all criteria divided by the maximum possible points. If the
-          score falls below the passing threshold, the question receives 0 points.
+          Beginning: 20% | Approaching: 40% | Meeting: 60% | Exceeding: ≥80%.
+          Each criteria is scored independently. The total score determines the final grade level.
         </p>
       </div>
+
+      <AddCriteriaDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onAdd={handleAddCriteria}
+      />
     </div>
   );
 }
