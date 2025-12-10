@@ -8,13 +8,14 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+import { Sparkles } from 'lucide-react';
 import { RubricLevel, RUBRIC_LEVELS } from '@/types/course';
 
 interface AddCriteriaDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAdd: (criteriaName: string, cells: { level: RubricLevel; description: string }[]) => void;
+  onAdd: (cells: { level: RubricLevel; description: string }[]) => void;
+  questionText?: string;
 }
 
 const SCORE_PERCENTAGES: Record<RubricLevel, string> = {
@@ -24,27 +25,24 @@ const SCORE_PERCENTAGES: Record<RubricLevel, string> = {
   exceeding: '≥80%',
 };
 
-export function AddCriteriaDialog({ open, onOpenChange, onAdd }: AddCriteriaDialogProps) {
-  const [criteriaName, setCriteriaName] = useState('');
+export function AddCriteriaDialog({ open, onOpenChange, onAdd, questionText }: AddCriteriaDialogProps) {
   const [cellDescriptions, setCellDescriptions] = useState<Record<RubricLevel, string>>({
     beginning: '',
     approaching: '',
     meeting: '',
     exceeding: '',
   });
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleAdd = () => {
-    if (!criteriaName.trim()) return;
-    
     const cells = RUBRIC_LEVELS.map(({ level }) => ({
       level,
       description: cellDescriptions[level],
     }));
     
-    onAdd(criteriaName, cells);
+    onAdd(cells);
     
     // Reset form
-    setCriteriaName('');
     setCellDescriptions({
       beginning: '',
       approaching: '',
@@ -58,26 +56,29 @@ export function AddCriteriaDialog({ open, onOpenChange, onAdd }: AddCriteriaDial
     setCellDescriptions(prev => ({ ...prev, [level]: value }));
   };
 
+  const handleGenerateWithAI = async () => {
+    setIsGenerating(true);
+    // Simulate AI generation - in real implementation, this would call an AI service
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const baseContext = questionText || 'the learning objective';
+    setCellDescriptions({
+      beginning: `Shows limited understanding of ${baseContext}. Requires significant support and guidance.`,
+      approaching: `Demonstrates developing understanding of ${baseContext}. Some concepts are grasped but inconsistently applied.`,
+      meeting: `Shows solid understanding of ${baseContext}. Applies concepts correctly with minor errors.`,
+      exceeding: `Demonstrates exceptional mastery of ${baseContext}. Applies concepts creatively and extends understanding.`,
+    });
+    setIsGenerating(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] bg-background">
+      <DialogContent className="sm:max-w-[550px] bg-background">
         <DialogHeader>
-          <DialogTitle>Add New Criteria</DialogTitle>
+          <DialogTitle>Add Criteria Item</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">
-              Criteria Name
-            </label>
-            <Input
-              value={criteriaName}
-              onChange={(e) => setCriteriaName(e.target.value)}
-              placeholder="Enter criteria name..."
-              className="rounded-lg"
-            />
-          </div>
-
           <div className="border border-border rounded-lg overflow-hidden">
             <table className="w-full">
               <thead>
@@ -93,7 +94,7 @@ export function AddCriteriaDialog({ open, onOpenChange, onAdd }: AddCriteriaDial
               <tbody>
                 {RUBRIC_LEVELS.map(({ level, label }) => (
                   <tr key={level} className="border-t border-border">
-                    <td className="p-3 border-r border-border">
+                    <td className="p-3 border-r border-border bg-muted/30">
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-foreground">
                           {label}
@@ -118,13 +119,24 @@ export function AddCriteriaDialog({ open, onOpenChange, onAdd }: AddCriteriaDial
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">
-            Cancel
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <Button
+            variant="outline"
+            onClick={handleGenerateWithAI}
+            disabled={isGenerating}
+            className="gap-2 rounded-xl mr-auto"
+          >
+            <Sparkles className="h-4 w-4" />
+            {isGenerating ? 'Generating...' : 'Gen w/ AI'}
           </Button>
-          <Button onClick={handleAdd} disabled={!criteriaName.trim()} className="rounded-xl">
-            Add Criteria
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">
+              Cancel
+            </Button>
+            <Button onClick={handleAdd} className="rounded-xl">
+              Add Criteria
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

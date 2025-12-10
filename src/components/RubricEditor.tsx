@@ -10,6 +10,7 @@ interface RubricEditorProps {
   cells: RubricCell[];
   onCriteriaChange: (criteria: RubricCriteria[]) => void;
   onCellsChange: (cells: RubricCell[]) => void;
+  questionText?: string;
 }
 
 const SCORE_PERCENTAGES: Record<RubricLevel, string> = {
@@ -24,16 +25,16 @@ export function RubricEditor({
   cells,
   onCriteriaChange,
   onCellsChange,
+  questionText,
 }: RubricEditorProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleAddCriteria = (
-    criteriaName: string,
     cellData: { level: RubricLevel; description: string }[]
   ) => {
     const newCriteria: RubricCriteria = {
       id: Date.now().toString(),
-      name: criteriaName,
+      name: `Criteria ${criteria.length + 1}`,
     };
     onCriteriaChange([...criteria, newCriteria]);
 
@@ -100,11 +101,11 @@ export function RubricEditor({
                   <th className="text-left text-xs font-medium text-foreground p-3 w-32 border-r border-border">
                     Criteria
                   </th>
-                  {criteria.map((c) => (
+                  {criteria.map((c, index) => (
                     <th key={c.id} className="text-left p-3 min-w-[180px] border-r border-border last:border-r-0">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-medium text-foreground truncate">
-                          {c.name || 'Add Criteria Item'}
+                          Item {index + 1}
                         </span>
                         <Button
                           variant="ghost"
@@ -117,6 +118,16 @@ export function RubricEditor({
                       </div>
                     </th>
                   ))}
+                  <th className="p-2 w-10">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => setDialogOpen(true)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -144,6 +155,7 @@ export function RubricEditor({
                         />
                       </td>
                     ))}
+                    <td className="p-2 w-10"></td>
                   </tr>
                 ))}
               </tbody>
@@ -165,6 +177,7 @@ export function RubricEditor({
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onAdd={handleAddCriteria}
+        questionText={questionText}
       />
     </div>
   );
