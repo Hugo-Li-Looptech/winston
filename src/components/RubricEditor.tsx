@@ -36,15 +36,23 @@ export function RubricEditor({
       id: Date.now().toString(),
       name: `Criteria ${criteria.length + 1}`,
     };
-    onCriteriaChange([...criteria, newCriteria]);
-
+    
     const newCells = cellData.map(({ level, description }) => ({
       criteriaId: newCriteria.id,
       level,
       description,
     }));
+    
+    console.log('Adding criteria:', newCriteria);
+    console.log('Adding cells:', newCells);
+    console.log('Current criteria before update:', criteria);
+    console.log('Current cells before update:', cells);
+    
+    onCriteriaChange([...criteria, newCriteria]);
     onCellsChange([...cells, ...newCells]);
   };
+
+  console.log('RubricEditor render - criteria:', criteria, 'cells:', cells);
 
   const removeCriteria = (criteriaId: string) => {
     onCriteriaChange(criteria.filter((c) => c.id !== criteriaId));
