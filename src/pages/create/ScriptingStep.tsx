@@ -495,8 +495,7 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                           <RubricEditor
                             criteria={currentQuestion.rubricCriteria || []}
                             cells={currentQuestion.rubricCells || []}
-                            onCriteriaChange={(criteria) => updateCurrentQuestion({ rubricCriteria: criteria })}
-                            onCellsChange={(cells) => updateCurrentQuestion({ rubricCells: cells })}
+                            onUpdate={(criteria, cells) => updateCurrentQuestion({ rubricCriteria: criteria, rubricCells: cells })}
                           />
                         )}
 

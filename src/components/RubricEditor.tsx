@@ -8,8 +8,7 @@ import { AddCriteriaDialog } from './AddCriteriaDialog';
 interface RubricEditorProps {
   criteria: RubricCriteria[];
   cells: RubricCell[];
-  onCriteriaChange: (criteria: RubricCriteria[]) => void;
-  onCellsChange: (cells: RubricCell[]) => void;
+  onUpdate: (criteria: RubricCriteria[], cells: RubricCell[]) => void;
   questionText?: string;
 }
 
@@ -23,8 +22,7 @@ const SCORE_PERCENTAGES: Record<RubricLevel, string> = {
 export function RubricEditor({
   criteria,
   cells,
-  onCriteriaChange,
-  onCellsChange,
+  onUpdate,
   questionText,
 }: RubricEditorProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -43,20 +41,15 @@ export function RubricEditor({
       description,
     }));
     
-    console.log('Adding criteria:', newCriteria);
-    console.log('Adding cells:', newCells);
-    console.log('Current criteria before update:', criteria);
-    console.log('Current cells before update:', cells);
-    
-    onCriteriaChange([...criteria, newCriteria]);
-    onCellsChange([...cells, ...newCells]);
+    // Update both at once to avoid race condition
+    onUpdate([...criteria, newCriteria], [...cells, ...newCells]);
   };
 
-  console.log('RubricEditor render - criteria:', criteria, 'cells:', cells);
-
   const removeCriteria = (criteriaId: string) => {
-    onCriteriaChange(criteria.filter((c) => c.id !== criteriaId));
-    onCellsChange(cells.filter((c) => c.criteriaId !== criteriaId));
+    onUpdate(
+      criteria.filter((c) => c.id !== criteriaId),
+      cells.filter((c) => c.criteriaId !== criteriaId)
+    );
   };
 
   const updateCellDescription = (criteriaId: string, level: RubricLevel, description: string) => {
@@ -65,7 +58,8 @@ export function RubricEditor({
     );
 
     if (existingCell) {
-      onCellsChange(
+      onUpdate(
+        criteria,
         cells.map((c) =>
           c.criteriaId === criteriaId && c.level === level
             ? { ...c, description }
@@ -73,7 +67,7 @@ export function RubricEditor({
         )
       );
     } else {
-      onCellsChange([...cells, { criteriaId, level, description }]);
+      onUpdate(criteria, [...cells, { criteriaId, level, description }]);
     }
   };
 
