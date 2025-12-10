@@ -26,6 +26,8 @@ export function RubricEditor({
   questionText,
 }: RubricEditorProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingCriteriaId, setEditingCriteriaId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
 
   const handleAddCriteria = (
     cellData: { level: RubricLevel; description: string }[]
@@ -50,6 +52,26 @@ export function RubricEditor({
       criteria.filter((c) => c.id !== criteriaId),
       cells.filter((c) => c.criteriaId !== criteriaId)
     );
+  };
+
+  const updateCriteriaName = (criteriaId: string, name: string) => {
+    onUpdate(
+      criteria.map((c) => (c.id === criteriaId ? { ...c, name } : c)),
+      cells
+    );
+  };
+
+  const startEditingName = (criteriaId: string, currentName: string) => {
+    setEditingCriteriaId(criteriaId);
+    setEditingName(currentName);
+  };
+
+  const finishEditingName = () => {
+    if (editingCriteriaId && editingName.trim()) {
+      updateCriteriaName(editingCriteriaId, editingName.trim());
+    }
+    setEditingCriteriaId(null);
+    setEditingName('');
   };
 
   const updateCellDescription = (criteriaId: string, level: RubricLevel, description: string) => {
@@ -106,9 +128,31 @@ export function RubricEditor({
                   {criteria.map((c, index) => (
                     <th key={c.id} className="text-left p-3 w-44 border-r border-border">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-foreground truncate">
-                          Item {index + 1}
-                        </span>
+                        {editingCriteriaId === c.id ? (
+                          <input
+                            type="text"
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onBlur={finishEditingName}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') finishEditingName();
+                              if (e.key === 'Escape') {
+                                setEditingCriteriaId(null);
+                                setEditingName('');
+                              }
+                            }}
+                            autoFocus
+                            className="text-xs font-medium text-foreground bg-background border border-primary rounded px-1.5 py-0.5 w-full outline-none"
+                          />
+                        ) : (
+                          <button
+                            onClick={() => startEditingName(c.id, c.name || `Item ${index + 1}`)}
+                            className="text-xs font-medium text-foreground truncate hover:text-primary transition-colors cursor-text text-left"
+                            title="Click to edit name"
+                          >
+                            {c.name || `Item ${index + 1}`}
+                          </button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
