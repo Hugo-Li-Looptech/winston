@@ -95,14 +95,14 @@ export function RubricEditor({
       ) : (
         <div className="overflow-x-auto">
           <div className="border border-border rounded-lg overflow-hidden">
-            <table className="w-full">
+            <table className="w-full table-fixed">
               <thead>
                 <tr className="bg-muted/50">
-                  <th className="text-left text-xs font-medium text-foreground p-3 w-32 border-r border-border">
+                  <th className="text-left text-xs font-medium text-foreground p-3 w-28 border-r border-border">
                     Criteria
                   </th>
                   {criteria.map((c, index) => (
-                    <th key={c.id} className="text-left p-3 min-w-[180px] border-r border-border last:border-r-0">
+                    <th key={c.id} className="text-left p-3 w-44 border-r border-border">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-medium text-foreground truncate">
                           Item {index + 1}
@@ -118,11 +118,11 @@ export function RubricEditor({
                       </div>
                     </th>
                   ))}
-                  <th className="p-2 w-10">
+                  <th className="p-2 w-12 bg-muted/30">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="icon"
-                      className="h-6 w-6"
+                      className="h-7 w-7 rounded-lg"
                       onClick={() => setDialogOpen(true)}
                     >
                       <Plus className="h-4 w-4" />
@@ -133,7 +133,7 @@ export function RubricEditor({
               <tbody>
                 {RUBRIC_LEVELS.map((level) => (
                   <tr key={level.level} className="border-t border-border">
-                    <td className="p-3 border-r border-border bg-muted/30">
+                    <td className="p-3 border-r border-border bg-muted/30 w-28">
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-foreground">
                           {level.label}
@@ -144,18 +144,18 @@ export function RubricEditor({
                       </div>
                     </td>
                     {criteria.map((c) => (
-                      <td key={`${c.id}-${level.level}`} className="p-3 border-r border-border last:border-r-0">
+                      <td key={`${c.id}-${level.level}`} className="p-2 border-r border-border w-44">
                         <Textarea
                           value={getCellDescription(c.id, level.level)}
                           onChange={(e) =>
                             updateCellDescription(c.id, level.level, e.target.value)
                           }
                           placeholder="Type in the criteria description..."
-                          className="min-h-[80px] text-xs rounded-lg resize-none"
+                          className="min-h-[70px] text-xs rounded-lg resize-none"
                         />
                       </td>
                     ))}
-                    <td className="p-2 w-10"></td>
+                    <td className="p-2 w-12 bg-muted/30"></td>
                   </tr>
                 ))}
               </tbody>
