@@ -20,6 +20,7 @@ import {
   List,
   Filter,
   FolderPlus,
+  GitBranch,
 } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
 import { AIAssistant } from "@/components/AIAssistant";
@@ -29,6 +30,7 @@ import { CourseCard } from "@/components/CourseCard";
 import { CourseGroupCard } from "@/components/CourseGroupCard";
 import { GroupDetailPanel } from "@/components/GroupDetailPanel";
 import { CreateGroupDialog } from "@/components/CreateGroupDialog";
+import { VersionControlDialog } from "@/components/VersionControlDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,7 +56,17 @@ type StatusTab = "all" | "pending" | "in_progress" | "published";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { courses, resetCurrentCourse, deleteCourse, updateCourseStatus, duplicateCourse } = useCourse();
+  const { 
+    courses, 
+    resetCurrentCourse, 
+    deleteCourse, 
+    updateCourseStatus, 
+    duplicateCourse,
+    getVersions,
+    currentVersionIds,
+    restoreVersion,
+    branchFromVersion,
+  } = useCourse();
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
@@ -68,6 +80,10 @@ export default function Dashboard() {
   const [selectedGroup, setSelectedGroup] = useState<CourseGroup | null>(null);
   const [groupDetailOpen, setGroupDetailOpen] = useState(false);
   const [draggedCourseId, setDraggedCourseId] = useState<string | null>(null);
+
+  // Version control state
+  const [versionControlCourseId, setVersionControlCourseId] = useState<string | null>(null);
+  const [versionControlOpen, setVersionControlOpen] = useState(false);
 
   const hasNoCourses = courses.length === 0;
 
@@ -147,6 +163,34 @@ export default function Dashboard() {
     }
     setDeleteDialogOpen(false);
     setCourseToDelete(null);
+  };
+
+  // Version control handlers
+  const handleVersionControl = (courseId: string) => {
+    setVersionControlCourseId(courseId);
+    setVersionControlOpen(true);
+  };
+
+  const handleRestoreVersion = (versionId: string) => {
+    if (versionControlCourseId) {
+      restoreVersion(versionControlCourseId, versionId);
+    }
+  };
+
+  const handleBranchFromVersion = (versionId: string) => {
+    if (versionControlCourseId) {
+      branchFromVersion(versionControlCourseId, versionId);
+    }
+  };
+
+  const handleEditVersion = (versionId: string) => {
+    if (versionControlCourseId) {
+      const course = courses.find((c) => c.id === versionControlCourseId);
+      if (course) {
+        restoreVersion(versionControlCourseId, versionId);
+        handleEditCourse(course);
+      }
+    }
   };
 
   // Group handlers
@@ -442,6 +486,7 @@ export default function Dashboard() {
                       onDuplicate={handleDuplicateCourse}
                       onTogglePublish={handleTogglePublish}
                       onDelete={handleDeleteClick}
+                      onVersionControl={handleVersionControl}
                     />
                   </div>
                 ))}
@@ -504,6 +549,10 @@ export default function Dashboard() {
                               <DropdownMenuItem onClick={() => handleDuplicateCourse(course.id)}>
                                 <Copy className="h-4 w-4 mr-2" />
                                 Duplicate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleVersionControl(course.id)}>
+                                <GitBranch className="h-4 w-4 mr-2" />
+                                Version Control
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleTogglePublish(course)}>
                                 {course.status === "published" ? (
@@ -583,6 +632,20 @@ export default function Dashboard() {
         onTogglePublish={handleTogglePublish}
         onDeleteCourse={handleDeleteClick}
       />
+
+      {/* Version Control Dialog */}
+      {versionControlCourseId && (
+        <VersionControlDialog
+          open={versionControlOpen}
+          onOpenChange={setVersionControlOpen}
+          course={courses.find((c) => c.id === versionControlCourseId)!}
+          versions={getVersions(versionControlCourseId)}
+          currentVersionId={currentVersionIds.get(versionControlCourseId)}
+          onRestoreVersion={handleRestoreVersion}
+          onBranchFromVersion={handleBranchFromVersion}
+          onEditVersion={handleEditVersion}
+        />
+      )}
     </div>
   );
 }

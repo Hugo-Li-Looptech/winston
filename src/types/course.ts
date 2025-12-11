@@ -90,6 +90,23 @@ export interface Assessment {
 
 export type WizardStep = 'upload' | 'wizard' | 'scripting' | 'preview';
 
+// Version Control Types
+export interface CourseVersion {
+  id: string;
+  versionName: string;
+  timestamp: string;
+  author: string;
+  parentVersionId?: string; // For branching support
+  courseSnapshot: {
+    title: string;
+    description: string;
+    slides: Slide[];
+    assessments: Assessment[];
+    courseItems: CourseItem[];
+    wizardSettings: WizardSettings;
+  };
+}
+
 // Unified Course Item System for inline assessments
 export type CourseItemType = 'slide' | 'assessment';
 
