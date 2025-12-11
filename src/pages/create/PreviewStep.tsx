@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCourse } from '@/contexts/CourseContext';
-import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, ArrowLeft, ClipboardList, Edit, Eye, EyeOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, ArrowLeft, ClipboardList, Edit, Eye, EyeOff, Maximize2, Minimize2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { Slider } from '@/components/ui/slider';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PreviewStepProps {
   onBack: () => void;
@@ -20,10 +21,48 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(80);
   const [isPublished, setIsPublished] = useState(true);
+  const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const transcriptRef = useRef<HTMLDivElement>(null);
 
   const currentItem = courseItems[currentItemIndex];
   const currentSlide = currentItem?.type === 'slide' ? currentItem.slideData : null;
   const currentAssessment = currentItem?.type === 'assessment' ? currentItem.assessmentData : null;
+
+  // Split talk points into words for highlighting
+  const talkPointWords = currentSlide?.talkPoints?.split(/\s+/) || [];
+
+  // Simulate audio playback word highlighting
+  useEffect(() => {
+    if (!isPlaying || !currentSlide?.talkPoints) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setCurrentWordIndex((prev) => {
+        const nextIndex = prev + 1;
+        if (nextIndex >= talkPointWords.length) {
+          return 0; // Loop back
+        }
+        return nextIndex;
+      });
+    }, 300); // ~300ms per word for demo
+
+    return () => clearInterval(interval);
+  }, [isPlaying, talkPointWords.length, currentSlide?.talkPoints]);
+
+  // Auto-scroll to highlighted word
+  useEffect(() => {
+    if (isTranscriptExpanded && transcriptRef.current) {
+      const highlightedWord = transcriptRef.current.querySelector('[data-highlighted="true"]');
+      highlightedWord?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [currentWordIndex, isTranscriptExpanded]);
+
+  // Reset word index when slide changes
+  useEffect(() => {
+    setCurrentWordIndex(0);
+  }, [currentItemIndex]);
 
   const goToItem = (index: number) => {
     if (index >= 0 && index < courseItems.length) {
@@ -170,7 +209,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2 w-32">
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -186,10 +225,50 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
                           if (val > 0) setIsMuted(false);
                         }}
                         max={100}
-                        className="flex-1"
+                        className="w-24"
                       />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsTranscriptExpanded(!isTranscriptExpanded)}
+                        className="h-8 w-8"
+                        title={isTranscriptExpanded ? "Collapse transcript" : "Expand transcript"}
+                      >
+                        {isTranscriptExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                      </Button>
                     </div>
                   </div>
+
+                  {/* Expanded Transcript Panel */}
+                  {isTranscriptExpanded && (
+                    <div className="border-t bg-muted/30 px-6 py-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium text-foreground">Full Transcript</span>
+                        <span className="text-xs text-muted-foreground">
+                          Word {currentWordIndex + 1} of {talkPointWords.length}
+                        </span>
+                      </div>
+                      <ScrollArea className="h-40 w-full rounded-lg bg-background border p-4">
+                        <div ref={transcriptRef} className="leading-relaxed">
+                          {talkPointWords.map((word, index) => (
+                            <span
+                              key={index}
+                              data-highlighted={index === currentWordIndex}
+                              className={`inline-block mr-1 px-0.5 rounded transition-all ${
+                                index === currentWordIndex
+                                  ? 'bg-primary text-primary-foreground font-medium'
+                                  : index < currentWordIndex
+                                    ? 'text-muted-foreground'
+                                    : 'text-foreground'
+                              }`}
+                            >
+                              {word}
+                            </span>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
                 </div>
               </>
             )}
