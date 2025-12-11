@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { CourseVersion } from "@/types/course";
 import { cn } from "@/lib/utils";
 import { GitBranch, Circle } from "lucide-react";
@@ -52,6 +53,7 @@ function flattenTree(nodes: VersionNode[], result: { version: CourseVersion; dep
 }
 
 export function VersionGraph({ versions, selectedVersionId, onSelectVersion, currentVersionId }: VersionGraphProps) {
+  const [hoveredVersionId, setHoveredVersionId] = useState<string | null>(null);
   const tree = buildVersionTree(versions);
   const flatList = flattenTree(tree);
 
@@ -76,31 +78,35 @@ export function VersionGraph({ versions, selectedVersionId, onSelectVersion, cur
   }
 
   return (
-    <div className="p-4 space-y-1">
+    <div className="p-3 space-y-0.5">
       {flatList.map((item, index) => {
         const { version, depth, hasBranch } = item;
         const isSelected = selectedVersionId === version.id;
         const isCurrent = currentVersionId === version.id;
         const isLast = index === flatList.length - 1;
+        const isHovered = hoveredVersionId === version.id;
+        const showDetails = isSelected || isHovered;
 
         return (
           <div
             key={version.id}
-            className="relative flex items-start gap-3"
-            style={{ paddingLeft: depth * 16 }}
+            className="relative flex items-start gap-2"
+            style={{ paddingLeft: depth * 12 }}
+            onMouseEnter={() => setHoveredVersionId(version.id)}
+            onMouseLeave={() => setHoveredVersionId(null)}
           >
             {/* Timeline connector */}
-            <div className="relative flex flex-col items-center">
+            <div className="relative flex flex-col items-center pt-2">
               {/* Vertical line above */}
               {index > 0 && (
-                <div className="absolute -top-1 left-1/2 w-0.5 h-2 bg-border -translate-x-1/2" />
+                <div className="absolute -top-0.5 left-1/2 w-0.5 h-2 bg-border -translate-x-1/2" />
               )}
               
               {/* Node circle */}
               <button
                 onClick={() => onSelectVersion(version.id)}
                 className={cn(
-                  "relative z-10 w-4 h-4 rounded-full border-2 transition-all",
+                  "relative z-10 w-3 h-3 rounded-full border-2 transition-all",
                   isSelected
                     ? "bg-primary border-primary scale-125"
                     : isCurrent
@@ -109,18 +115,18 @@ export function VersionGraph({ versions, selectedVersionId, onSelectVersion, cur
                 )}
               >
                 {isCurrent && !isSelected && (
-                  <Circle className="absolute inset-0 h-4 w-4 text-primary animate-pulse" />
+                  <Circle className="absolute inset-0 h-3 w-3 text-primary animate-pulse" />
                 )}
               </button>
               
               {/* Vertical line below */}
               {!isLast && (
-                <div className="absolute top-4 left-1/2 w-0.5 h-full bg-border -translate-x-1/2" />
+                <div className="absolute top-5 left-1/2 w-0.5 h-full bg-border -translate-x-1/2" />
               )}
               
               {/* Branch indicator */}
               {hasBranch && (
-                <GitBranch className="absolute top-5 -right-1 h-3 w-3 text-muted-foreground" />
+                <GitBranch className="absolute top-5 -right-1 h-2.5 w-2.5 text-muted-foreground" />
               )}
             </div>
 
@@ -128,35 +134,41 @@ export function VersionGraph({ versions, selectedVersionId, onSelectVersion, cur
             <button
               onClick={() => onSelectVersion(version.id)}
               className={cn(
-                "flex-1 text-left p-3 rounded-lg transition-all border",
+                "flex-1 text-left py-1.5 px-2 rounded-md transition-all",
                 isSelected
-                  ? "bg-primary/10 border-primary/30"
-                  : "bg-card hover:bg-muted/50 border-transparent hover:border-border"
+                  ? "bg-primary/10 border border-primary/30"
+                  : "hover:bg-muted/50 border border-transparent"
               )}
             >
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span className={cn(
-                  "font-medium text-sm",
+                  "font-medium text-xs",
                   isSelected ? "text-primary" : "text-foreground"
                 )}>
                   {version.versionName}
                 </span>
                 {version.isPublished && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-600 font-medium">
+                  <span className="text-[9px] px-1 py-0.5 rounded-full bg-green-500/20 text-green-600 font-medium">
                     Published
                   </span>
                 )}
                 {isCurrent && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
+                  <span className="text-[9px] px-1 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
                     Current
                   </span>
                 )}
               </div>
-              <div className="text-xs text-muted-foreground">
-                {formatDate(version.timestamp)} at {formatTime(version.timestamp)}
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                by {version.author}
+              {/* Expandable details on hover/select */}
+              <div className={cn(
+                "overflow-hidden transition-all duration-200",
+                showDetails ? "max-h-12 opacity-100 mt-0.5" : "max-h-0 opacity-0"
+              )}>
+                <div className="text-[10px] text-muted-foreground">
+                  {formatDate(version.timestamp)} at {formatTime(version.timestamp)}
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  by {version.author}
+                </div>
               </div>
             </button>
           </div>

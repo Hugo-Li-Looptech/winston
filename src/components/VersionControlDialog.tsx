@@ -69,7 +69,7 @@ export function VersionControlDialog({
         title: "Branch created",
         description: `Created new branch from "${selectedVersion?.versionName}"`,
       });
-      onOpenChange(false);
+      // Don't close dialog - user can see the new branch in the tree
     }
   };
 
@@ -87,9 +87,9 @@ export function VersionControlDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl h-[80vh] p-0 gap-0">
-        <DialogHeader className="px-6 py-4 border-b">
-          <DialogTitle className="flex items-center gap-2">
-            <GitBranch className="h-5 w-5" />
+        <DialogHeader className="px-6 py-3 border-b">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <GitBranch className="h-4 w-4" />
             Version Control - {course.title}
           </DialogTitle>
         </DialogHeader>
