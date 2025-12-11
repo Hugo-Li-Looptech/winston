@@ -1,4 +1,4 @@
-import { CourseVersion, Slide, CourseItem } from "@/types/course";
+import { CourseVersion, Assessment } from "@/types/course";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Minus, Edit3 } from "lucide-react";
 
@@ -12,6 +12,51 @@ interface DiffItem {
   itemType: 'slide' | 'assessment';
   title: string;
   details?: string[];
+}
+
+function compareAssessments(selectedAssessment: Assessment, currentAssessment: Assessment): string[] {
+  const changes: string[] = [];
+  
+  // Compare question counts
+  if (selectedAssessment.questions.length !== currentAssessment.questions.length) {
+    changes.push(`Questions: ${selectedAssessment.questions.length} → ${currentAssessment.questions.length}`);
+  }
+  
+  // Compare individual questions
+  const minQuestions = Math.min(selectedAssessment.questions.length, currentAssessment.questions.length);
+  for (let i = 0; i < minQuestions; i++) {
+    const selectedQ = selectedAssessment.questions[i];
+    const currentQ = currentAssessment.questions[i];
+    
+    if (selectedQ.question !== currentQ.question) {
+      changes.push(`Q${i + 1} text changed`);
+    }
+    
+    if (selectedQ.type !== currentQ.type) {
+      changes.push(`Q${i + 1} type: ${selectedQ.type} → ${currentQ.type}`);
+    }
+    
+    // Compare options for multiple choice/checkbox
+    if (selectedQ.options && currentQ.options) {
+      if (selectedQ.options.length !== currentQ.options.length) {
+        changes.push(`Q${i + 1} options: ${selectedQ.options.length} → ${currentQ.options.length}`);
+      }
+    }
+    
+    // Compare rubric for open-ended
+    if (selectedQ.rubricCriteria && currentQ.rubricCriteria) {
+      if (selectedQ.rubricCriteria.length !== currentQ.rubricCriteria.length) {
+        changes.push(`Q${i + 1} rubric criteria: ${selectedQ.rubricCriteria.length} → ${currentQ.rubricCriteria.length}`);
+      }
+    }
+  }
+  
+  // Compare passing threshold
+  if (selectedAssessment.passingThreshold !== currentAssessment.passingThreshold) {
+    changes.push(`Passing threshold: ${selectedAssessment.passingThreshold}% → ${currentAssessment.passingThreshold}%`);
+  }
+  
+  return changes;
 }
 
 function computeDiff(selected: CourseVersion, current: CourseVersion): DiffItem[] {
@@ -69,17 +114,47 @@ function computeDiff(selected: CourseVersion, current: CourseVersion): DiffItem[
     }
   });
   
-  // Compare assessments
-  const selectedAssessments = selected.courseSnapshot.courseItems.filter(i => i.type === 'assessment');
-  const currentAssessments = current.courseSnapshot.courseItems.filter(i => i.type === 'assessment');
+  // Compare assessments by ID
+  const selectedAssessments = new Map(selected.courseSnapshot.assessments.map(a => [a.id, a]));
+  const currentAssessments = new Map(current.courseSnapshot.assessments.map(a => [a.id, a]));
   
-  if (selectedAssessments.length !== currentAssessments.length) {
-    diffs.push({
-      type: selectedAssessments.length < currentAssessments.length ? 'added' : 'removed',
-      itemType: 'assessment',
-      title: `${Math.abs(currentAssessments.length - selectedAssessments.length)} assessment(s)`,
-    });
-  }
+  // Find removed assessments
+  selected.courseSnapshot.assessments.forEach((assessment) => {
+    if (!currentAssessments.has(assessment.id)) {
+      diffs.push({
+        type: 'removed',
+        itemType: 'assessment',
+        title: `Assessment (${assessment.questions.length} question${assessment.questions.length !== 1 ? 's' : ''})`,
+      });
+    }
+  });
+  
+  // Find added assessments
+  current.courseSnapshot.assessments.forEach((assessment) => {
+    if (!selectedAssessments.has(assessment.id)) {
+      diffs.push({
+        type: 'added',
+        itemType: 'assessment',
+        title: `Assessment (${assessment.questions.length} question${assessment.questions.length !== 1 ? 's' : ''})`,
+      });
+    }
+  });
+  
+  // Find modified assessments
+  selected.courseSnapshot.assessments.forEach((selectedAssessment) => {
+    const currentAssessment = currentAssessments.get(selectedAssessment.id);
+    if (currentAssessment) {
+      const changes = compareAssessments(selectedAssessment, currentAssessment);
+      if (changes.length > 0) {
+        diffs.push({
+          type: 'modified',
+          itemType: 'assessment',
+          title: `Assessment`,
+          details: changes,
+        });
+      }
+    }
+  });
   
   return diffs;
 }

@@ -560,35 +560,28 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     const versions = courseVersions.get(courseId) || [];
     const version = versions.find((v) => v.id === versionId);
     if (version) {
-      // Create a new course as a branch
-      const branchCourse: Course = {
-        id: `branch-${Date.now()}`,
-        title: `${version.courseSnapshot.title} (Branch)`,
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        status: 'in_progress',
-        progress: 'setting_talk_points',
-      };
-      setCourses((prev) => [...prev, branchCourse]);
-
-      // Create initial version for the branch
+      // Create a new branch version within the SAME course's version tree
       const branchVersion: CourseVersion = {
         id: `version-${Date.now()}`,
-        versionName: 'v1.0 - Branch from ' + version.versionName,
+        versionName: `Branch from ${version.versionName}`,
         timestamp: new Date().toISOString(),
         author: 'Course Creator',
-        parentVersionId: versionId,
+        parentVersionId: versionId, // Links to the source version, creating a branch in the tree
         courseSnapshot: { ...version.courseSnapshot },
       };
 
+      // Add the branch to the same course's version history
       setCourseVersions((prev) => {
         const newMap = new Map(prev);
-        newMap.set(branchCourse.id, [branchVersion]);
+        const existing = newMap.get(courseId) || [];
+        newMap.set(courseId, [...existing, branchVersion]);
         return newMap;
       });
 
+      // Set the new branch as the current version
       setCurrentVersionIds((prev) => {
         const newMap = new Map(prev);
-        newMap.set(branchCourse.id, branchVersion.id);
+        newMap.set(courseId, branchVersion.id);
         return newMap;
       });
     }
