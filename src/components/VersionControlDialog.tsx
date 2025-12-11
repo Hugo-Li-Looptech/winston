@@ -87,13 +87,12 @@ export function VersionControlDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl h-[80vh] p-0 gap-0">
-        <DialogHeader className="px-6 py-3 border-b">
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <GitBranch className="h-4 w-4" />
+        <DialogHeader className="px-4 py-2 border-b">
+          <DialogTitle className="flex items-center gap-2 text-sm font-medium">
+            <GitBranch className="h-3.5 w-3.5" />
             Version Control - {course.title}
           </DialogTitle>
         </DialogHeader>
-
         <div className="flex flex-1 overflow-hidden">
           {/* Left Panel - Version Graph */}
           <div className="w-[280px] border-r flex flex-col bg-muted/30">
