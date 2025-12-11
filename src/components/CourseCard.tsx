@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Play, Edit, Copy, Eye, EyeOff, Trash2 } from "lucide-react";
+import { MoreHorizontal, Play, Edit, Copy, Eye, EyeOff, Trash2, GitBranch } from "lucide-react";
 
 interface CourseCardProps {
   course: Course;
@@ -16,6 +16,7 @@ interface CourseCardProps {
   onDuplicate: (courseId: string) => void;
   onTogglePublish: (course: Course) => void;
   onDelete: (courseId: string) => void;
+  onVersionControl?: (courseId: string) => void;
 }
 
 const getProgressPercent = (progress: Course["progress"]) => {
@@ -44,6 +45,7 @@ export function CourseCard({
   onDuplicate,
   onTogglePublish,
   onDelete,
+  onVersionControl,
 }: CourseCardProps) {
   const progressPercent = getProgressPercent(course.progress);
   
@@ -81,6 +83,12 @@ export function CourseCard({
                 <Copy className="h-4 w-4 mr-2" />
                 Duplicate
               </DropdownMenuItem>
+              {onVersionControl && (
+                <DropdownMenuItem onClick={() => onVersionControl(course.id)}>
+                  <GitBranch className="h-4 w-4 mr-2" />
+                  Version Control
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => onTogglePublish(course)}>
                 {course.status === "published" ? (
                   <>

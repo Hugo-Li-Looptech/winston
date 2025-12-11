@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Course, SlideFile, WizardSettings, Slide, Assessment, AssessmentQuestion, WizardStep, CourseItem } from '@/types/course';
+import { Course, SlideFile, WizardSettings, Slide, Assessment, AssessmentQuestion, WizardStep, CourseItem, CourseVersion } from '@/types/course';
 import { Comment, proxyComments } from '@/types/comment';
 
 interface CompletedSteps {
@@ -37,6 +37,9 @@ interface CourseContextType {
   };
   completedSteps: CompletedSteps;
   comments: Comment[];
+  // Version control
+  courseVersions: Map<string, CourseVersion[]>;
+  currentVersionIds: Map<string, string>;
   setSlideFiles: (files: SlideFile[]) => void;
   setSupplementFiles: (files: SlideFile[]) => void;
   setWizardSettings: (settings: WizardSettings) => void;
@@ -60,6 +63,11 @@ interface CourseContextType {
   duplicateCourse: (id: string) => void;
   publishCourse: () => void;
   saveCourseAsDraft: () => void;
+  // Version control functions
+  saveVersion: (courseId: string, versionName: string) => void;
+  getVersions: (courseId: string) => CourseVersion[];
+  restoreVersion: (courseId: string, versionId: string) => void;
+  branchFromVersion: (courseId: string, versionId: string) => void;
 }
 
 const defaultWizardSettings: WizardSettings = {
@@ -220,6 +228,10 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   });
   const [metadata, setMetadataState] = useState<CourseMetadata>(defaultMetadata);
   const [comments, setComments] = useState<Comment[]>(proxyComments);
+  
+  // Version control state
+  const [courseVersions, setCourseVersions] = useState<Map<string, CourseVersion[]>>(new Map());
+  const [currentVersionIds, setCurrentVersionIds] = useState<Map<string, string>>(new Map());
 
   // Wrapper to keep slides and courseItems in sync
   const setSlides = (newSlides: Slide[]) => {
@@ -398,6 +410,99 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     setCourses((prev) => [...prev, newCourse]);
   };
 
+  // Version control functions
+  const saveVersion = (courseId: string, versionName: string) => {
+    const newVersion: CourseVersion = {
+      id: `version-${Date.now()}`,
+      versionName,
+      timestamp: new Date().toISOString(),
+      author: 'Course Creator',
+      parentVersionId: currentVersionIds.get(courseId),
+      courseSnapshot: {
+        title: courseTitle,
+        description: courseDescription,
+        slides: [...slides],
+        assessments: [...assessments],
+        courseItems: [...courseItems],
+        wizardSettings: { ...wizardSettings },
+      },
+    };
+
+    setCourseVersions((prev) => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(courseId) || [];
+      newMap.set(courseId, [...existing, newVersion]);
+      return newMap;
+    });
+
+    setCurrentVersionIds((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(courseId, newVersion.id);
+      return newMap;
+    });
+  };
+
+  const getVersions = (courseId: string): CourseVersion[] => {
+    return courseVersions.get(courseId) || [];
+  };
+
+  const restoreVersion = (courseId: string, versionId: string) => {
+    const versions = courseVersions.get(courseId) || [];
+    const version = versions.find((v) => v.id === versionId);
+    if (version) {
+      setSlidesState(version.courseSnapshot.slides);
+      setAssessments(version.courseSnapshot.assessments);
+      setCourseItems(version.courseSnapshot.courseItems);
+      setCourseTitle(version.courseSnapshot.title);
+      setCourseDescription(version.courseSnapshot.description);
+      setWizardSettings(version.courseSnapshot.wizardSettings);
+      
+      setCurrentVersionIds((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(courseId, versionId);
+        return newMap;
+      });
+    }
+  };
+
+  const branchFromVersion = (courseId: string, versionId: string) => {
+    const versions = courseVersions.get(courseId) || [];
+    const version = versions.find((v) => v.id === versionId);
+    if (version) {
+      // Create a new course as a branch
+      const branchCourse: Course = {
+        id: `branch-${Date.now()}`,
+        title: `${version.courseSnapshot.title} (Branch)`,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        status: 'in_progress',
+        progress: 'setting_talk_points',
+      };
+      setCourses((prev) => [...prev, branchCourse]);
+
+      // Create initial version for the branch
+      const branchVersion: CourseVersion = {
+        id: `version-${Date.now()}`,
+        versionName: 'v1.0 - Branch from ' + version.versionName,
+        timestamp: new Date().toISOString(),
+        author: 'Course Creator',
+        parentVersionId: versionId,
+        courseSnapshot: { ...version.courseSnapshot },
+      };
+
+      setCourseVersions((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(branchCourse.id, [branchVersion]);
+        return newMap;
+      });
+
+      setCurrentVersionIds((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(branchCourse.id, branchVersion.id);
+        return newMap;
+      });
+    }
+  };
+
   return (
     <CourseContext.Provider
       value={{
@@ -417,6 +522,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         },
         completedSteps,
         comments,
+        courseVersions,
+        currentVersionIds,
         setSlideFiles,
         setSupplementFiles,
         setWizardSettings,
@@ -440,6 +547,10 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         duplicateCourse,
         publishCourse,
         saveCourseAsDraft,
+        saveVersion,
+        getVersions,
+        restoreVersion,
+        branchFromVersion,
       }}
     >
       {children}
