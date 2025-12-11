@@ -187,6 +187,91 @@ const proxyCourses: Course[] = [
   },
 ];
 
+// Create initial versions for proxy courses
+const createInitialVersionsMap = (): Map<string, CourseVersion[]> => {
+  const map = new Map<string, CourseVersion[]>();
+  
+  // Initial version for proxy-1 (published course)
+  map.set('proxy-1', [
+    {
+      id: 'version-proxy-1-initial',
+      versionName: 'Initial Draft',
+      timestamp: '2024-11-28T10:00:00.000Z',
+      author: 'Course Creator',
+      courseSnapshot: {
+        title: 'Introduction to Machine Learning',
+        description: 'A comprehensive introduction to ML concepts',
+        slides: defaultSlides,
+        assessments: [],
+        courseItems: buildCourseItemsFromSlides(defaultSlides),
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+    {
+      id: 'version-proxy-1-published',
+      versionName: 'Published - Dec 1, 2024',
+      timestamp: '2024-12-01T14:00:00.000Z',
+      author: 'Course Creator',
+      parentVersionId: 'version-proxy-1-initial',
+      isPublished: true,
+      courseSnapshot: {
+        title: 'Introduction to Machine Learning',
+        description: 'A comprehensive introduction to ML concepts',
+        slides: defaultSlides,
+        assessments: [],
+        courseItems: buildCourseItemsFromSlides(defaultSlides),
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+  ]);
+  
+  // Initial version for proxy-2 (in progress)
+  map.set('proxy-2', [
+    {
+      id: 'version-proxy-2-initial',
+      versionName: 'Initial Draft',
+      timestamp: '2024-11-28T09:00:00.000Z',
+      author: 'Course Creator',
+      courseSnapshot: {
+        title: 'Advanced React Patterns',
+        description: 'Deep dive into React patterns and best practices',
+        slides: defaultSlides,
+        assessments: [],
+        courseItems: buildCourseItemsFromSlides(defaultSlides),
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+  ]);
+  
+  // Initial version for proxy-3 (pending)
+  map.set('proxy-3', [
+    {
+      id: 'version-proxy-3-initial',
+      versionName: 'Initial Draft',
+      timestamp: '2024-11-25T08:00:00.000Z',
+      author: 'Course Creator',
+      courseSnapshot: {
+        title: 'UI/UX Design Fundamentals',
+        description: 'Learn the basics of UI/UX design',
+        slides: defaultSlides,
+        assessments: [],
+        courseItems: buildCourseItemsFromSlides(defaultSlides),
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+  ]);
+  
+  return map;
+};
+
+const createInitialVersionIdsMap = (): Map<string, string> => {
+  const map = new Map<string, string>();
+  map.set('proxy-1', 'version-proxy-1-published');
+  map.set('proxy-2', 'version-proxy-2-initial');
+  map.set('proxy-3', 'version-proxy-3-initial');
+  return map;
+};
+
 const defaultMetadata: CourseMetadata = {
   duration: '45 minutes',
   totalSlides: 10,
@@ -230,9 +315,9 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   const [metadata, setMetadataState] = useState<CourseMetadata>(defaultMetadata);
   const [comments, setComments] = useState<Comment[]>(proxyComments);
   
-  // Version control state
-  const [courseVersions, setCourseVersions] = useState<Map<string, CourseVersion[]>>(new Map());
-  const [currentVersionIds, setCurrentVersionIds] = useState<Map<string, string>>(new Map());
+  // Version control state - initialized with proxy course versions
+  const [courseVersions, setCourseVersions] = useState<Map<string, CourseVersion[]>>(createInitialVersionsMap);
+  const [currentVersionIds, setCurrentVersionIds] = useState<Map<string, string>>(createInitialVersionIdsMap);
 
   // Wrapper to keep slides and courseItems in sync
   const setSlides = (newSlides: Slide[]) => {
