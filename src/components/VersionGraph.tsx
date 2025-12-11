@@ -141,6 +141,11 @@ export function VersionGraph({ versions, selectedVersionId, onSelectVersion, cur
                 )}>
                   {version.versionName}
                 </span>
+                {version.isPublished && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-600 font-medium">
+                    Published
+                  </span>
+                )}
                 {isCurrent && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
                     Current

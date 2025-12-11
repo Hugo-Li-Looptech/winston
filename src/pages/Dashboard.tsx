@@ -63,9 +63,10 @@ export default function Dashboard() {
     updateCourseStatus, 
     duplicateCourse,
     getVersions,
-    currentVersionIds,
+    getCurrentVersionId,
     restoreVersion,
     branchFromVersion,
+    saveVersion,
   } = useCourse();
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -132,6 +133,13 @@ export default function Dashboard() {
   const handleTogglePublish = (course: Course) => {
     const newStatus = course.status === "published" ? "pending" : "published";
     updateCourseStatus(course.id, newStatus);
+    
+    // Save a published version when publishing (not when unpublishing)
+    if (newStatus === "published") {
+      const versionName = `Published - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      saveVersion(course.id, versionName, true);
+    }
+    
     toast({
       title: newStatus === "published" ? "Course published" : "Course unpublished",
       description:
@@ -640,7 +648,7 @@ export default function Dashboard() {
           onOpenChange={setVersionControlOpen}
           course={courses.find((c) => c.id === versionControlCourseId)!}
           versions={getVersions(versionControlCourseId)}
-          currentVersionId={currentVersionIds.get(versionControlCourseId)}
+          currentVersionId={getCurrentVersionId(versionControlCourseId)}
           onRestoreVersion={handleRestoreVersion}
           onBranchFromVersion={handleBranchFromVersion}
           onEditVersion={handleEditVersion}
