@@ -97,6 +97,7 @@ export interface CourseVersion {
   timestamp: string;
   author: string;
   parentVersionId?: string; // For branching support
+  isPublished?: boolean; // Marks published versions
   courseSnapshot: {
     title: string;
     description: string;

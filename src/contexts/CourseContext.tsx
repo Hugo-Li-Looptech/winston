@@ -64,8 +64,9 @@ interface CourseContextType {
   publishCourse: () => void;
   saveCourseAsDraft: () => void;
   // Version control functions
-  saveVersion: (courseId: string, versionName: string) => void;
+  saveVersion: (courseId: string, versionName: string, isPublished?: boolean) => void;
   getVersions: (courseId: string) => CourseVersion[];
+  getCurrentVersionId: (courseId: string) => string | undefined;
   restoreVersion: (courseId: string, versionId: string) => void;
   branchFromVersion: (courseId: string, versionId: string) => void;
 }
@@ -411,13 +412,14 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   };
 
   // Version control functions
-  const saveVersion = (courseId: string, versionName: string) => {
+  const saveVersion = (courseId: string, versionName: string, isPublished?: boolean) => {
     const newVersion: CourseVersion = {
       id: `version-${Date.now()}`,
       versionName,
       timestamp: new Date().toISOString(),
       author: 'Course Creator',
       parentVersionId: currentVersionIds.get(courseId),
+      isPublished,
       courseSnapshot: {
         title: courseTitle,
         description: courseDescription,
@@ -440,6 +442,10 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       newMap.set(courseId, newVersion.id);
       return newMap;
     });
+  };
+
+  const getCurrentVersionId = (courseId: string): string | undefined => {
+    return currentVersionIds.get(courseId);
   };
 
   const getVersions = (courseId: string): CourseVersion[] => {
@@ -549,6 +555,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         saveCourseAsDraft,
         saveVersion,
         getVersions,
+        getCurrentVersionId,
         restoreVersion,
         branchFromVersion,
       }}
