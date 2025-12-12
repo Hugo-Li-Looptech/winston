@@ -560,28 +560,40 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     const versions = courseVersions.get(courseId) || [];
     const version = versions.find((v) => v.id === versionId);
     if (version) {
-      // Create a new branch version within the SAME course's version tree
+      const branchId = `branch-${Date.now()}`;
+      
+      // Create a new branch version
       const branchVersion: CourseVersion = {
         id: `version-${Date.now()}`,
-        versionName: `Branch from ${version.versionName}`,
+        versionName: `Initial Draft`,
         timestamp: new Date().toISOString(),
         author: 'Course Creator',
-        parentVersionId: versionId, // Links to the source version, creating a branch in the tree
         courseSnapshot: { ...version.courseSnapshot },
       };
 
-      // Add the branch to the same course's version history
+      // Create a NEW course on the Dashboard with the branched content
+      const newCourse: Course = {
+        id: branchId,
+        title: `${version.courseSnapshot.title} (Branch)`,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        status: 'pending',
+        progress: 'slides_uploaded',
+      };
+      
+      // Add the new course to the courses list
+      setCourses((prev) => [...prev, newCourse]);
+      
+      // Initialize version history for the NEW course
       setCourseVersions((prev) => {
         const newMap = new Map(prev);
-        const existing = newMap.get(courseId) || [];
-        newMap.set(courseId, [...existing, branchVersion]);
+        newMap.set(branchId, [branchVersion]);
         return newMap;
       });
 
-      // Set the new branch as the current version
+      // Set the initial version as current for the new course
       setCurrentVersionIds((prev) => {
         const newMap = new Map(prev);
-        newMap.set(courseId, branchVersion.id);
+        newMap.set(branchId, branchVersion.id);
         return newMap;
       });
     }
