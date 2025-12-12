@@ -62,26 +62,32 @@ export function VersionControlDialog({
   const courseItems = selectedVersion?.courseSnapshot.courseItems || [];
   const assessmentCount = courseItems.filter(i => i.type === "assessment").length;
   return <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl h-[80vh] p-0 gap-0">
-        <DialogHeader className="px-4 py-1.5 border-b">
-          <DialogTitle className="flex items-center gap-2 text-sm font-medium">
-            <GitBranch className="h-3.5 w-3.5" />
-            Version Control - {course.title}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-1 overflow-hidden">
-          {/* Left Panel - Version Graph */}
-          <div className="w-[280px] border-r flex flex-col bg-muted/30">
-            <div className="p-3 border-b bg-card">
-              <h3 className="text-sm font-medium">Version History</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {versions.length} version{versions.length !== 1 ? "s" : ""}
-              </p>
-            </div>
-            <ScrollArea className="flex-1">
-              <VersionGraph versions={versions} selectedVersionId={selectedVersionId} onSelectVersion={setSelectedVersionId} currentVersionId={currentVersionId} />
-            </ScrollArea>
-          </div>
+ <DialogContent className="max-w-5xl h-[80vh] p-0 gap-0 flex flex-col">
+  <DialogHeader className="px-4 py-1.5 border-b shrink-0">
+    <DialogTitle className="flex items-center gap-2 text-sm font-medium">
+      <GitBranch className="h-3.5 w-3.5" />
+      Version Control - {course.title}
+    </DialogTitle>
+  </DialogHeader>
+
+  <div className="flex flex-1 overflow-hidden">
+    <div className="w-[280px] border-r flex flex-col bg-muted/30">
+      <div className="p-3 border-b bg-card">
+        <h3 className="text-sm font-medium">Version History</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {versions.length} version{versions.length !== 1 ? "s" : ""}
+        </p>
+      </div>
+      <ScrollArea className="flex-1">
+        <VersionGraph
+          versions={versions}
+          selectedVersionId={selectedVersionId}
+          onSelectVersion={setSelectedVersionId}
+          currentVersionId={currentVersionId}
+        />
+      </ScrollArea>
+    </div>
+  </div>
 
           {/* Right Panel - Preview/Compare */}
           <div className="flex-1 flex flex-col">
