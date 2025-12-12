@@ -61,6 +61,11 @@ export function VersionControlDialog({
   const slides = selectedVersion?.courseSnapshot.slides || [];
   const courseItems = selectedVersion?.courseSnapshot.courseItems || [];
   const assessmentCount = courseItems.filter(i => i.type === "assessment").length;
+  // Early return if course is undefined
+  if (!course) {
+    return null;
+  }
+
   return <Dialog open={open} onOpenChange={onOpenChange}>
  <DialogContent className="max-w-5xl h-[80vh] p-0 gap-0 flex flex-col">
   <DialogHeader className="px-4 py-1.5 border-b shrink-0">
