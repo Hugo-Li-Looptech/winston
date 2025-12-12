@@ -87,7 +87,6 @@ export function VersionControlDialog({
         />
       </ScrollArea>
     </div>
-  </div>
 
           {/* Right Panel - Preview/Compare */}
           <div className="flex-1 flex flex-col">
