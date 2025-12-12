@@ -87,7 +87,7 @@ export function VersionControlDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl h-[80vh] p-0 gap-0">
-        <DialogHeader className="px-4 py-2 border-b">
+        <DialogHeader className="px-4 py-1 border-b">
           <DialogTitle className="flex items-center gap-2 text-sm font-medium">
             <GitBranch className="h-3.5 w-3.5" />
             Version Control - {course.title}
