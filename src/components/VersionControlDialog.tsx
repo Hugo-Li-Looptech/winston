@@ -115,14 +115,14 @@ export function VersionControlDialog({
           {/* Right Panel - Preview/Compare */}
           <div className="flex-1 flex flex-col">
             <Tabs defaultValue="preview" className="flex-1 flex flex-col">
-              <div className="px-4 pt-3 border-b">
-                <TabsList className="w-auto">
-                  <TabsTrigger value="preview" className="gap-1.5">
-                    <FileText className="h-4 w-4" />
+              <div className="px-3 py-2 border-b">
+                <TabsList className="h-8">
+                  <TabsTrigger value="preview" className="gap-1.5 text-xs h-7">
+                    <FileText className="h-3.5 w-3.5" />
                     Preview
                   </TabsTrigger>
-                  <TabsTrigger value="compare" className="gap-1.5">
-                    <ClipboardCheck className="h-4 w-4" />
+                  <TabsTrigger value="compare" className="gap-1.5 text-xs h-7">
+                    <ClipboardCheck className="h-3.5 w-3.5" />
                     Compare
                   </TabsTrigger>
                 </TabsList>
@@ -131,65 +131,75 @@ export function VersionControlDialog({
               <TabsContent value="preview" className="flex-1 m-0 overflow-hidden">
                 {selectedVersion ? (
                   <div className="h-full flex flex-col">
-                    {/* Version info header */}
-                    <div className="p-4 border-b bg-muted/30">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">{selectedVersion.versionName}</h4>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {slides.length} slides • {assessmentCount} assessments
-                          </p>
-                        </div>
-                        <div className="text-right text-xs text-muted-foreground">
-                          <div>{new Date(selectedVersion.timestamp).toLocaleDateString()}</div>
-                          <div>by {selectedVersion.author}</div>
-                        </div>
+                    {/* Compact version info header */}
+                    <div className="px-3 py-2 border-b bg-muted/30 flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium">{selectedVersion.versionName}</span>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="text-muted-foreground text-xs">{slides.length} slides • {assessmentCount} assessments</span>
                       </div>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(selectedVersion.timestamp).toLocaleDateString()} by {selectedVersion.author}
+                      </span>
                     </div>
 
                     {/* Slide preview */}
-                    <div className="flex-1 p-4 overflow-hidden">
+                    <div className="flex-1 p-3 overflow-hidden">
                       {slides.length > 0 ? (
                         <div className="h-full flex flex-col">
                           {/* Slide content */}
-                          <div className="flex-1 bg-card rounded-xl border p-6 overflow-auto">
-                            <h3 className="text-lg font-semibold mb-3">
+                          <div className="flex-1 bg-card rounded-lg border p-4 overflow-auto">
+                            <h3 className="text-base font-semibold mb-2">
                               {slides[previewSlideIndex]?.title}
                             </h3>
-                            <div className="space-y-2 mb-4">
+                            <div className="space-y-1.5 mb-3">
                               {slides[previewSlideIndex]?.content.map((item, i) => (
                                 <p key={i} className="text-sm text-muted-foreground">
                                   • {item}
                                 </p>
                               ))}
                             </div>
-                            <div className="border-t pt-4 mt-4">
-                              <h4 className="text-sm font-medium mb-2">Talk Points</h4>
+                            <div className="border-t pt-3 mt-3">
+                              <h4 className="text-xs font-medium mb-1.5 text-muted-foreground">Talk Points</h4>
                               <p className="text-sm text-muted-foreground">
                                 {slides[previewSlideIndex]?.talkPoints}
                               </p>
                             </div>
                           </div>
 
-                          {/* Slide navigation */}
-                          <div className="flex items-center justify-center gap-4 mt-4">
+                          {/* Slide thumbnail carousel */}
+                          <div className="mt-3 flex items-center gap-2">
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="icon"
+                              className="h-7 w-7 shrink-0"
                               onClick={() => setPreviewSlideIndex((i) => Math.max(0, i - 1))}
                               disabled={previewSlideIndex === 0}
                             >
                               <ChevronLeft className="h-4 w-4" />
                             </Button>
-                            <span className="text-sm text-muted-foreground">
-                              Slide {previewSlideIndex + 1} of {slides.length}
-                            </span>
+                            <div className="flex-1 overflow-x-auto">
+                              <div className="flex gap-1.5 justify-center">
+                                {slides.map((slide, idx) => (
+                                  <button
+                                    key={slide.id}
+                                    onClick={() => setPreviewSlideIndex(idx)}
+                                    className={`h-8 min-w-[2rem] px-2 rounded text-xs font-medium transition-colors ${
+                                      idx === previewSlideIndex
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                                    }`}
+                                  >
+                                    {idx + 1}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="icon"
-                              onClick={() =>
-                                setPreviewSlideIndex((i) => Math.min(slides.length - 1, i + 1))
-                              }
+                              className="h-7 w-7 shrink-0"
+                              onClick={() => setPreviewSlideIndex((i) => Math.min(slides.length - 1, i + 1))}
                               disabled={previewSlideIndex === slides.length - 1}
                             >
                               <ChevronRight className="h-4 w-4" />
@@ -197,14 +207,14 @@ export function VersionControlDialog({
                           </div>
                         </div>
                       ) : (
-                        <div className="h-full flex items-center justify-center text-muted-foreground">
+                        <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
                           No slides in this version
                         </div>
                       )}
                     </div>
                   </div>
                 ) : (
-                  <div className="h-full flex items-center justify-center text-muted-foreground">
+                  <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
                     Select a version to preview
                   </div>
                 )}
@@ -225,31 +235,34 @@ export function VersionControlDialog({
             </Tabs>
 
             {/* Action buttons */}
-            <div className="p-4 border-t bg-muted/30 flex items-center justify-end gap-2">
+            <div className="px-3 py-2 border-t bg-muted/30 flex items-center justify-end gap-2">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={handleRestore}
                 disabled={!selectedVersionId || selectedVersionId === currentVersionId}
-                className="gap-2"
+                className="gap-1.5 h-8 text-xs"
               >
-                <RotateCcw className="h-4 w-4" />
+                <RotateCcw className="h-3.5 w-3.5" />
                 Restore
               </Button>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={handleBranch}
                 disabled={!selectedVersionId}
-                className="gap-2"
+                className="gap-1.5 h-8 text-xs"
               >
-                <GitBranch className="h-4 w-4" />
+                <GitBranch className="h-3.5 w-3.5" />
                 Copy as Branch
               </Button>
               <Button
+                size="sm"
                 onClick={handleEdit}
                 disabled={!selectedVersionId}
-                className="gap-2"
+                className="gap-1.5 h-8 text-xs"
               >
-                <Edit className="h-4 w-4" />
+                <Edit className="h-3.5 w-3.5" />
                 Edit
               </Button>
             </div>

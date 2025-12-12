@@ -162,73 +162,127 @@ function computeDiff(selected: CourseVersion, current: CourseVersion): DiffItem[
 export function VersionCompare({ selectedVersion, currentVersion }: VersionCompareProps) {
   const diffs = computeDiff(selectedVersion, currentVersion);
   
+  // Calculate summary counts
+  const addedCount = diffs.filter(d => d.type === 'added').length;
+  const removedCount = diffs.filter(d => d.type === 'removed').length;
+  const modifiedCount = diffs.filter(d => d.type === 'modified').length;
+  
   if (diffs.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-6">
-        <Edit3 className="h-8 w-8 mb-2 opacity-50" />
-        <p className="text-sm">No differences found</p>
-        <p className="text-xs mt-1">This version is identical to the current version</p>
+      <div className="h-full flex flex-col">
+        {/* Version comparison header */}
+        <div className="px-3 py-2 border-b bg-muted/30">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{selectedVersion.versionName}</span>
+              <span className="text-muted-foreground">{new Date(selectedVersion.timestamp).toLocaleDateString()}</span>
+            </div>
+            <span className="text-muted-foreground">vs</span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{currentVersion.versionName}</span>
+              <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px]">Current</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-4">
+          <Edit3 className="h-6 w-6 mb-2 opacity-50" />
+          <p className="text-sm">No differences found</p>
+          <p className="text-xs mt-0.5">Versions are identical</p>
+        </div>
       </div>
     );
   }
   
   return (
-    <ScrollArea className="h-full">
-      <div className="p-4 space-y-3">
-        <div className="text-sm text-muted-foreground mb-4">
-          Comparing <span className="font-medium text-foreground">{selectedVersion.versionName}</span> with{" "}
-          <span className="font-medium text-foreground">{currentVersion.versionName}</span>
-        </div>
-        
-        {diffs.map((diff, index) => (
-          <div
-            key={index}
-            className={`p-3 rounded-lg border ${
-              diff.type === 'added'
-                ? 'bg-green-500/10 border-green-500/30'
-                : diff.type === 'removed'
-                ? 'bg-red-500/10 border-red-500/30'
-                : 'bg-amber-500/10 border-amber-500/30'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {diff.type === 'added' && <Plus className="h-4 w-4 text-green-500" />}
-              {diff.type === 'removed' && <Minus className="h-4 w-4 text-red-500" />}
-              {diff.type === 'modified' && <Edit3 className="h-4 w-4 text-amber-500" />}
-              
-              <span className={`text-sm font-medium ${
-                diff.type === 'added'
-                  ? 'text-green-600 dark:text-green-400'
-                  : diff.type === 'removed'
-                  ? 'text-red-600 dark:text-red-400'
-                  : 'text-amber-600 dark:text-amber-400'
-              }`}>
-                {diff.itemType === 'slide' ? 'Slide' : 'Assessment'}: {diff.title}
-              </span>
-              
-              <span className={`text-xs px-1.5 py-0.5 rounded ${
-                diff.type === 'added'
-                  ? 'bg-green-500/20 text-green-600 dark:text-green-400'
-                  : diff.type === 'removed'
-                  ? 'bg-red-500/20 text-red-600 dark:text-red-400'
-                  : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-              }`}>
-                {diff.type}
-              </span>
-            </div>
-            
-            {diff.details && diff.details.length > 0 && (
-              <div className="mt-2 pl-6 space-y-1">
-                {diff.details.map((detail, i) => (
-                  <div key={i} className="text-xs text-muted-foreground">
-                    • {detail}
-                  </div>
-                ))}
-              </div>
-            )}
+    <div className="h-full flex flex-col">
+      {/* Version comparison header */}
+      <div className="px-3 py-2 border-b bg-muted/30">
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{selectedVersion.versionName}</span>
+            <span className="text-muted-foreground">{new Date(selectedVersion.timestamp).toLocaleDateString()}</span>
           </div>
-        ))}
+          <span className="text-muted-foreground">vs</span>
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{currentVersion.versionName}</span>
+            <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px]">Current</span>
+          </div>
+        </div>
       </div>
-    </ScrollArea>
+      
+      {/* Summary bar */}
+      <div className="px-3 py-2 border-b flex items-center gap-3 text-xs">
+        <span className="text-muted-foreground">Changes:</span>
+        {addedCount > 0 && (
+          <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+            <Plus className="h-3 w-3" />+{addedCount} added
+          </span>
+        )}
+        {removedCount > 0 && (
+          <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
+            <Minus className="h-3 w-3" />-{removedCount} removed
+          </span>
+        )}
+        {modifiedCount > 0 && (
+          <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+            <Edit3 className="h-3 w-3" />~{modifiedCount} modified
+          </span>
+        )}
+      </div>
+      
+      {/* Diff list */}
+      <ScrollArea className="flex-1">
+        <div className="p-3 space-y-2">
+          {diffs.map((diff, index) => (
+            <div
+              key={index}
+              className={`p-2.5 rounded-lg border ${
+                diff.type === 'added'
+                  ? 'bg-green-500/10 border-green-500/30'
+                  : diff.type === 'removed'
+                  ? 'bg-red-500/10 border-red-500/30'
+                  : 'bg-amber-500/10 border-amber-500/30'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {diff.type === 'added' && <Plus className="h-3.5 w-3.5 text-green-500" />}
+                {diff.type === 'removed' && <Minus className="h-3.5 w-3.5 text-red-500" />}
+                {diff.type === 'modified' && <Edit3 className="h-3.5 w-3.5 text-amber-500" />}
+                
+                <span className={`text-xs font-medium ${
+                  diff.type === 'added'
+                    ? 'text-green-600 dark:text-green-400'
+                    : diff.type === 'removed'
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-amber-600 dark:text-amber-400'
+                }`}>
+                  {diff.itemType === 'slide' ? 'Slide' : 'Assessment'}: {diff.title}
+                </span>
+                
+                <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                  diff.type === 'added'
+                    ? 'bg-green-500/20 text-green-600 dark:text-green-400'
+                    : diff.type === 'removed'
+                    ? 'bg-red-500/20 text-red-600 dark:text-red-400'
+                    : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                }`}>
+                  {diff.type}
+                </span>
+              </div>
+              
+              {diff.details && diff.details.length > 0 && (
+                <div className="mt-1.5 pl-5 space-y-0.5">
+                  {diff.details.map((detail, i) => (
+                    <div key={i} className="text-[11px] text-muted-foreground">
+                      • {detail}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
   );
 }
