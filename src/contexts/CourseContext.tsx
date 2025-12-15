@@ -114,46 +114,6 @@ const defaultSlides: Slide[] = [
   },
   {
     id: '5',
-    title: 'Peanut Butter Selection',
-    content: ['Creamy vs chunky', 'Natural vs processed', 'Allergy alternatives'],
-    talkPoints: 'Peanut butter comes in many varieties. Creamy spreads easier, while chunky adds texture. Consider natural options and be aware of allergies.',
-    keywords: ['peanut butter', 'creamy', 'chunky', 'natural'],
-    summary: 'Guide to selecting and understanding peanut butter options.',
-  },
-  {
-    id: '6',
-    title: 'Jelly and Jam Options',
-    content: ['Grape - the classic choice', 'Strawberry - popular alternative', 'Exotic flavors'],
-    talkPoints: 'Grape jelly is the traditional choice, but strawberry is equally popular. Don\'t be afraid to experiment with other fruit options.',
-    keywords: ['jelly', 'jam', 'grape', 'strawberry'],
-    summary: 'Overview of jelly and jam varieties for PBJ sandwiches.',
-  },
-  {
-    id: '7',
-    title: 'Assembly Technique',
-    content: ['Spreading evenly', 'Edge-to-edge coverage', 'Layering order'],
-    talkPoints: 'Now for assembly. Spread peanut butter on one slice and jelly on the other. Make sure to cover edge-to-edge for consistent flavor in every bite.',
-    keywords: ['assembly', 'spreading', 'technique'],
-    summary: 'Step-by-step assembly instructions.',
-  },
-  {
-    id: '8',
-    title: 'Cutting Styles',
-    content: ['Diagonal - classic triangle', 'Horizontal - rectangles', 'No cut - whole sandwich'],
-    talkPoints: 'How you cut your sandwich matters! Diagonal cuts create the classic triangle look. Some prefer horizontal cuts or leaving it whole.',
-    keywords: ['cutting', 'diagonal', 'triangle', 'presentation'],
-    summary: 'Different ways to cut and present your sandwich.',
-  },
-  {
-    id: '9',
-    title: 'Serving Suggestions',
-    content: ['Pair with milk', 'Add chips on the side', 'Pack for lunch'],
-    talkPoints: 'A PBJ pairs perfectly with a cold glass of milk. Add some chips for crunch, or pack it for a convenient lunch option.',
-    keywords: ['serving', 'pairing', 'milk', 'lunch'],
-    summary: 'Suggestions for serving and enjoying your PBJ.',
-  },
-  {
-    id: '10',
     title: 'Summary & Next Steps',
     content: ['Review key points', 'Practice makes perfect', 'Share your creations'],
     talkPoints: 'Congratulations! You now know how to make the perfect PBJ sandwich. Practice your technique and share your creations with others.',
@@ -161,6 +121,266 @@ const defaultSlides: Slide[] = [
     summary: 'Course conclusion and encouragement to practice.',
   },
 ];
+
+// Version-specific slide content generators
+const createMLSlidesV1 = (): Slide[] => [
+  { id: 'ml-1', title: 'What is Machine Learning?', content: ['Definition of ML', 'Types of learning'], talkPoints: 'Machine learning is a subset of artificial intelligence that enables systems to learn from data.', keywords: ['ML', 'AI'], summary: 'Introduction to ML concepts.' },
+  { id: 'ml-2', title: 'Supervised Learning', content: ['Labeled data', 'Classification', 'Regression'], talkPoints: 'Supervised learning uses labeled datasets to train algorithms.', keywords: ['supervised', 'classification'], summary: 'Overview of supervised learning.' },
+  { id: 'ml-3', title: 'Unsupervised Learning', content: ['Clustering', 'Pattern recognition'], talkPoints: 'Unsupervised learning finds hidden patterns in unlabeled data.', keywords: ['unsupervised', 'clustering'], summary: 'Introduction to unsupervised methods.' },
+];
+
+const createMLSlidesV2 = (): Slide[] => [
+  { id: 'ml-1', title: 'What is Machine Learning?', content: ['Definition of ML', 'Types of learning', 'Real-world applications'], talkPoints: 'Machine learning is a powerful subset of artificial intelligence that enables computer systems to automatically learn and improve from experience without being explicitly programmed.', keywords: ['ML', 'AI', 'applications'], summary: 'Introduction to ML concepts.' },
+  { id: 'ml-2', title: 'Supervised Learning Fundamentals', content: ['Labeled datasets', 'Classification algorithms', 'Regression models', 'Training process'], talkPoints: 'Supervised learning is the most common type of ML. It uses labeled training data to learn a mapping function that predicts outputs for new inputs.', keywords: ['supervised', 'classification', 'regression'], summary: 'Deep dive into supervised learning.' },
+  { id: 'ml-3', title: 'Unsupervised Learning', content: ['Clustering', 'Pattern recognition'], talkPoints: 'Unsupervised learning discovers hidden patterns in unlabeled data through algorithms like k-means clustering.', keywords: ['unsupervised', 'clustering'], summary: 'Introduction to unsupervised methods.' },
+  { id: 'ml-4', title: 'Neural Networks Basics', content: ['Neurons and layers', 'Activation functions', 'Backpropagation'], talkPoints: 'Neural networks are inspired by biological neurons. They consist of interconnected layers that process information.', keywords: ['neural', 'deep learning'], summary: 'Foundations of neural networks.' },
+];
+
+const createMLSlidesV3 = (): Slide[] => [
+  { id: 'ml-1', title: 'Introduction to Machine Learning', content: ['What is ML?', 'Why ML matters today', 'Industry applications', 'Course roadmap'], talkPoints: 'Welcome to this comprehensive course on machine learning! ML is revolutionizing every industry from healthcare to finance. By the end of this course, you will understand core ML concepts and be ready to apply them.', keywords: ['ML', 'AI', 'introduction'], summary: 'Course introduction and overview.' },
+  { id: 'ml-2', title: 'Supervised Learning Mastery', content: ['Training with labeled data', 'Classification vs Regression', 'Model evaluation metrics', 'Overfitting prevention'], talkPoints: 'Supervised learning is the backbone of most practical ML applications. We will explore how to train models effectively, evaluate their performance, and avoid common pitfalls like overfitting.', keywords: ['supervised', 'classification', 'evaluation'], summary: 'Comprehensive supervised learning guide.' },
+  { id: 'ml-3', title: 'Unsupervised Learning Techniques', content: ['Clustering algorithms', 'Dimensionality reduction', 'Anomaly detection'], talkPoints: 'Unsupervised learning helps us find structure in data without labels. K-means, hierarchical clustering, and PCA are essential tools in your ML toolkit.', keywords: ['unsupervised', 'clustering', 'PCA'], summary: 'Advanced unsupervised methods.' },
+  { id: 'ml-4', title: 'Deep Learning Foundations', content: ['Neural network architecture', 'Training deep networks', 'GPU acceleration'], talkPoints: 'Deep learning has transformed ML with its ability to learn complex representations. Understanding neural network fundamentals is crucial for modern ML practitioners.', keywords: ['deep learning', 'neural networks'], summary: 'Deep learning essentials.' },
+  { id: 'ml-5', title: 'Practical ML Projects', content: ['Project setup', 'Data preparation', 'Model deployment'], talkPoints: 'Putting theory into practice is essential. We will walk through complete ML projects from data collection to production deployment.', keywords: ['projects', 'deployment'], summary: 'Hands-on ML implementation.' },
+];
+
+const createMLSlidesBranch = (): Slide[] => [
+  { id: 'ml-1', title: 'ML for Beginners', content: ['Simple explanations', 'No math required', 'Visual examples'], talkPoints: 'This beginner-friendly approach to machine learning focuses on intuition over mathematics. Perfect for those new to the field.', keywords: ['beginner', 'simple'], summary: 'Beginner-friendly ML intro.' },
+  { id: 'ml-2', title: 'Understanding Data', content: ['What is data?', 'Data types', 'Data quality'], talkPoints: 'Before diving into algorithms, we need to understand data. Good data is the foundation of any successful ML project.', keywords: ['data', 'basics'], summary: 'Data fundamentals.' },
+  { id: 'ml-3', title: 'Your First Model', content: ['Simple linear regression', 'Making predictions', 'Evaluating results'], talkPoints: 'Let\'s build your very first ML model together! Linear regression is the perfect starting point.', keywords: ['first model', 'linear regression'], summary: 'Building your first model.' },
+];
+
+const createReactSlidesV1 = (): Slide[] => [
+  { id: 'react-1', title: 'React Fundamentals Review', content: ['Components', 'Props', 'State'], talkPoints: 'Let\'s review React fundamentals before diving into advanced patterns.', keywords: ['react', 'fundamentals'], summary: 'React basics recap.' },
+  { id: 'react-2', title: 'Component Patterns', content: ['Container/Presentational', 'Render Props'], talkPoints: 'Component patterns help organize code and improve reusability.', keywords: ['patterns', 'components'], summary: 'Common component patterns.' },
+  { id: 'react-3', title: 'State Management', content: ['Context API', 'Redux basics'], talkPoints: 'Managing state at scale requires thoughtful architecture.', keywords: ['state', 'redux'], summary: 'State management strategies.' },
+];
+
+const createReactSlidesV2 = (): Slide[] => [
+  { id: 'react-1', title: 'React Fundamentals Review', content: ['Components & JSX', 'Props drilling', 'State lifecycle', 'Hooks introduction'], talkPoints: 'Before exploring advanced patterns, let\'s ensure we have a solid foundation. We\'ll review components, props, state, and introduce the hooks paradigm that has transformed React development.', keywords: ['react', 'fundamentals', 'hooks'], summary: 'Comprehensive React basics.' },
+  { id: 'react-2', title: 'Advanced Component Patterns', content: ['Container/Presentational', 'Render Props', 'Higher-Order Components', 'Compound Components'], talkPoints: 'These patterns have evolved over time. Compound components and render props offer powerful composition strategies for building flexible UI libraries.', keywords: ['patterns', 'HOC', 'composition'], summary: 'Advanced pattern deep dive.' },
+  { id: 'react-3', title: 'Modern State Management', content: ['Context API optimization', 'Zustand', 'Jotai', 'React Query'], talkPoints: 'The state management landscape has shifted. While Redux remains popular, newer solutions like Zustand and React Query offer simpler APIs for specific use cases.', keywords: ['state', 'zustand', 'react-query'], summary: 'Modern state solutions.' },
+  { id: 'react-4', title: 'Performance Optimization', content: ['Memoization', 'Code splitting', 'Virtual DOM'], talkPoints: 'Performance matters. Learn to use React.memo, useMemo, and useCallback effectively without premature optimization.', keywords: ['performance', 'memo'], summary: 'React performance tips.' },
+];
+
+const createUIUXSlidesV1 = (): Slide[] => [
+  { id: 'uiux-1', title: 'Design Thinking', content: ['Empathize', 'Define', 'Ideate'], talkPoints: 'Design thinking is a user-centered approach to problem solving.', keywords: ['design thinking'], summary: 'Design thinking intro.' },
+  { id: 'uiux-2', title: 'Visual Hierarchy', content: ['Size', 'Color', 'Contrast'], talkPoints: 'Visual hierarchy guides users through your interface.', keywords: ['hierarchy', 'visual'], summary: 'Visual design basics.' },
+];
+
+const createUIUXSlidesV2 = (): Slide[] => [
+  { id: 'uiux-1', title: 'Design Thinking Process', content: ['Empathize with users', 'Define the problem', 'Ideate solutions', 'Prototype quickly'], talkPoints: 'Design thinking puts users at the center of every decision. This iterative process helps create products people actually want to use.', keywords: ['design thinking', 'process'], summary: 'Complete design thinking overview.' },
+  { id: 'uiux-2', title: 'Visual Hierarchy Mastery', content: ['Size and scale', 'Color psychology', 'Contrast and whitespace', 'Typography hierarchy'], talkPoints: 'Mastering visual hierarchy is essential for effective design. Learn to guide the user\'s eye and communicate importance through visual cues.', keywords: ['hierarchy', 'visual', 'typography'], summary: 'Advanced visual hierarchy.' },
+  { id: 'uiux-3', title: 'User Research Methods', content: ['Interviews', 'Surveys', 'Usability testing'], talkPoints: 'Good design starts with understanding your users. We\'ll explore various research methods to gather meaningful insights.', keywords: ['research', 'usability'], summary: 'User research fundamentals.' },
+];
+
+const createUIUXSlidesV3 = (): Slide[] => [
+  { id: 'uiux-1', title: 'Introduction to UI/UX', content: ['What is UI?', 'What is UX?', 'The relationship between them'], talkPoints: 'UI and UX are related but distinct disciplines. UI focuses on visual elements while UX encompasses the entire user experience. Together they create products users love.', keywords: ['UI', 'UX', 'intro'], summary: 'UI/UX foundations.' },
+  { id: 'uiux-2', title: 'Design Thinking Deep Dive', content: ['Empathy mapping', 'Problem framing', 'Brainstorming techniques', 'Rapid prototyping'], talkPoints: 'Design thinking is more than a process—it\'s a mindset. We\'ll practice each phase with hands-on exercises and real-world examples.', keywords: ['design thinking', 'empathy'], summary: 'Comprehensive design thinking.' },
+  { id: 'uiux-3', title: 'Visual Design Principles', content: ['Gestalt principles', 'Color theory', 'Grid systems', 'Responsive design'], talkPoints: 'Visual design principles are the foundation of beautiful, functional interfaces. Understanding Gestalt psychology helps create cohesive designs.', keywords: ['visual', 'gestalt', 'color'], summary: 'Visual design mastery.' },
+  { id: 'uiux-4', title: 'Prototyping & Testing', content: ['Low-fidelity prototypes', 'High-fidelity mockups', 'User testing sessions', 'Iterating on feedback'], talkPoints: 'Prototyping allows us to test ideas quickly and cheaply. We\'ll cover tools and techniques for creating effective prototypes at every fidelity level.', keywords: ['prototype', 'testing'], summary: 'Prototyping essentials.' },
+];
+
+const createUIUXSlidesBranchA = (): Slide[] => [
+  { id: 'uiux-1', title: 'Mobile-First Design', content: ['Why mobile first?', 'Touch interactions', 'Small screen constraints'], talkPoints: 'Mobile-first design ensures your product works on the most constrained devices first, then progressively enhances for larger screens.', keywords: ['mobile', 'responsive'], summary: 'Mobile-first approach.' },
+  { id: 'uiux-2', title: 'App Navigation Patterns', content: ['Tab bars', 'Hamburger menus', 'Bottom sheets'], talkPoints: 'Navigation is critical for mobile apps. We\'ll explore patterns that work well on small screens and follow platform conventions.', keywords: ['navigation', 'mobile'], summary: 'Mobile navigation patterns.' },
+  { id: 'uiux-3', title: 'Gesture Design', content: ['Swipe', 'Pinch', 'Long press'], talkPoints: 'Touch gestures are a powerful vocabulary for mobile interactions. Learn to use them intuitively without confusing users.', keywords: ['gestures', 'touch'], summary: 'Touch gesture design.' },
+];
+
+const createUIUXSlidesBranchB = (): Slide[] => [
+  { id: 'uiux-1', title: 'iOS Design Guidelines', content: ['Human Interface Guidelines', 'SF Symbols', 'iOS patterns'], talkPoints: 'Apple\'s Human Interface Guidelines provide a foundation for creating intuitive iOS apps. Following platform conventions helps users feel at home.', keywords: ['iOS', 'Apple', 'HIG'], summary: 'iOS design fundamentals.' },
+  { id: 'uiux-2', title: 'SwiftUI Components', content: ['Native components', 'Custom styling', 'Animations'], talkPoints: 'SwiftUI provides beautiful native components. Learn when to use them and when custom designs are appropriate.', keywords: ['SwiftUI', 'components'], summary: 'SwiftUI component guide.' },
+];
+
+// Create initial versions for proxy courses with comprehensive dummy data
+const createInitialVersionsMap = (): Map<string, CourseVersion[]> => {
+  const map = new Map<string, CourseVersion[]>();
+  
+  // proxy-1 (Introduction to Machine Learning) - Published course with 3 versions + 1 branch
+  map.set('proxy-1', [
+    {
+      id: 'version-proxy-1-v1',
+      versionName: 'v1.0 Initial Draft',
+      timestamp: '2024-11-20T10:00:00.000Z',
+      author: 'Sarah Chen',
+      courseSnapshot: {
+        title: 'Introduction to Machine Learning',
+        description: 'Basic ML concepts',
+        slides: createMLSlidesV1(),
+        assessments: [],
+        courseItems: createMLSlidesV1().map(s => ({ id: s.id, type: 'slide' as const, slideData: s })),
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+    {
+      id: 'version-proxy-1-v2',
+      versionName: 'v1.1 Added Neural Networks',
+      timestamp: '2024-11-25T14:30:00.000Z',
+      author: 'Sarah Chen',
+      parentVersionId: 'version-proxy-1-v1',
+      courseSnapshot: {
+        title: 'Introduction to Machine Learning',
+        description: 'Expanded ML concepts with neural networks',
+        slides: createMLSlidesV2(),
+        assessments: [],
+        courseItems: createMLSlidesV2().map(s => ({ id: s.id, type: 'slide' as const, slideData: s })),
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+    {
+      id: 'version-proxy-1-branch',
+      versionName: 'v1.0-beginner (Simplified)',
+      timestamp: '2024-11-26T09:00:00.000Z',
+      author: 'Mike Johnson',
+      parentVersionId: 'version-proxy-1-v1',
+      courseSnapshot: {
+        title: 'ML for Absolute Beginners',
+        description: 'Beginner-friendly ML introduction',
+        slides: createMLSlidesBranch(),
+        assessments: [],
+        courseItems: createMLSlidesBranch().map(s => ({ id: s.id, type: 'slide' as const, slideData: s })),
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+    {
+      id: 'version-proxy-1-v3',
+      versionName: 'v2.0 Published',
+      timestamp: '2024-12-01T14:00:00.000Z',
+      author: 'Sarah Chen',
+      parentVersionId: 'version-proxy-1-v2',
+      isPublished: true,
+      courseSnapshot: {
+        title: 'Introduction to Machine Learning',
+        description: 'A comprehensive introduction to ML concepts',
+        slides: createMLSlidesV3(),
+        assessments: [{ id: 'assess-ml-1', weight: 20, passingThreshold: 70, questions: [{ id: 'q1', question: 'What is supervised learning?', type: 'multi_selection', options: [{ label: 'Learning with labels', isCorrect: true }, { label: 'Learning without labels', isCorrect: false }] }] }],
+        courseItems: [...createMLSlidesV3().map(s => ({ id: s.id, type: 'slide' as const, slideData: s }))],
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+  ]);
+  
+  // proxy-2 (Advanced React Patterns) - In progress with 2 versions
+  map.set('proxy-2', [
+    {
+      id: 'version-proxy-2-v1',
+      versionName: 'v1.0 Initial Draft',
+      timestamp: '2024-11-22T09:00:00.000Z',
+      author: 'Alex Rivera',
+      courseSnapshot: {
+        title: 'Advanced React Patterns',
+        description: 'React patterns overview',
+        slides: createReactSlidesV1(),
+        assessments: [],
+        courseItems: createReactSlidesV1().map(s => ({ id: s.id, type: 'slide' as const, slideData: s })),
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+    {
+      id: 'version-proxy-2-v2',
+      versionName: 'v1.1 Talk Points Updated',
+      timestamp: '2024-11-28T09:00:00.000Z',
+      author: 'Alex Rivera',
+      parentVersionId: 'version-proxy-2-v1',
+      courseSnapshot: {
+        title: 'Advanced React Patterns',
+        description: 'Deep dive into React patterns and best practices',
+        slides: createReactSlidesV2(),
+        assessments: [],
+        courseItems: createReactSlidesV2().map(s => ({ id: s.id, type: 'slide' as const, slideData: s })),
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+  ]);
+  
+  // proxy-3 (UI/UX Design Fundamentals) - Pending with 4 versions + 2 branches
+  map.set('proxy-3', [
+    {
+      id: 'version-proxy-3-v1',
+      versionName: 'v1.0 Initial',
+      timestamp: '2024-11-15T08:00:00.000Z',
+      author: 'Emma Wilson',
+      courseSnapshot: {
+        title: 'UI/UX Design Fundamentals',
+        description: 'Basic design concepts',
+        slides: createUIUXSlidesV1(),
+        assessments: [],
+        courseItems: createUIUXSlidesV1().map(s => ({ id: s.id, type: 'slide' as const, slideData: s })),
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+    {
+      id: 'version-proxy-3-v2',
+      versionName: 'v1.1 Added Research',
+      timestamp: '2024-11-18T11:00:00.000Z',
+      author: 'Emma Wilson',
+      parentVersionId: 'version-proxy-3-v1',
+      courseSnapshot: {
+        title: 'UI/UX Design Fundamentals',
+        description: 'Design concepts with research methods',
+        slides: createUIUXSlidesV2(),
+        assessments: [],
+        courseItems: createUIUXSlidesV2().map(s => ({ id: s.id, type: 'slide' as const, slideData: s })),
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+    {
+      id: 'version-proxy-3-branch-a',
+      versionName: 'v1.0-mobile (Mobile Focus)',
+      timestamp: '2024-11-19T14:00:00.000Z',
+      author: 'David Kim',
+      parentVersionId: 'version-proxy-3-v1',
+      courseSnapshot: {
+        title: 'Mobile UI/UX Design',
+        description: 'Mobile-first design approach',
+        slides: createUIUXSlidesBranchA(),
+        assessments: [],
+        courseItems: createUIUXSlidesBranchA().map(s => ({ id: s.id, type: 'slide' as const, slideData: s })),
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+    {
+      id: 'version-proxy-3-branch-b',
+      versionName: 'v1.0-ios (iOS Specific)',
+      timestamp: '2024-11-21T10:00:00.000Z',
+      author: 'David Kim',
+      parentVersionId: 'version-proxy-3-branch-a',
+      courseSnapshot: {
+        title: 'iOS Design Mastery',
+        description: 'iOS-specific design patterns',
+        slides: createUIUXSlidesBranchB(),
+        assessments: [],
+        courseItems: createUIUXSlidesBranchB().map(s => ({ id: s.id, type: 'slide' as const, slideData: s })),
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+    {
+      id: 'version-proxy-3-v3',
+      versionName: 'v1.2 Refined Content',
+      timestamp: '2024-11-25T08:00:00.000Z',
+      author: 'Emma Wilson',
+      parentVersionId: 'version-proxy-3-v2',
+      courseSnapshot: {
+        title: 'UI/UX Design Fundamentals',
+        description: 'Learn the basics of UI/UX design',
+        slides: createUIUXSlidesV3(),
+        assessments: [{ id: 'assess-uiux-1', weight: 15, passingThreshold: 60, questions: [{ id: 'q1', question: 'What is the first step of design thinking?', type: 'multi_selection', options: [{ label: 'Empathize', isCorrect: true }, { label: 'Prototype', isCorrect: false }] }] }],
+        courseItems: createUIUXSlidesV3().map(s => ({ id: s.id, type: 'slide' as const, slideData: s })),
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+  ]);
+  
+  return map;
+};
+
+const createInitialVersionIdsMap = (): Map<string, string> => {
+  const map = new Map<string, string>();
+  map.set('proxy-1', 'version-proxy-1-v3');
+  map.set('proxy-2', 'version-proxy-2-v2');
+  map.set('proxy-3', 'version-proxy-3-v3');
+  return map;
+};
 
 // Proxy courses for initial state
 const proxyCourses: Course[] = [
@@ -186,91 +406,6 @@ const proxyCourses: Course[] = [
     progress: 'slides_uploaded',
   },
 ];
-
-// Create initial versions for proxy courses
-const createInitialVersionsMap = (): Map<string, CourseVersion[]> => {
-  const map = new Map<string, CourseVersion[]>();
-  
-  // Initial version for proxy-1 (published course)
-  map.set('proxy-1', [
-    {
-      id: 'version-proxy-1-initial',
-      versionName: 'Initial Draft',
-      timestamp: '2024-11-28T10:00:00.000Z',
-      author: 'Course Creator',
-      courseSnapshot: {
-        title: 'Introduction to Machine Learning',
-        description: 'A comprehensive introduction to ML concepts',
-        slides: defaultSlides,
-        assessments: [],
-        courseItems: buildCourseItemsFromSlides(defaultSlides),
-        wizardSettings: defaultWizardSettings,
-      },
-    },
-    {
-      id: 'version-proxy-1-published',
-      versionName: 'Published - Dec 1, 2024',
-      timestamp: '2024-12-01T14:00:00.000Z',
-      author: 'Course Creator',
-      parentVersionId: 'version-proxy-1-initial',
-      isPublished: true,
-      courseSnapshot: {
-        title: 'Introduction to Machine Learning',
-        description: 'A comprehensive introduction to ML concepts',
-        slides: defaultSlides,
-        assessments: [],
-        courseItems: buildCourseItemsFromSlides(defaultSlides),
-        wizardSettings: defaultWizardSettings,
-      },
-    },
-  ]);
-  
-  // Initial version for proxy-2 (in progress)
-  map.set('proxy-2', [
-    {
-      id: 'version-proxy-2-initial',
-      versionName: 'Initial Draft',
-      timestamp: '2024-11-28T09:00:00.000Z',
-      author: 'Course Creator',
-      courseSnapshot: {
-        title: 'Advanced React Patterns',
-        description: 'Deep dive into React patterns and best practices',
-        slides: defaultSlides,
-        assessments: [],
-        courseItems: buildCourseItemsFromSlides(defaultSlides),
-        wizardSettings: defaultWizardSettings,
-      },
-    },
-  ]);
-  
-  // Initial version for proxy-3 (pending)
-  map.set('proxy-3', [
-    {
-      id: 'version-proxy-3-initial',
-      versionName: 'Initial Draft',
-      timestamp: '2024-11-25T08:00:00.000Z',
-      author: 'Course Creator',
-      courseSnapshot: {
-        title: 'UI/UX Design Fundamentals',
-        description: 'Learn the basics of UI/UX design',
-        slides: defaultSlides,
-        assessments: [],
-        courseItems: buildCourseItemsFromSlides(defaultSlides),
-        wizardSettings: defaultWizardSettings,
-      },
-    },
-  ]);
-  
-  return map;
-};
-
-const createInitialVersionIdsMap = (): Map<string, string> => {
-  const map = new Map<string, string>();
-  map.set('proxy-1', 'version-proxy-1-published');
-  map.set('proxy-2', 'version-proxy-2-initial');
-  map.set('proxy-3', 'version-proxy-3-initial');
-  return map;
-};
 
 const defaultMetadata: CourseMetadata = {
   duration: '45 minutes',

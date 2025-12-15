@@ -1,146 +1,138 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { CourseVersion, Assessment, Slide } from "@/types/course";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Plus, Minus, Edit3, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Minus, Edit3, ChevronDown, ChevronRight } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface VersionCompareProps {
   selectedVersion: CourseVersion;
   currentVersion: CourseVersion;
 }
 
-interface DiffItem {
-  type: 'added' | 'removed' | 'modified';
-  itemType: 'slide' | 'assessment';
+interface LineDiff {
+  type: 'added' | 'removed' | 'unchanged';
+  content: string;
+}
+
+interface SlideDiff {
+  slideId: string;
   title: string;
-  details?: string[];
+  status: 'added' | 'removed' | 'modified' | 'unchanged';
+  titleDiff?: { old: string; new: string };
+  contentDiffs: LineDiff[];
+  talkPointsDiffs: LineDiff[];
 }
 
-function compareAssessments(selectedAssessment: Assessment, currentAssessment: Assessment): string[] {
-  const changes: string[] = [];
-  
-  if (selectedAssessment.questions.length !== currentAssessment.questions.length) {
-    changes.push(`Questions: ${selectedAssessment.questions.length} → ${currentAssessment.questions.length}`);
-  }
-  
-  const minQuestions = Math.min(selectedAssessment.questions.length, currentAssessment.questions.length);
-  for (let i = 0; i < minQuestions; i++) {
-    const selectedQ = selectedAssessment.questions[i];
-    const currentQ = currentAssessment.questions[i];
-    
-    if (selectedQ.question !== currentQ.question) {
-      changes.push(`Q${i + 1} text changed`);
-    }
-    
-    if (selectedQ.type !== currentQ.type) {
-      changes.push(`Q${i + 1} type: ${selectedQ.type} → ${currentQ.type}`);
-    }
-    
-    if (selectedQ.options && currentQ.options) {
-      if (selectedQ.options.length !== currentQ.options.length) {
-        changes.push(`Q${i + 1} options: ${selectedQ.options.length} → ${currentQ.options.length}`);
-      }
-    }
-    
-    if (selectedQ.rubricCriteria && currentQ.rubricCriteria) {
-      if (selectedQ.rubricCriteria.length !== currentQ.rubricCriteria.length) {
-        changes.push(`Q${i + 1} rubric criteria: ${selectedQ.rubricCriteria.length} → ${currentQ.rubricCriteria.length}`);
-      }
-    }
-  }
-  
-  if (selectedAssessment.passingThreshold !== currentAssessment.passingThreshold) {
-    changes.push(`Passing threshold: ${selectedAssessment.passingThreshold}% → ${currentAssessment.passingThreshold}%`);
-  }
-  
-  return changes;
+interface AssessmentDiff {
+  assessmentId: string;
+  status: 'added' | 'removed' | 'modified';
+  title: string;
+  changes: string[];
 }
 
-function computeDiff(selected: CourseVersion, current: CourseVersion): DiffItem[] {
-  const diffs: DiffItem[] = [];
+// Compute line-by-line diff using LCS approach
+function computeLineDiff(oldLines: string[], newLines: string[]): LineDiff[] {
+  const result: LineDiff[] = [];
   
-  const selectedSlides = new Map(selected.courseSnapshot.slides.map(s => [s.id, s]));
-  const currentSlides = new Map(current.courseSnapshot.slides.map(s => [s.id, s]));
+  // Simple diff algorithm - find matching lines and mark additions/removals
+  const oldSet = new Set(oldLines);
+  const newSet = new Set(newLines);
   
-  selected.courseSnapshot.slides.forEach((slide) => {
-    if (!currentSlides.has(slide.id)) {
+  let oldIdx = 0;
+  let newIdx = 0;
+  
+  while (oldIdx < oldLines.length || newIdx < newLines.length) {
+    const oldLine = oldLines[oldIdx];
+    const newLine = newLines[newIdx];
+    
+    if (oldIdx >= oldLines.length) {
+      // All remaining new lines are additions
+      result.push({ type: 'added', content: newLines[newIdx] });
+      newIdx++;
+    } else if (newIdx >= newLines.length) {
+      // All remaining old lines are removals
+      result.push({ type: 'removed', content: oldLines[oldIdx] });
+      oldIdx++;
+    } else if (oldLine === newLine) {
+      // Lines match
+      result.push({ type: 'unchanged', content: oldLine });
+      oldIdx++;
+      newIdx++;
+    } else if (!newSet.has(oldLine) && !oldSet.has(newLine)) {
+      // Both are unique - show as removal then addition
+      result.push({ type: 'removed', content: oldLine });
+      result.push({ type: 'added', content: newLine });
+      oldIdx++;
+      newIdx++;
+    } else if (!newSet.has(oldLine)) {
+      // Old line was removed
+      result.push({ type: 'removed', content: oldLine });
+      oldIdx++;
+    } else {
+      // New line was added
+      result.push({ type: 'added', content: newLine });
+      newIdx++;
+    }
+  }
+  
+  return result;
+}
+
+// Compute comprehensive slide diffs
+function computeSlideDiffs(selectedSlides: Slide[], currentSlides: Slide[]): SlideDiff[] {
+  const diffs: SlideDiff[] = [];
+  const selectedMap = new Map(selectedSlides.map(s => [s.id, s]));
+  const currentMap = new Map(currentSlides.map(s => [s.id, s]));
+  
+  // Check for removed slides (in selected but not in current)
+  selectedSlides.forEach(slide => {
+    if (!currentMap.has(slide.id)) {
       diffs.push({
-        type: 'removed',
-        itemType: 'slide',
+        slideId: slide.id,
         title: slide.title,
+        status: 'removed',
+        contentDiffs: slide.content.map(c => ({ type: 'removed', content: c })),
+        talkPointsDiffs: slide.talkPoints.split('. ').filter(Boolean).map(t => ({ type: 'removed', content: t })),
       });
     }
   });
   
-  current.courseSnapshot.slides.forEach((slide) => {
-    if (!selectedSlides.has(slide.id)) {
+  // Check for added slides (in current but not in selected)
+  currentSlides.forEach(slide => {
+    if (!selectedMap.has(slide.id)) {
       diffs.push({
-        type: 'added',
-        itemType: 'slide',
+        slideId: slide.id,
         title: slide.title,
+        status: 'added',
+        contentDiffs: slide.content.map(c => ({ type: 'added', content: c })),
+        talkPointsDiffs: slide.talkPoints.split('. ').filter(Boolean).map(t => ({ type: 'added', content: t })),
       });
     }
   });
   
-  selected.courseSnapshot.slides.forEach((selectedSlide) => {
-    const currentSlide = currentSlides.get(selectedSlide.id);
-    if (currentSlide) {
-      const changes: string[] = [];
+  // Check for modified slides
+  currentSlides.forEach(currentSlide => {
+    const selectedSlide = selectedMap.get(currentSlide.id);
+    if (selectedSlide) {
+      const titleChanged = selectedSlide.title !== currentSlide.title;
+      const contentDiffs = computeLineDiff(selectedSlide.content, currentSlide.content);
+      const talkPointsDiffs = computeLineDiff(
+        selectedSlide.talkPoints.split('. ').filter(Boolean),
+        currentSlide.talkPoints.split('. ').filter(Boolean)
+      );
       
-      if (selectedSlide.title !== currentSlide.title) {
-        changes.push(`Title: "${selectedSlide.title}" → "${currentSlide.title}"`);
-      }
+      const hasContentChanges = contentDiffs.some(d => d.type !== 'unchanged');
+      const hasTalkPointChanges = talkPointsDiffs.some(d => d.type !== 'unchanged');
       
-      if (selectedSlide.talkPoints !== currentSlide.talkPoints) {
-        const selectedWords = selectedSlide.talkPoints.split(' ').length;
-        const currentWords = currentSlide.talkPoints.split(' ').length;
-        changes.push(`Talk points: ${selectedWords} words → ${currentWords} words`);
-      }
-      
-      if (changes.length > 0) {
+      if (titleChanged || hasContentChanges || hasTalkPointChanges) {
         diffs.push({
-          type: 'modified',
-          itemType: 'slide',
+          slideId: currentSlide.id,
           title: currentSlide.title,
-          details: changes,
-        });
-      }
-    }
-  });
-  
-  const selectedAssessments = new Map(selected.courseSnapshot.assessments.map(a => [a.id, a]));
-  const currentAssessments = new Map(current.courseSnapshot.assessments.map(a => [a.id, a]));
-  
-  selected.courseSnapshot.assessments.forEach((assessment) => {
-    if (!currentAssessments.has(assessment.id)) {
-      diffs.push({
-        type: 'removed',
-        itemType: 'assessment',
-        title: `Assessment (${assessment.questions.length} question${assessment.questions.length !== 1 ? 's' : ''})`,
-      });
-    }
-  });
-  
-  current.courseSnapshot.assessments.forEach((assessment) => {
-    if (!selectedAssessments.has(assessment.id)) {
-      diffs.push({
-        type: 'added',
-        itemType: 'assessment',
-        title: `Assessment (${assessment.questions.length} question${assessment.questions.length !== 1 ? 's' : ''})`,
-      });
-    }
-  });
-  
-  selected.courseSnapshot.assessments.forEach((selectedAssessment) => {
-    const currentAssessment = currentAssessments.get(selectedAssessment.id);
-    if (currentAssessment) {
-      const changes = compareAssessments(selectedAssessment, currentAssessment);
-      if (changes.length > 0) {
-        diffs.push({
-          type: 'modified',
-          itemType: 'assessment',
-          title: `Assessment`,
-          details: changes,
+          status: 'modified',
+          titleDiff: titleChanged ? { old: selectedSlide.title, new: currentSlide.title } : undefined,
+          contentDiffs,
+          talkPointsDiffs,
         });
       }
     }
@@ -149,95 +141,233 @@ function computeDiff(selected: CourseVersion, current: CourseVersion): DiffItem[
   return diffs;
 }
 
-// Check if two slides are different
-function slidesAreDifferent(slide1: Slide, slide2: Slide): boolean {
-  return slide1.title !== slide2.title || slide1.talkPoints !== slide2.talkPoints;
+// Compute assessment diffs
+function computeAssessmentDiffs(selectedAssessments: Assessment[], currentAssessments: Assessment[]): AssessmentDiff[] {
+  const diffs: AssessmentDiff[] = [];
+  const selectedMap = new Map(selectedAssessments.map(a => [a.id, a]));
+  const currentMap = new Map(currentAssessments.map(a => [a.id, a]));
+  
+  // Removed assessments
+  selectedAssessments.forEach(assessment => {
+    if (!currentMap.has(assessment.id)) {
+      diffs.push({
+        assessmentId: assessment.id,
+        status: 'removed',
+        title: `Assessment (${assessment.questions.length} questions)`,
+        changes: [`Removed ${assessment.questions.length} question(s)`],
+      });
+    }
+  });
+  
+  // Added assessments
+  currentAssessments.forEach(assessment => {
+    if (!selectedMap.has(assessment.id)) {
+      diffs.push({
+        assessmentId: assessment.id,
+        status: 'added',
+        title: `Assessment (${assessment.questions.length} questions)`,
+        changes: [`Added ${assessment.questions.length} question(s)`],
+      });
+    }
+  });
+  
+  // Modified assessments
+  currentAssessments.forEach(currentAssessment => {
+    const selectedAssessment = selectedMap.get(currentAssessment.id);
+    if (selectedAssessment) {
+      const changes: string[] = [];
+      
+      if (selectedAssessment.questions.length !== currentAssessment.questions.length) {
+        changes.push(`Questions: ${selectedAssessment.questions.length} → ${currentAssessment.questions.length}`);
+      }
+      
+      if (selectedAssessment.passingThreshold !== currentAssessment.passingThreshold) {
+        changes.push(`Threshold: ${selectedAssessment.passingThreshold}% → ${currentAssessment.passingThreshold}%`);
+      }
+      
+      if (changes.length > 0) {
+        diffs.push({
+          assessmentId: currentAssessment.id,
+          status: 'modified',
+          title: 'Assessment',
+          changes,
+        });
+      }
+    }
+  });
+  
+  return diffs;
 }
 
-// Slide comparison card component
-function SlideCompareCard({ 
-  slide, 
-  slideIndex, 
-  totalSlides, 
-  onPrev, 
-  onNext, 
-  label,
-  isModified 
-}: { 
-  slide: Slide | null; 
-  slideIndex: number; 
-  totalSlides: number; 
-  onPrev: () => void; 
-  onNext: () => void; 
-  label: string;
-  isModified: boolean;
-}) {
-  if (!slide) {
+// Line component for diff display
+function DiffLine({ diff }: { diff: LineDiff }) {
+  if (diff.type === 'added') {
     return (
-      <div className="flex-1 bg-muted/20 rounded-lg p-3 flex items-center justify-center">
-        <span className="text-xs text-muted-foreground">No slide at this position</span>
+      <div className="flex items-start gap-2 bg-green-500/15 border-l-2 border-green-500 px-2 py-0.5">
+        <span className="text-green-600 dark:text-green-400 font-mono text-xs select-none">+</span>
+        <span className="text-xs text-green-700 dark:text-green-300">{diff.content}</span>
       </div>
     );
   }
-
+  
+  if (diff.type === 'removed') {
+    return (
+      <div className="flex items-start gap-2 bg-red-500/15 border-l-2 border-red-500 px-2 py-0.5">
+        <span className="text-red-600 dark:text-red-400 font-mono text-xs select-none">-</span>
+        <span className="text-xs text-red-700 dark:text-red-300">{diff.content}</span>
+      </div>
+    );
+  }
+  
   return (
-    <div className={`flex-1 bg-muted/20 rounded-lg p-3 border ${isModified ? 'border-amber-500/50' : 'border-transparent'}`}>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        {isModified && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400">
-            Modified
-          </span>
-        )}
+    <div className="flex items-start gap-2 px-2 py-0.5">
+      <span className="text-muted-foreground font-mono text-xs select-none">&nbsp;</span>
+      <span className="text-xs text-muted-foreground">{diff.content}</span>
+    </div>
+  );
+}
+
+// Slide diff block component
+function SlideDiffBlock({ diff, defaultOpen = false }: { diff: SlideDiff; defaultOpen?: boolean }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  
+  const statusColors = {
+    added: 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400',
+    removed: 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400',
+    modified: 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400',
+    unchanged: 'bg-muted/50 border-muted text-muted-foreground',
+  };
+  
+  const statusIcons = {
+    added: <Plus className="h-3 w-3" />,
+    removed: <Minus className="h-3 w-3" />,
+    modified: <Edit3 className="h-3 w-3" />,
+    unchanged: null,
+  };
+  
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <div className={`rounded-lg border ${statusColors[diff.status]}`}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center gap-2 p-2.5 hover:bg-muted/20 transition-colors">
+            {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            {statusIcons[diff.status]}
+            <span className="text-xs font-medium flex-1 text-left">Slide: {diff.title}</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+              diff.status === 'added' ? 'bg-green-500/20' :
+              diff.status === 'removed' ? 'bg-red-500/20' :
+              'bg-amber-500/20'
+            }`}>
+              {diff.status}
+            </span>
+          </button>
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          <div className="border-t border-inherit p-2 space-y-3">
+            {/* Title change */}
+            {diff.titleDiff && (
+              <div className="space-y-1">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Title</span>
+                <div className="bg-red-500/15 border-l-2 border-red-500 px-2 py-0.5">
+                  <span className="text-red-600 dark:text-red-400 font-mono text-xs">- </span>
+                  <span className="text-xs text-red-700 dark:text-red-300">{diff.titleDiff.old}</span>
+                </div>
+                <div className="bg-green-500/15 border-l-2 border-green-500 px-2 py-0.5">
+                  <span className="text-green-600 dark:text-green-400 font-mono text-xs">+ </span>
+                  <span className="text-xs text-green-700 dark:text-green-300">{diff.titleDiff.new}</span>
+                </div>
+              </div>
+            )}
+            
+            {/* Content changes */}
+            {diff.contentDiffs.length > 0 && diff.contentDiffs.some(d => d.type !== 'unchanged') && (
+              <div className="space-y-1">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Content</span>
+                <div className="rounded border bg-muted/20">
+                  {diff.contentDiffs.map((lineDiff, i) => (
+                    <DiffLine key={i} diff={lineDiff} />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Talk points changes */}
+            {diff.talkPointsDiffs.length > 0 && diff.talkPointsDiffs.some(d => d.type !== 'unchanged') && (
+              <div className="space-y-1">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Talk Points</span>
+                <div className="rounded border bg-muted/20">
+                  {diff.talkPointsDiffs.map((lineDiff, i) => (
+                    <DiffLine key={i} diff={lineDiff} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </CollapsibleContent>
       </div>
-      
-      <div className="flex items-center justify-between mb-2">
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onPrev} disabled={slideIndex === 0}>
-          <ChevronLeft className="h-3 w-3" />
-        </Button>
-        <span className="text-xs">Slide {slideIndex + 1} / {totalSlides}</span>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onNext} disabled={slideIndex >= totalSlides - 1}>
-          <ChevronRight className="h-3 w-3" />
-        </Button>
+    </Collapsible>
+  );
+}
+
+// Assessment diff block component
+function AssessmentDiffBlock({ diff }: { diff: AssessmentDiff }) {
+  const statusColors = {
+    added: 'bg-green-500/10 border-green-500/30',
+    removed: 'bg-red-500/10 border-red-500/30',
+    modified: 'bg-amber-500/10 border-amber-500/30',
+  };
+  
+  const statusTextColors = {
+    added: 'text-green-600 dark:text-green-400',
+    removed: 'text-red-600 dark:text-red-400',
+    modified: 'text-amber-600 dark:text-amber-400',
+  };
+  
+  return (
+    <div className={`rounded-lg border p-2.5 ${statusColors[diff.status]}`}>
+      <div className="flex items-center gap-2">
+        {diff.status === 'added' && <Plus className={`h-3 w-3 ${statusTextColors[diff.status]}`} />}
+        {diff.status === 'removed' && <Minus className={`h-3 w-3 ${statusTextColors[diff.status]}`} />}
+        {diff.status === 'modified' && <Edit3 className={`h-3 w-3 ${statusTextColors[diff.status]}`} />}
+        <span className={`text-xs font-medium ${statusTextColors[diff.status]}`}>{diff.title}</span>
+        <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+          diff.status === 'added' ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
+          diff.status === 'removed' ? 'bg-red-500/20 text-red-600 dark:text-red-400' :
+          'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+        }`}>
+          {diff.status}
+        </span>
       </div>
-      
-      <div className="space-y-2">
-        <h4 className="text-sm font-medium truncate">{slide.title}</h4>
-        <div className="space-y-1">
-          {slide.content.slice(0, 3).map((point, i) => (
-            <p key={i} className="text-xs text-muted-foreground truncate">• {point}</p>
+      {diff.changes.length > 0 && (
+        <div className="mt-1.5 pl-5 space-y-0.5">
+          {diff.changes.map((change, i) => (
+            <div key={i} className="text-[11px] text-muted-foreground">• {change}</div>
           ))}
         </div>
-        <p className="text-[10px] text-muted-foreground">
-          Talk points: {slide.talkPoints.split(' ').length} words
-        </p>
-      </div>
+      )}
     </div>
   );
 }
 
 export function VersionCompare({ selectedVersion, currentVersion }: VersionCompareProps) {
-  const [selectedSlideIndex, setSelectedSlideIndex] = useState(0);
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const slideDiffs = useMemo(() => 
+    computeSlideDiffs(selectedVersion.courseSnapshot.slides, currentVersion.courseSnapshot.slides),
+    [selectedVersion, currentVersion]
+  );
   
-  const diffs = computeDiff(selectedVersion, currentVersion);
+  const assessmentDiffs = useMemo(() =>
+    computeAssessmentDiffs(selectedVersion.courseSnapshot.assessments, currentVersion.courseSnapshot.assessments),
+    [selectedVersion, currentVersion]
+  );
   
-  const addedCount = diffs.filter(d => d.type === 'added').length;
-  const removedCount = diffs.filter(d => d.type === 'removed').length;
-  const modifiedCount = diffs.filter(d => d.type === 'modified').length;
+  const addedCount = slideDiffs.filter(d => d.status === 'added').length + assessmentDiffs.filter(d => d.status === 'added').length;
+  const removedCount = slideDiffs.filter(d => d.status === 'removed').length + assessmentDiffs.filter(d => d.status === 'removed').length;
+  const modifiedCount = slideDiffs.filter(d => d.status === 'modified').length + assessmentDiffs.filter(d => d.status === 'modified').length;
   
-  const selectedSlides = selectedVersion.courseSnapshot.slides;
-  const currentSlides = currentVersion.courseSnapshot.slides;
+  const hasChanges = slideDiffs.length > 0 || assessmentDiffs.length > 0;
   
-  const selectedSlide = selectedSlides[selectedSlideIndex] || null;
-  const currentSlide = currentSlides[currentSlideIndex] || null;
-  
-  // Check if both slides exist and are the same slide (by ID) but have differences
-  const isModified = selectedSlide && currentSlide && 
-    selectedSlide.id === currentSlide.id && 
-    slidesAreDifferent(selectedSlide, currentSlide);
-  
-  if (diffs.length === 0) {
+  if (!hasChanges) {
     return (
       <div className="h-full flex flex-col">
         <div className="px-3 py-2 border-b bg-muted/30">
@@ -264,7 +394,7 @@ export function VersionCompare({ selectedVersion, currentVersion }: VersionCompa
   
   return (
     <div className="h-full flex flex-col">
-      {/* Version comparison header */}
+      {/* Header */}
       <div className="px-3 py-2 border-b bg-muted/30">
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
@@ -279,100 +409,44 @@ export function VersionCompare({ selectedVersion, currentVersion }: VersionCompa
         </div>
       </div>
       
-      {/* Side-by-side slide comparison */}
-      <div className="px-3 py-3 border-b">
-        <div className="flex gap-3">
-          <SlideCompareCard
-            slide={selectedSlide}
-            slideIndex={selectedSlideIndex}
-            totalSlides={selectedSlides.length}
-            onPrev={() => setSelectedSlideIndex(i => Math.max(0, i - 1))}
-            onNext={() => setSelectedSlideIndex(i => Math.min(selectedSlides.length - 1, i + 1))}
-            label="Selected Version"
-            isModified={isModified}
-          />
-          <SlideCompareCard
-            slide={currentSlide}
-            slideIndex={currentSlideIndex}
-            totalSlides={currentSlides.length}
-            onPrev={() => setCurrentSlideIndex(i => Math.max(0, i - 1))}
-            onNext={() => setCurrentSlideIndex(i => Math.min(currentSlides.length - 1, i + 1))}
-            label="Current Version"
-            isModified={isModified}
-          />
-        </div>
-      </div>
-      
-      {/* Summary bar */}
-      <div className="px-3 py-2 border-b flex items-center gap-3 text-xs">
-        <span className="text-muted-foreground">Changes:</span>
+      {/* Summary bar - GitHub style */}
+      <div className="px-3 py-2 border-b flex items-center gap-4 text-xs bg-muted/20">
+        <span className="text-muted-foreground font-medium">Changes:</span>
         {addedCount > 0 && (
           <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-            <Plus className="h-3 w-3" />+{addedCount} added
+            <Plus className="h-3 w-3" />
+            <span className="font-medium">{addedCount}</span> added
           </span>
         )}
         {removedCount > 0 && (
           <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
-            <Minus className="h-3 w-3" />-{removedCount} removed
+            <Minus className="h-3 w-3" />
+            <span className="font-medium">{removedCount}</span> removed
           </span>
         )}
         {modifiedCount > 0 && (
           <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-            <Edit3 className="h-3 w-3" />~{modifiedCount} modified
+            <Edit3 className="h-3 w-3" />
+            <span className="font-medium">{modifiedCount}</span> modified
           </span>
         )}
       </div>
       
-      {/* Diff list */}
+      {/* Diff content */}
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-2">
-          {diffs.map((diff, index) => (
-            <div
-              key={index}
-              className={`p-2.5 rounded-lg border ${
-                diff.type === 'added'
-                  ? 'bg-green-500/10 border-green-500/30'
-                  : diff.type === 'removed'
-                  ? 'bg-red-500/10 border-red-500/30'
-                  : 'bg-amber-500/10 border-amber-500/30'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                {diff.type === 'added' && <Plus className="h-3.5 w-3.5 text-green-500" />}
-                {diff.type === 'removed' && <Minus className="h-3.5 w-3.5 text-red-500" />}
-                {diff.type === 'modified' && <Edit3 className="h-3.5 w-3.5 text-amber-500" />}
-                
-                <span className={`text-xs font-medium ${
-                  diff.type === 'added'
-                    ? 'text-green-600 dark:text-green-400'
-                    : diff.type === 'removed'
-                    ? 'text-red-600 dark:text-red-400'
-                    : 'text-amber-600 dark:text-amber-400'
-                }`}>
-                  {diff.itemType === 'slide' ? 'Slide' : 'Assessment'}: {diff.title}
-                </span>
-                
-                <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                  diff.type === 'added'
-                    ? 'bg-green-500/20 text-green-600 dark:text-green-400'
-                    : diff.type === 'removed'
-                    ? 'bg-red-500/20 text-red-600 dark:text-red-400'
-                    : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                }`}>
-                  {diff.type}
-                </span>
-              </div>
-              
-              {diff.details && diff.details.length > 0 && (
-                <div className="mt-1.5 pl-5 space-y-0.5">
-                  {diff.details.map((detail, i) => (
-                    <div key={i} className="text-[11px] text-muted-foreground">
-                      • {detail}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          {/* Slide diffs */}
+          {slideDiffs.map((diff, index) => (
+            <SlideDiffBlock 
+              key={diff.slideId} 
+              diff={diff} 
+              defaultOpen={index === 0}
+            />
+          ))}
+          
+          {/* Assessment diffs */}
+          {assessmentDiffs.map((diff) => (
+            <AssessmentDiffBlock key={diff.assessmentId} diff={diff} />
           ))}
         </div>
       </ScrollArea>
