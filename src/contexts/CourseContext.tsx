@@ -695,40 +695,34 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     const versions = courseVersions.get(courseId) || [];
     const version = versions.find((v) => v.id === versionId);
     if (version) {
-      const branchId = `branch-${Date.now()}`;
+      // Count existing branches from this version to name the new one
+      const branchCount = versions.filter(v => v.parentVersionId === versionId).length;
+      const branchName = branchCount === 0 
+        ? `${version.versionName} (Branch)` 
+        : `${version.versionName} (Branch ${branchCount + 1})`;
       
-      // Create a new branch version
+      // Create a new branch version within the SAME course's version tree
       const branchVersion: CourseVersion = {
-        id: `version-${Date.now()}`,
-        versionName: `Initial Draft`,
+        id: `version-branch-${Date.now()}`,
+        versionName: branchName,
         timestamp: new Date().toISOString(),
         author: 'Course Creator',
+        parentVersionId: versionId, // Link to parent to show as branch
         courseSnapshot: { ...version.courseSnapshot },
       };
 
-      // Create a NEW course on the Dashboard with the branched content
-      const newCourse: Course = {
-        id: branchId,
-        title: `${version.courseSnapshot.title} (Branch)`,
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        status: 'pending',
-        progress: 'slides_uploaded',
-      };
-      
-      // Add the new course to the courses list
-      setCourses((prev) => [...prev, newCourse]);
-      
-      // Initialize version history for the NEW course
+      // Add the branch version to the SAME course's version history
       setCourseVersions((prev) => {
         const newMap = new Map(prev);
-        newMap.set(branchId, [branchVersion]);
+        const existing = newMap.get(courseId) || [];
+        newMap.set(courseId, [...existing, branchVersion]);
         return newMap;
       });
 
-      // Set the initial version as current for the new course
+      // Set the new branch as the current version
       setCurrentVersionIds((prev) => {
         const newMap = new Map(prev);
-        newMap.set(branchId, branchVersion.id);
+        newMap.set(courseId, branchVersion.id);
         return newMap;
       });
     }
