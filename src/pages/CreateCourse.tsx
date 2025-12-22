@@ -130,7 +130,7 @@ export default function CreateCourse() {
   };
 
   const isFullWidthStep = subStep === 'scripting' || subStep === 'preview';
-  const hideMainHeader = subStep === 'scripting' || subStep === 'preview';
+  const hideMainHeader = subStep === 'scripting';
 
   const renderStep = () => {
     switch (subStep) {
@@ -168,8 +168,7 @@ export default function CreateCourse() {
                 setSubStep('scripting');
               }
             }} 
-            isPreviewOnly={isPreviewOnly}
-            onStepClick={handleStepClick}
+            isPreviewOnly={isPreviewOnly} 
           />
         );
       default:
