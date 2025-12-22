@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
 import { AIAssistant } from "@/components/AIAssistant";
+import { SettingsPopover } from "@/components/SettingsPopover";
 import { Course } from "@/types/course";
 import { CourseGroup } from "@/types/courseGroup";
 import { CourseCard } from "@/components/CourseCard";
@@ -616,6 +617,7 @@ export default function Dashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <SettingsPopover />
       <AIAssistant />
 
       <TutorialSlideshow open={showTutorial} onOpenChange={setShowTutorial} />
