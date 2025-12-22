@@ -330,9 +330,9 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Left Panel - Editor */}
           <ResizablePanel defaultSize={40} minSize={25} maxSize={60}>
-            <div className="h-full bg-card flex flex-col">
+            <div className="h-full bg-card/80 backdrop-blur-xl flex flex-col">
               {/* Tab Navigation - aligned with carousel */}
-              <div className="bg-card border-b px-6 h-14 flex items-end">
+              <div className="px-6 h-14 flex items-end">
                 <div className="flex gap-4">
                   <button
                     onClick={() => setActiveTab("scripting")}
@@ -742,9 +742,9 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
 
           {/* Right Panel - Preview */}
           <ResizablePanel defaultSize={60} minSize={40} maxSize={75}>
-            <div className="h-full bg-muted/30 flex flex-col overflow-hidden">
+            <div className="h-full bg-card/60 backdrop-blur-xl flex flex-col overflow-hidden">
               {/* Item Carousel */}
-              <div className="bg-card border-b px-6 h-14 flex items-center">
+              <div className="px-6 h-14 flex items-center">
                 <div className="flex items-center justify-center gap-2 w-full">
                   <Button
                     variant="ghost"
@@ -814,7 +814,7 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
 
               {/* Question Carousel - Only shown when on assessment */}
               {currentItem?.type === "assessment" && currentAssessment && (
-                <div className="bg-muted/50 border-b px-6 h-12 flex items-center">
+                <div className="bg-muted/30 px-6 h-12 flex items-center">
                   <div className="flex items-center justify-center gap-2 w-full">
                     <Button
                       variant="ghost"
@@ -883,7 +883,7 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                 {currentItem?.type === "slide" && currentSlide && (
                   <>
                     {/* 16:9 Slide Preview */}
-                    <div className="bg-muted rounded-2xl p-4 mb-6">
+                    <div className="bg-muted/50 rounded-2xl p-4 mb-6 shadow-sm">
                       <div className="aspect-video bg-card rounded-xl shadow-lg overflow-hidden">
                         <div className="h-full p-6 flex">
                           {/* Slide Content */}
@@ -1074,7 +1074,7 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
       </div>
 
       {/* Footer Navigation */}
-      <div className="bg-card border-t px-6 py-4 flex items-center justify-between">
+      <div className="bg-card/80 backdrop-blur-xl px-6 py-4 flex items-center justify-between shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
         <Button variant="outline" onClick={handleBack} className="gap-2 rounded-xl">
           <ArrowLeft className="h-4 w-4" />
           Back
