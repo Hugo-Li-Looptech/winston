@@ -109,9 +109,9 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
   };
 
   return (
-    <div className="h-full flex flex-col bg-muted/30">
+    <div className="h-full flex flex-col bg-muted/20 dark:bg-background">
       {/* Header */}
-      <div className="bg-card border-b px-6 py-4">
+      <div className="bg-card/80 backdrop-blur-xl px-6 py-4 shadow-sm dark:shadow-black/20 transition-all duration-300">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-foreground">Preview Your Course</h1>
@@ -120,14 +120,14 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
           <div className="flex items-center gap-3">
             {isPreviewOnly ? (
               <>
-                <Button variant="outline" onClick={handleEdit} className="rounded-xl gap-2">
+                <Button variant="outline" onClick={handleEdit} className="rounded-xl gap-2 transition-transform duration-200 hover:scale-105">
                   <Edit className="h-4 w-4" />
                   Edit
                 </Button>
                 <Button 
                   variant={isPublished ? "outline" : "default"} 
                   onClick={handleTogglePublish} 
-                  className="rounded-xl gap-2"
+                  className="rounded-xl gap-2 transition-transform duration-200 hover:scale-105"
                 >
                   {isPublished ? (
                     <>
@@ -144,10 +144,10 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
               </>
             ) : (
               <>
-                <Button variant="outline" onClick={handleSaveDraft} className="rounded-xl">
+                <Button variant="outline" onClick={handleSaveDraft} className="rounded-xl transition-transform duration-200 hover:scale-105">
                   Save as Draft
                 </Button>
-                <Button onClick={handlePublish} className="rounded-xl">
+                <Button onClick={handlePublish} className="rounded-xl transition-transform duration-200 hover:scale-105">
                   Publish Course
                 </Button>
               </>
@@ -160,11 +160,11 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-5xl mx-auto space-y-6">
           {/* Slide/Assessment Card */}
-          <div className="bg-card rounded-2xl shadow-lg border overflow-hidden">
+          <div className="bg-card/80 backdrop-blur-xl rounded-2xl shadow-lg dark:shadow-black/30 overflow-hidden transition-all duration-300 hover:shadow-xl dark:hover:shadow-black/40">
             {currentItem?.type === 'slide' && currentSlide && (
               <>
                 {/* Slide Content */}
-                <div className="aspect-video bg-gradient-to-br from-muted/50 to-muted p-8 flex">
+                <div className="aspect-video bg-gradient-to-br from-muted/30 to-muted/50 dark:from-muted/10 dark:to-muted/20 p-8 flex">
                   <div className="flex-1 flex flex-col justify-center">
                     <h2 className="text-3xl font-bold text-foreground mb-6">{currentSlide.title}</h2>
                     <div className="space-y-3">
@@ -176,19 +176,19 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
                       ))}
                     </div>
                   </div>
-                  <div className="w-1/3 ml-6 bg-muted rounded-xl flex items-center justify-center border-2 border-dashed border-muted-foreground/30">
+                  <div className="w-1/3 ml-6 bg-muted/50 dark:bg-muted/30 rounded-xl flex items-center justify-center border border-muted-foreground/10">
                     <span className="text-muted-foreground">Slide Image</span>
                   </div>
                 </div>
 
                 {/* Audio Player Bar */}
-                <div className="bg-background border-t px-6 py-4">
+                <div className="bg-background/50 dark:bg-background/30 backdrop-blur-sm px-6 py-4">
                   <div className="flex items-center gap-4">
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={() => setIsPlaying(!isPlaying)}
-                      className="h-10 w-10 rounded-full"
+                      className="h-10 w-10 rounded-full transition-transform duration-200 hover:scale-110"
                     >
                       {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                     </Button>
@@ -241,14 +241,14 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
 
                   {/* Expanded Transcript Panel */}
                   {isTranscriptExpanded && (
-                    <div className="border-t bg-muted/30 px-6 py-4">
+                    <div className="mt-4 pt-4 border-t border-border/50">
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-sm font-medium text-foreground">Full Transcript</span>
                         <span className="text-xs text-muted-foreground">
                           Word {currentWordIndex + 1} of {talkPointWords.length}
                         </span>
                       </div>
-                      <ScrollArea className="h-40 w-full rounded-lg bg-background border p-4">
+                      <ScrollArea className="h-40 w-full rounded-xl bg-muted/30 dark:bg-muted/20 p-4">
                         <div ref={transcriptRef} className="leading-relaxed">
                           {talkPointWords.map((word, index) => (
                             <span
@@ -289,7 +289,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
 
                 <div className="space-y-6">
                   {currentAssessment.questions.map((question, qIndex) => (
-                    <div key={question.id} className="bg-muted/50 rounded-xl p-6">
+                    <div key={question.id} className="bg-muted/30 dark:bg-muted/20 rounded-xl p-6 transition-all duration-300 hover:bg-muted/40 dark:hover:bg-muted/30">
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                           Q{qIndex + 1}
@@ -311,11 +311,11 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
                           {question.options.map((opt, i) => (
                             <div
                               key={i}
-                              className="flex items-center gap-3 p-3 bg-background rounded-lg border cursor-pointer hover:border-primary/50 transition-colors"
+                              className="flex items-center gap-3 p-3 bg-background/50 dark:bg-background/30 rounded-lg cursor-pointer hover:bg-background/80 dark:hover:bg-background/50 transition-all duration-200"
                             >
                               <div className={`w-5 h-5 border-2 ${
                                 question.type === 'checkbox' ? 'rounded' : 'rounded-full'
-                              } border-muted-foreground`} />
+                              } border-muted-foreground/50`} />
                               <span className="text-foreground">{opt.label || `Option ${i + 1}`}</span>
                             </div>
                           ))}
@@ -323,7 +323,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
                       )}
                       
                       {question.type === 'open_ended' && (
-                        <div className="bg-background rounded-lg p-4 border-2 border-dashed border-muted-foreground/30 min-h-[120px]">
+                        <div className="bg-background/50 dark:bg-background/30 rounded-lg p-4 border border-muted-foreground/10 min-h-[120px]">
                           <p className="text-muted-foreground">Student response area...</p>
                         </div>
                       )}
@@ -340,7 +340,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
               variant="outline"
               onClick={() => goToItem(currentItemIndex - 1)}
               disabled={currentItemIndex === 0}
-              className="rounded-xl"
+              className="rounded-xl transition-transform duration-200 hover:scale-105"
             >
               <ChevronLeft className="h-4 w-4 mr-2" />
               Previous
@@ -351,7 +351,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
                 <button
                   key={item.id}
                   onClick={() => goToItem(index)}
-                  className={`h-2.5 rounded-full transition-all ${
+                  className={`h-2.5 rounded-full transition-all duration-200 ${
                     index === currentItemIndex 
                       ? 'w-8 bg-primary' 
                       : item.type === 'assessment'
@@ -366,7 +366,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
               variant="outline"
               onClick={() => goToItem(currentItemIndex + 1)}
               disabled={currentItemIndex === courseItems.length - 1}
-              className="rounded-xl"
+              className="rounded-xl transition-transform duration-200 hover:scale-105"
             >
               Next
               <ChevronRight className="h-4 w-4 ml-2" />
@@ -381,9 +381,9 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
       </div>
 
       {/* Footer */}
-      <div className="bg-card border-t px-6 py-4">
+      <div className="bg-card/80 backdrop-blur-xl px-6 py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] transition-all duration-300">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <Button variant="outline" onClick={onBack} className="gap-2 rounded-xl">
+          <Button variant="outline" onClick={onBack} className="gap-2 rounded-xl transition-transform duration-200 hover:scale-105">
             <ArrowLeft className="h-4 w-4" />
             {isPreviewOnly ? 'Back to Dashboard' : 'Back to Editing'}
           </Button>
