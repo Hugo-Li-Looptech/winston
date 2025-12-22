@@ -1,4 +1,4 @@
-import { GripVertical } from "lucide-react";
+import * as React from "react";
 import * as ResizablePrimitive from "react-resizable-panels";
 
 import { cn } from "@/lib/utils";
@@ -21,14 +21,24 @@ const ResizableHandle = ({
 }) => (
   <ResizablePrimitive.PanelResizeHandle
     className={cn(
-      "relative flex w-px items-center justify-center bg-border after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:-translate-y-1/2 data-[panel-group-direction=vertical]:after:translate-x-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 [&[data-panel-group-direction=vertical]>div]:rotate-90",
+      "group relative flex w-px items-center justify-center bg-transparent data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full focus-visible:outline-none",
       className,
     )}
     {...props}
   >
+    {/* Glass line background */}
+    <div className="absolute inset-y-4 w-[1px] bg-border/40 backdrop-blur-sm transition-all duration-300 group-hover:bg-border/60 group-hover:w-[2px] data-[panel-group-direction=vertical]:inset-y-0 data-[panel-group-direction=vertical]:inset-x-4 data-[panel-group-direction=vertical]:h-[1px] data-[panel-group-direction=vertical]:w-auto group-hover:data-[panel-group-direction=vertical]:h-[2px]" />
+    
+    {/* Gradient accent on hover */}
+    <div className="absolute inset-y-[20%] w-[2px] bg-gradient-to-b from-transparent via-primary/50 to-transparent opacity-0 blur-[1px] transition-all duration-300 group-hover:opacity-100 group-hover:w-[3px] data-[panel-group-direction=vertical]:inset-y-0 data-[panel-group-direction=vertical]:inset-x-[20%] data-[panel-group-direction=vertical]:h-[2px] data-[panel-group-direction=vertical]:w-auto data-[panel-group-direction=vertical]:bg-gradient-to-r group-hover:data-[panel-group-direction=vertical]:h-[3px]" />
+    
     {withHandle && (
-      <div className="z-10 flex h-8 w-2 items-center justify-center rounded-full bg-muted/50 dark:bg-muted/30 hover:bg-muted dark:hover:bg-muted/50 transition-all duration-200 hover:scale-110">
-        <GripVertical className="h-3 w-3 text-muted-foreground" />
+      <div className="z-10 flex h-12 w-4 items-center justify-center rounded-full bg-background/80 backdrop-blur-md border border-border/30 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:scale-105 group-hover:shadow-md group-hover:border-primary/20">
+        <div className="flex flex-col gap-[2px]">
+          <div className="h-[2px] w-[2px] rounded-full bg-muted-foreground/60 group-hover:bg-primary/70 transition-colors" />
+          <div className="h-[2px] w-[2px] rounded-full bg-muted-foreground/60 group-hover:bg-primary/70 transition-colors" />
+          <div className="h-[2px] w-[2px] rounded-full bg-muted-foreground/60 group-hover:bg-primary/70 transition-colors" />
+        </div>
       </div>
     )}
   </ResizablePrimitive.PanelResizeHandle>
