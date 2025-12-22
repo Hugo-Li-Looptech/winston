@@ -61,7 +61,7 @@ export function StepIndicator({
     return (
       <button
         onClick={onToggleCollapse}
-        className="flex items-center gap-2 bg-card/80 backdrop-blur-sm shadow-sm rounded-full px-4 py-2 transition-all hover:shadow-md"
+        className="flex items-center gap-2 bg-card/80 backdrop-blur-sm rounded-full px-4 py-2 transition-all hover:bg-card"
       >
         {steps.map((step, index) => {
           const accessible = isStepAccessible(step.key);
@@ -86,7 +86,7 @@ export function StepIndicator({
   return (
     <button
       onClick={onToggleCollapse}
-      className="flex items-center gap-0 bg-card/80 backdrop-blur-sm shadow-sm rounded-full px-6 py-3 transition-all hover:shadow-md"
+      className="flex items-center gap-0 bg-card/80 backdrop-blur-sm rounded-full px-6 py-3 transition-all hover:bg-card"
     >
       {steps.map((step, index) => {
         const accessible = isStepAccessible(step.key);
