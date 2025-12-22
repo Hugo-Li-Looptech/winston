@@ -175,7 +175,7 @@ export function QuickEditsPanel({
 
       {/* Suggestion Preview */}
       {suggestedTalkPoints && !isGenerating && (
-        <div className="animate-fade-in mt-4 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+        <div className="animate-fade-in mt-4 p-4 bg-primary/5 rounded-2xl">
           <p className="text-sm font-medium text-primary mb-2">
             {getSuggestionTitle()}
           </p>

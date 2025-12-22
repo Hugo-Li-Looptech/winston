@@ -76,7 +76,7 @@ export function CourseEditorHeader({
   };
 
   return (
-    <div className="bg-card border-b px-6 py-3 flex items-center justify-between">
+    <div className="bg-card/80 backdrop-blur-xl px-6 py-3 flex items-center justify-between shadow-sm">
       {/* Left - Step Indicator */}
       <div className="flex items-center gap-4">
         <StepIndicator

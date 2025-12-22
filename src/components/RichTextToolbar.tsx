@@ -19,7 +19,7 @@ export function RichTextToolbar({
   onLink,
 }: RichTextToolbarProps) {
   return (
-    <div className="flex items-center gap-1 p-1.5 bg-muted/50 rounded-xl w-fit">
+    <div className="flex items-center gap-1 p-1.5 bg-muted/30 rounded-xl w-fit">
       <Button 
         variant="ghost" 
         size="icon" 
@@ -44,7 +44,7 @@ export function RichTextToolbar({
       >
         <Underline className="h-4 w-4" />
       </Button>
-      <div className="w-px h-5 bg-border mx-1" />
+      <div className="w-px h-4 bg-border/30 mx-1.5" />
       <Button 
         variant="ghost" 
         size="icon" 
@@ -61,7 +61,7 @@ export function RichTextToolbar({
       >
         <ListOrdered className="h-4 w-4" />
       </Button>
-      <div className="w-px h-5 bg-border mx-1" />
+      <div className="w-px h-4 bg-border/30 mx-1.5" />
       <Button 
         variant="ghost" 
         size="icon" 
