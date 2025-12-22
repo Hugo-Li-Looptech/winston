@@ -28,6 +28,7 @@ import { Slider } from "@/components/ui/slider";
 import { ClipboardList } from "lucide-react";
 import { WizardStep, QuestionType, Assessment, AssessmentQuestion } from "@/types/course";
 import { RubricEditor } from "@/components/RubricEditor";
+import { FinalAssessmentEditor } from "@/components/FinalAssessmentEditor";
 import { Badge } from "@/components/ui/badge";
 
 interface ScriptingStepProps {
@@ -52,14 +53,16 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
     comments,
     addComment,
     resolveComment,
-    setMetadata
+    setMetadata,
+    finalAssessment,
+    setFinalAssessment
   } = useCourse();
   const { slides, courseItems, courseTitle, metadata } = currentCourse;
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isVerbose, setIsVerbose] = useState(false);
   const [isStreamlined, setIsStreamlined] = useState(false);
-  const [activeTab, setActiveTab] = useState<"scripting" | "metadata">("scripting");
+  const [activeTab, setActiveTab] = useState<"scripting" | "metadata" | "final-assessment">("scripting");
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
   const [isCommentsPanelOpen, setIsCommentsPanelOpen] = useState(false);
@@ -343,6 +346,12 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                   >
                     Metadata
                   </button>
+                  <button
+                    onClick={() => setActiveTab("final-assessment")}
+                    className={`text-sm font-medium pb-2 border-b-2 transition-colors ${activeTab === "final-assessment" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                  >
+                    Final Assessment
+                  </button>
                 </div>
               </div>
 
@@ -410,7 +419,7 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                             className="text-destructive hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-1" />
-                            {currentAssessment.questions.length <= 1 ? 'Delete Assessment' : 'Delete Question'}
+                            {currentAssessment.questions.length <= 1 ? 'Delete Knowledge Check' : 'Delete Question'}
                           </Button>
                         </div>
 
@@ -552,7 +561,7 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                       <div className="p-4 bg-muted/50 rounded-xl">
                         <div className="flex items-center gap-2 text-muted-foreground mb-1">
                           <ClipboardList className="h-4 w-4" />
-                          <span className="text-xs font-medium">Assessments</span>
+                          <span className="text-xs font-medium">Knowledge Checks</span>
                         </div>
                         <p className="text-2xl font-bold text-foreground">{totalAssessments}</p>
                       </div>
@@ -785,7 +794,7 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={handleAddAssessment}>
                         <ClipboardList className="h-4 w-4 mr-2" />
-                        Add Assessment
+                        Add Knowledge Check
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

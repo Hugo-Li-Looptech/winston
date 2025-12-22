@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Course, SlideFile, WizardSettings, Slide, Assessment, AssessmentQuestion, WizardStep, CourseItem, CourseVersion } from '@/types/course';
+import { Course, SlideFile, WizardSettings, Slide, Assessment, AssessmentQuestion, WizardStep, CourseItem, CourseVersion, FinalAssessment } from '@/types/course';
 import { Comment, proxyComments } from '@/types/comment';
 
 interface CompletedSteps {
@@ -34,6 +34,7 @@ interface CourseContextType {
     courseTitle: string;
     courseDescription: string;
     metadata: CourseMetadata;
+    finalAssessment: FinalAssessment | null;
   };
   completedSteps: CompletedSteps;
   comments: Comment[];
@@ -69,6 +70,9 @@ interface CourseContextType {
   getCurrentVersionId: (courseId: string) => string | undefined;
   restoreVersion: (courseId: string, versionId: string) => void;
   branchFromVersion: (courseId: string, versionId: string) => void;
+  // Final Assessment
+  finalAssessment: FinalAssessment | null;
+  setFinalAssessment: (assessment: FinalAssessment | null) => void;
 }
 
 const defaultWizardSettings: WizardSettings = {
@@ -449,6 +453,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   });
   const [metadata, setMetadataState] = useState<CourseMetadata>(defaultMetadata);
   const [comments, setComments] = useState<Comment[]>(proxyComments);
+  const [finalAssessment, setFinalAssessment] = useState<FinalAssessment | null>(null);
   
   // Version control state - initialized with proxy course versions
   const [courseVersions, setCourseVersions] = useState<Map<string, CourseVersion[]>>(createInitialVersionsMap);
@@ -581,6 +586,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     setCourseDescription('');
     setCompletedSteps({ upload: false, wizard: false, scripting: false });
     setMetadataState(defaultMetadata);
+    setFinalAssessment(null);
   };
 
   const deleteCourse = (id: string) => {
@@ -744,6 +750,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
           courseTitle,
           courseDescription,
           metadata,
+          finalAssessment,
         },
         completedSteps,
         comments,
@@ -777,6 +784,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         getCurrentVersionId,
         restoreVersion,
         branchFromVersion,
+        finalAssessment,
+        setFinalAssessment,
       }}
     >
       {children}

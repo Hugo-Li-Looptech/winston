@@ -80,12 +80,25 @@ export interface AssessmentQuestion {
   rubricCells?: RubricCell[];
 }
 
-// Assessment is now a collection of questions
+// Assessment is now a collection of questions (used for knowledge checks)
 export interface Assessment {
   id: string;
   weight: number;
   passingThreshold: number;
   questions: AssessmentQuestion[];
+}
+
+// Final Assessment at end of course
+export interface FinalAssessment {
+  id: string;
+  title: string;
+  description?: string;
+  timeLimit?: number; // in minutes
+  attemptsAllowed?: number;
+  passingThreshold: number;
+  showFeedback: boolean;
+  questions: AssessmentQuestion[];
+  gradingType: 'percentage' | 'pass_fail' | 'letter_grade';
 }
 
 export type WizardStep = 'upload' | 'wizard' | 'scripting' | 'preview';

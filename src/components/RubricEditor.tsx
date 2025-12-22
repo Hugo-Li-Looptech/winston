@@ -30,11 +30,12 @@ export function RubricEditor({
   const [editingName, setEditingName] = useState('');
 
   const handleAddCriteria = (
-    cellData: { level: RubricLevel; description: string }[]
+    cellData: { level: RubricLevel; description: string }[],
+    criteriaName: string
   ) => {
     const newCriteria: RubricCriteria = {
       id: Date.now().toString(),
-      name: `Criteria ${criteria.length + 1}`,
+      name: criteriaName || `Criteria ${criteria.length + 1}`,
     };
     
     const newCells = cellData.map(({ level, description }) => ({
