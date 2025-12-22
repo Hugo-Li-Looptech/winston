@@ -180,8 +180,8 @@ export default function CreateCourse() {
     <div className="min-h-screen bg-muted flex flex-col">
       {/* Header with Step Indicator - hidden for scripting step */}
       {!hideMainHeader && (
-        <div className="bg-card border-b shadow-sm">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="bg-card/80 backdrop-blur-xl">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
             <StepIndicator 
               currentStep={getWizardStep()} 
               isCollapsed={isStepIndicatorCollapsed}
@@ -205,14 +205,14 @@ export default function CreateCourse() {
       {/* Main Content */}
       {isFullWidthStep ? (
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 bg-card border-t overflow-hidden">
+          <div className="flex-1 bg-card overflow-hidden animate-fade-in">
             {renderStep()}
           </div>
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-6 py-8">
-            <div className="bg-card rounded-2xl shadow-lg border p-8">
+          <div className="max-w-4xl mx-auto px-6 py-8 animate-fade-in">
+            <div className="bg-card rounded-2xl shadow-lg p-8">
               {renderStep()}
             </div>
           </div>

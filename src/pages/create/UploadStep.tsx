@@ -77,9 +77,9 @@ export function UploadStep({ onContinue }: UploadStepProps) {
   const hasTitle = currentCourse.courseTitle.trim().length > 0;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
       {/* Course Information Section */}
-      <div className="bg-card rounded-2xl shadow-lg border overflow-hidden">
+      <div className="bg-card rounded-2xl shadow-lg overflow-hidden">
         <div className="p-6 border-b bg-muted/30">
           <h3 className="text-lg font-semibold text-foreground">Course Information</h3>
           <p className="text-sm text-muted-foreground mt-1">Set up your course title and description</p>
@@ -108,7 +108,7 @@ export function UploadStep({ onContinue }: UploadStepProps) {
         </div>
       </div>
       {/* Main Slide File Section */}
-      <div className="bg-card rounded-2xl shadow-lg border overflow-hidden">
+      <div className="bg-card rounded-2xl shadow-lg overflow-hidden">
         <div className="p-6 border-b bg-muted/30">
           <h3 className="text-lg font-semibold text-foreground">Main Slide File</h3>
           <p className="text-sm text-muted-foreground mt-1">Upload your presentation slides</p>
@@ -192,7 +192,7 @@ export function UploadStep({ onContinue }: UploadStepProps) {
       </div>
 
       {/* Supplement Files Section */}
-      <div className="bg-card rounded-2xl shadow-lg border overflow-hidden">
+      <div className="bg-card rounded-2xl shadow-lg overflow-hidden">
         <div className="p-6 border-b bg-muted/30">
           <h3 className="text-lg font-semibold text-foreground">Supplement Files</h3>
           <p className="text-sm text-muted-foreground mt-1">
