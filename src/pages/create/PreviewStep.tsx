@@ -1,21 +1,25 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCourse } from '@/contexts/CourseContext';
-import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, ArrowLeft, ClipboardList, Edit, Eye, EyeOff, Maximize2, Minimize2, GraduationCap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, ArrowLeft, ClipboardList, Edit, Eye, EyeOff, Maximize2, Minimize2, GraduationCap, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { CourseEditorHeader } from '@/components/CourseEditorHeader';
+import { WizardStep } from '@/types/course';
+import { Progress } from '@/components/ui/progress';
 
 interface PreviewStepProps {
   onBack: () => void;
   isPreviewOnly?: boolean;
+  onStepClick?: (step: WizardStep) => void;
 }
 
-export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps) {
+export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: PreviewStepProps) {
   const navigate = useNavigate();
-  const { currentCourse, setCourses, courses, finalAssessment } = useCourse();
-  const { courseItems } = currentCourse;
+  const { currentCourse, setCourses, courses, finalAssessment, setCourseTitle, saveCourseAsDraft, publishCourse, markStepComplete } = useCourse();
+  const { courseItems, courseTitle } = currentCourse;
   
   // Create combined items array with final assessment at the end
   const hasFinalAssessment = finalAssessment && finalAssessment.questions.length > 0;
@@ -28,7 +32,12 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
   const [isPublished, setIsPublished] = useState(true);
   const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(true);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const transcriptRef = useRef<HTMLDivElement>(null);
+  
+  // Final assessment progress tracking
+  const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(new Set());
 
   // Determine if we're viewing the final assessment
   const isViewingFinalAssessment = hasFinalAssessment && currentItemIndex === courseItems.length;
@@ -36,6 +45,24 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
   const currentItem = isViewingFinalAssessment ? null : courseItems[currentItemIndex];
   const currentSlide = currentItem?.type === 'slide' ? currentItem.slideData : null;
   const currentAssessment = currentItem?.type === 'assessment' ? currentItem.assessmentData : null;
+
+  // Progress calculation for final assessment
+  const totalFinalQuestions = finalAssessment?.questions.length || 0;
+  const completedFinalQuestions = answeredQuestions.size;
+  const progressPercentage = totalFinalQuestions > 0 ? (completedFinalQuestions / totalFinalQuestions) * 100 : 0;
+
+  // Toggle question answered state (for demo purposes)
+  const toggleQuestionAnswered = (questionId: string) => {
+    setAnsweredQuestions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(questionId)) {
+        newSet.delete(questionId);
+      } else {
+        newSet.add(questionId);
+      }
+      return newSet;
+    });
+  };
 
   // Split talk points into words for highlighting
   const talkPointWords = currentSlide?.talkPoints?.split(/\s+/) || [];
@@ -129,22 +156,12 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
   };
 
   const handlePublish = () => {
-    const newCourse = {
-      id: Date.now().toString(),
-      title: 'How to Make a PBJ Sand',
-      date: new Date().toLocaleDateString(),
-      status: 'published' as const,
-      progress: '100%' as const,
-    };
-    setCourses([newCourse, ...courses]);
-    toast({
-      title: 'Course Published!',
-      description: 'Your course is now live and available to learners.',
-    });
+    publishCourse();
     navigate('/dashboard');
   };
 
   const handleSaveDraft = () => {
+    saveCourseAsDraft();
     toast({
       title: 'Draft Saved',
       description: 'Your course has been saved as a draft.',
@@ -152,56 +169,30 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
     navigate('/dashboard');
   };
 
+  const handleComment = () => {
+    // Placeholder for comments functionality
+  };
+
   return (
-    <div className="h-full flex flex-col bg-muted/20 dark:bg-background">
-      {/* Header */}
-      <div className="bg-card/80 backdrop-blur-xl px-6 py-4 transition-all duration-300">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">Preview Your Course</h1>
-            <p className="text-sm text-muted-foreground">Experience your course from a student's perspective</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {isPreviewOnly ? (
-              <>
-                <Button variant="outline" onClick={handleEdit} className="rounded-xl gap-2 transition-transform duration-200 hover:scale-105">
-                  <Edit className="h-4 w-4" />
-                  Edit
-                </Button>
-                <Button 
-                  variant={isPublished ? "outline" : "default"} 
-                  onClick={handleTogglePublish} 
-                  className="rounded-xl gap-2 transition-transform duration-200 hover:scale-105"
-                >
-                  {isPublished ? (
-                    <>
-                      <EyeOff className="h-4 w-4" />
-                      Unpublish
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="h-4 w-4" />
-                      Publish
-                    </>
-                  )}
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="outline" onClick={handleSaveDraft} className="rounded-xl transition-transform duration-200 hover:scale-105">
-                  Save as Draft
-                </Button>
-                <Button onClick={handlePublish} className="rounded-xl transition-transform duration-200 hover:scale-105">
-                  Publish Course
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+    <div className="h-full flex flex-col">
+      {/* Header with Step Indicator */}
+      <CourseEditorHeader
+        currentStep="preview"
+        courseTitle={courseTitle || 'Untitled Course'}
+        isCollapsed={isHeaderCollapsed}
+        onToggleCollapse={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+        onClose={() => navigate("/dashboard")}
+        onStepClick={onStepClick}
+        showActions={true}
+        onTitleChange={setCourseTitle}
+        onComment={handleComment}
+        onSave={handleSaveDraft}
+        onPublish={handlePublish}
+        hasUnsavedChanges={hasUnsavedChanges}
+      />
 
       {/* Main Preview Area */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6 bg-muted/20 dark:bg-background">
         <div className="max-w-5xl mx-auto space-y-6">
           {/* Slide/Assessment Card */}
           <div className="bg-card/80 backdrop-blur-xl rounded-2xl shadow-lg dark:shadow-black/30 overflow-hidden transition-all duration-300 hover:shadow-xl dark:hover:shadow-black/40">
@@ -380,15 +371,34 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
             {/* Final Assessment Preview */}
             {isViewingFinalAssessment && finalAssessment && (
               <div className="p-8">
-                <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
                     <GraduationCap className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="text-lg font-semibold text-foreground">{finalAssessment.title || 'Final Assessment'}</h3>
                     <p className="text-sm text-muted-foreground">
                       {finalAssessment.questions.length} question{finalAssessment.questions.length !== 1 ? 's' : ''} • {finalAssessment.timeLimit} minutes • Passing: {finalAssessment.passingThreshold}%
                     </p>
+                  </div>
+                </div>
+
+                {/* Progress Tracking */}
+                <div className="bg-amber-500/5 dark:bg-amber-500/10 rounded-xl p-4 mb-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-foreground">Progress</span>
+                    <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+                      {completedFinalQuestions} of {totalFinalQuestions} completed
+                    </span>
+                  </div>
+                  <Progress value={progressPercentage} className="h-2 bg-amber-500/20" />
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-muted-foreground">
+                      {totalFinalQuestions - completedFinalQuestions} remaining
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {Math.round(progressPercentage)}%
+                    </span>
                   </div>
                 </div>
 
@@ -397,47 +407,74 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
                 )}
 
                 <div className="space-y-6">
-                  {finalAssessment.questions.map((question, qIndex) => (
-                    <div key={question.id} className="bg-amber-500/5 dark:bg-amber-500/10 rounded-xl p-6 transition-all duration-300 hover:bg-amber-500/10 dark:hover:bg-amber-500/15">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xs font-medium bg-amber-500/20 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
-                          Q{qIndex + 1}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {question.type === 'multi_selection' && 'Select one'}
-                          {question.type === 'checkbox' && 'Select all that apply'}
-                          {question.type === 'open_ended' && 'Open response'}
-                        </span>
-                      </div>
-                      
-                      <p className="text-lg font-medium text-foreground mb-4">
-                        {question.question || 'No question text configured'}
-                      </p>
-                      
-                      {(question.type === 'multi_selection' || question.type === 'checkbox') && 
-                        question.options && (
-                        <div className="space-y-3">
-                          {question.options.map((opt, i) => (
-                            <div
-                              key={i}
-                              className="flex items-center gap-3 p-3 bg-background/50 dark:bg-background/30 rounded-lg cursor-pointer hover:bg-background/80 dark:hover:bg-background/50 transition-all duration-200"
-                            >
-                              <div className={`w-5 h-5 border-2 ${
-                                question.type === 'checkbox' ? 'rounded' : 'rounded-full'
-                              } border-muted-foreground/50`} />
-                              <span className="text-foreground">{opt.label || `Option ${i + 1}`}</span>
+                  {finalAssessment.questions.map((question, qIndex) => {
+                    const isAnswered = answeredQuestions.has(question.id);
+                    return (
+                      <div 
+                        key={question.id} 
+                        className={`rounded-xl p-6 transition-all duration-300 cursor-pointer ${
+                          isAnswered 
+                            ? 'bg-green-500/10 dark:bg-green-500/15 hover:bg-green-500/15 dark:hover:bg-green-500/20' 
+                            : 'bg-amber-500/5 dark:bg-amber-500/10 hover:bg-amber-500/10 dark:hover:bg-amber-500/15'
+                        }`}
+                        onClick={() => toggleQuestionAnswered(question.id)}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                              isAnswered 
+                                ? 'bg-green-500/20 text-green-700 dark:text-green-300' 
+                                : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                            }`}>
+                              Q{qIndex + 1}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {question.type === 'multi_selection' && 'Select one'}
+                              {question.type === 'checkbox' && 'Select all that apply'}
+                              {question.type === 'open_ended' && 'Open response'}
+                            </span>
+                          </div>
+                          {isAnswered && (
+                            <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                              <Check className="h-4 w-4" />
+                              <span className="text-xs font-medium">Answered</span>
                             </div>
-                          ))}
+                          )}
                         </div>
-                      )}
-                      
-                      {question.type === 'open_ended' && (
-                        <div className="bg-background/50 dark:bg-background/30 rounded-lg p-4 border border-muted-foreground/10 min-h-[120px]">
-                          <p className="text-muted-foreground">Student response area...</p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        
+                        <p className="text-lg font-medium text-foreground mb-4">
+                          {question.question || 'No question text configured'}
+                        </p>
+                        
+                        {(question.type === 'multi_selection' || question.type === 'checkbox') && 
+                          question.options && (
+                          <div className="space-y-3">
+                            {question.options.map((opt, i) => (
+                              <div
+                                key={i}
+                                className="flex items-center gap-3 p-3 bg-background/50 dark:bg-background/30 rounded-lg cursor-pointer hover:bg-background/80 dark:hover:bg-background/50 transition-all duration-200"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div className={`w-5 h-5 border-2 ${
+                                  question.type === 'checkbox' ? 'rounded' : 'rounded-full'
+                                } border-muted-foreground/50`} />
+                                <span className="text-foreground">{opt.label || `Option ${i + 1}`}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {question.type === 'open_ended' && (
+                          <div 
+                            className="bg-background/50 dark:bg-background/30 rounded-lg p-4 border border-muted-foreground/10 min-h-[120px]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <p className="text-muted-foreground">Student response area...</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
