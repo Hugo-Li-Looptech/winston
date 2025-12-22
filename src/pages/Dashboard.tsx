@@ -341,7 +341,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-card border-b sticky top-0 z-10">
+      <header className="bg-card/80 backdrop-blur-xl sticky top-0 z-10 shadow-sm dark:shadow-black/20">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center">

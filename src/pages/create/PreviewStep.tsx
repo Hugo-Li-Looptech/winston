@@ -64,6 +64,42 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
     setCurrentWordIndex(0);
   }, [currentItemIndex]);
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          if (currentItemIndex > 0) {
+            setCurrentItemIndex(currentItemIndex - 1);
+          }
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          if (currentItemIndex < courseItems.length - 1) {
+            setCurrentItemIndex(currentItemIndex + 1);
+          }
+          break;
+        case ' ':
+          e.preventDefault();
+          setIsPlaying(!isPlaying);
+          break;
+        case 'm':
+        case 'M':
+          setIsMuted(!isMuted);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentItemIndex, courseItems.length, isPlaying, isMuted]);
+
   const goToItem = (index: number) => {
     if (index >= 0 && index < courseItems.length) {
       setCurrentItemIndex(index);
