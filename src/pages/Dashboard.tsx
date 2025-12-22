@@ -349,9 +349,12 @@ export default function Dashboard() {
             </div>
             <span className="font-semibold text-foreground">Winston</span>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <LogOut className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <SettingsPopover />
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -617,7 +620,7 @@ export default function Dashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <SettingsPopover />
+
       <AIAssistant />
 
       <TutorialSlideshow open={showTutorial} onOpenChange={setShowTutorial} />

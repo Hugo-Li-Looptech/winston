@@ -56,17 +56,14 @@ export function SettingsPopover() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center hover:scale-105 active:scale-95 z-40"
-        >
-          <Settings className="h-6 w-6" />
-        </button>
+        <Button variant="ghost" size="icon">
+          <Settings className="h-5 w-5" />
+        </Button>
       </PopoverTrigger>
       <PopoverContent 
         align="end" 
-        side="top" 
         className="w-56 p-3 rounded-xl"
-        sideOffset={12}
+        sideOffset={8}
       >
         <div className="space-y-3">
           <div className="flex items-center gap-2 pb-2 border-b">
