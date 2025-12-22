@@ -723,6 +723,17 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                     </div>
                   </div>
                 )}
+
+                {activeTab === "final-assessment" && (
+                  <div className="space-y-6">
+                    <FinalAssessmentEditor
+                      assessment={finalAssessment}
+                      onUpdate={setFinalAssessment}
+                      slides={slides}
+                      knowledgeChecks={courseItems.filter(i => i.type === 'assessment').map(i => i.assessmentData!)}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </ResizablePanel>

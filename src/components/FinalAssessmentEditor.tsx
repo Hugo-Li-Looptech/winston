@@ -12,17 +12,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Plus, Trash2, Clock, Award, RotateCcw, MessageSquare } from 'lucide-react';
-import { FinalAssessment, AssessmentQuestion, QuestionType } from '@/types/course';
+import { Plus, Trash2, Clock, Award, RotateCcw, MessageSquare, Sparkles, RefreshCw } from 'lucide-react';
+import { FinalAssessment, AssessmentQuestion, QuestionType, Slide, Assessment } from '@/types/course';
 import { RubricEditor } from './RubricEditor';
 
 interface FinalAssessmentEditorProps {
   assessment: FinalAssessment | null;
   onUpdate: (assessment: FinalAssessment | null) => void;
+  slides?: Slide[];
+  knowledgeChecks?: Assessment[];
 }
 
-export function FinalAssessmentEditor({ assessment, onUpdate }: FinalAssessmentEditorProps) {
+export function FinalAssessmentEditor({ assessment, onUpdate, slides = [], knowledgeChecks = [] }: FinalAssessmentEditorProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const createDefaultQuestion = (): AssessmentQuestion => ({
     id: `question-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -35,6 +38,46 @@ export function FinalAssessmentEditor({ assessment, onUpdate }: FinalAssessmentE
     ],
   });
 
+  // Generate questions from course content and knowledge checks
+  const generateQuestionsFromContent = (): AssessmentQuestion[] => {
+    const generatedQuestions: AssessmentQuestion[] = [];
+    
+    // Generate questions from slides (based on their content and keywords)
+    slides.forEach((slide, index) => {
+      if (index % 2 === 0 && generatedQuestions.length < 3) { // Take every other slide to not overwhelm
+        generatedQuestions.push({
+          id: `question-slide-${Date.now()}-${index}`,
+          question: `Based on "${slide.title}", which of the following is correct?`,
+          type: 'multi_selection',
+          options: [
+            { label: slide.content[0] || 'Option A', isCorrect: true },
+            { label: `Not related to ${slide.keywords?.[0] || 'the topic'}`, isCorrect: false },
+            { label: 'None of the above', isCorrect: false },
+          ],
+        });
+      }
+    });
+
+    // Copy questions from knowledge checks
+    knowledgeChecks.forEach((kc) => {
+      kc.questions.forEach((q) => {
+        if (generatedQuestions.length < 6) { // Limit to 6 total questions
+          generatedQuestions.push({
+            ...q,
+            id: `question-kc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          });
+        }
+      });
+    });
+
+    // If no questions generated, add a default one
+    if (generatedQuestions.length === 0) {
+      generatedQuestions.push(createDefaultQuestion());
+    }
+
+    return generatedQuestions;
+  };
+
   const createDefaultAssessment = (): FinalAssessment => ({
     id: `final-assessment-${Date.now()}`,
     title: 'Final Assessment',
@@ -43,12 +86,24 @@ export function FinalAssessmentEditor({ assessment, onUpdate }: FinalAssessmentE
     attemptsAllowed: 3,
     passingThreshold: 70,
     showFeedback: true,
-    questions: [createDefaultQuestion()],
+    questions: generateQuestionsFromContent(),
     gradingType: 'percentage',
   });
 
   const handleEnableAssessment = () => {
     onUpdate(createDefaultAssessment());
+  };
+
+  const handleRegenerateQuestions = async () => {
+    if (!assessment) return;
+    setIsGenerating(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    onUpdate({
+      ...assessment,
+      questions: generateQuestionsFromContent(),
+    });
+    setCurrentQuestionIndex(0);
+    setIsGenerating(false);
   };
 
   const handleDisableAssessment = () => {
@@ -162,14 +217,34 @@ export function FinalAssessmentEditor({ assessment, onUpdate }: FinalAssessmentE
           <div>
             <h3 className="text-lg font-semibold text-foreground">Final Assessment</h3>
             <p className="text-sm text-muted-foreground">
-              {assessment.questions.length} question{assessment.questions.length !== 1 ? 's' : ''}
+              {assessment.questions.length} question{assessment.questions.length !== 1 ? 's' : ''} • Pre-populated from course content
             </p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={handleDisableAssessment} className="text-destructive hover:text-destructive rounded-xl gap-1">
-          <Trash2 className="h-4 w-4" />
-          Remove
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRegenerateQuestions}
+            disabled={isGenerating}
+            className="rounded-xl gap-1"
+          >
+            <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
+            {isGenerating ? 'Generating...' : 'Regenerate'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDisableAssessment} className="text-destructive hover:text-destructive rounded-xl gap-1">
+            <Trash2 className="h-4 w-4" />
+            Remove
+          </Button>
+        </div>
+      </div>
+
+      {/* Source info */}
+      <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-xl">
+        <Sparkles className="h-4 w-4 text-primary" />
+        <p className="text-xs text-muted-foreground">
+          Questions are generated from <span className="font-medium text-foreground">{slides.length} slides</span> and <span className="font-medium text-foreground">{knowledgeChecks.length} knowledge checks</span>
+        </p>
       </div>
 
       {/* Assessment Settings */}
