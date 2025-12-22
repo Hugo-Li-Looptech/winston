@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCourse } from '@/contexts/CourseContext';
-import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, ArrowLeft, ClipboardList, Edit, Eye, EyeOff, Maximize2, Minimize2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, ArrowLeft, ClipboardList, Edit, Eye, EyeOff, Maximize2, Minimize2, GraduationCap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { Slider } from '@/components/ui/slider';
@@ -14,8 +14,13 @@ interface PreviewStepProps {
 
 export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps) {
   const navigate = useNavigate();
-  const { currentCourse, setCourses, courses } = useCourse();
+  const { currentCourse, setCourses, courses, finalAssessment } = useCourse();
   const { courseItems } = currentCourse;
+  
+  // Create combined items array with final assessment at the end
+  const hasFinalAssessment = finalAssessment && finalAssessment.questions.length > 0;
+  const totalItems = hasFinalAssessment ? courseItems.length + 1 : courseItems.length;
+  
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -25,7 +30,10 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
-  const currentItem = courseItems[currentItemIndex];
+  // Determine if we're viewing the final assessment
+  const isViewingFinalAssessment = hasFinalAssessment && currentItemIndex === courseItems.length;
+  
+  const currentItem = isViewingFinalAssessment ? null : courseItems[currentItemIndex];
   const currentSlide = currentItem?.type === 'slide' ? currentItem.slideData : null;
   const currentAssessment = currentItem?.type === 'assessment' ? currentItem.assessmentData : null;
 
@@ -81,7 +89,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
           break;
         case 'ArrowRight':
           e.preventDefault();
-          if (currentItemIndex < courseItems.length - 1) {
+          if (currentItemIndex < totalItems - 1) {
             setCurrentItemIndex(currentItemIndex + 1);
           }
           break;
@@ -98,10 +106,10 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentItemIndex, courseItems.length, isPlaying, isMuted]);
+  }, [currentItemIndex, totalItems, isPlaying, isMuted]);
 
   const goToItem = (index: number) => {
-    if (index >= 0 && index < courseItems.length) {
+    if (index >= 0 && index < totalItems) {
       setCurrentItemIndex(index);
     }
   };
@@ -147,7 +155,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
   return (
     <div className="h-full flex flex-col bg-muted/20 dark:bg-background">
       {/* Header */}
-      <div className="bg-card/80 backdrop-blur-xl px-6 py-4 shadow-sm dark:shadow-black/20 transition-all duration-300">
+      <div className="bg-card/80 backdrop-blur-xl px-6 py-4 transition-all duration-300">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-foreground">Preview Your Course</h1>
@@ -368,6 +376,71 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
                 </div>
               </div>
             )}
+
+            {/* Final Assessment Preview */}
+            {isViewingFinalAssessment && finalAssessment && (
+              <div className="p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                    <GraduationCap className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">{finalAssessment.title || 'Final Assessment'}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {finalAssessment.questions.length} question{finalAssessment.questions.length !== 1 ? 's' : ''} • {finalAssessment.timeLimit} minutes • Passing: {finalAssessment.passingThreshold}%
+                    </p>
+                  </div>
+                </div>
+
+                {finalAssessment.description && (
+                  <p className="text-muted-foreground mb-6">{finalAssessment.description}</p>
+                )}
+
+                <div className="space-y-6">
+                  {finalAssessment.questions.map((question, qIndex) => (
+                    <div key={question.id} className="bg-amber-500/5 dark:bg-amber-500/10 rounded-xl p-6 transition-all duration-300 hover:bg-amber-500/10 dark:hover:bg-amber-500/15">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-xs font-medium bg-amber-500/20 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
+                          Q{qIndex + 1}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {question.type === 'multi_selection' && 'Select one'}
+                          {question.type === 'checkbox' && 'Select all that apply'}
+                          {question.type === 'open_ended' && 'Open response'}
+                        </span>
+                      </div>
+                      
+                      <p className="text-lg font-medium text-foreground mb-4">
+                        {question.question || 'No question text configured'}
+                      </p>
+                      
+                      {(question.type === 'multi_selection' || question.type === 'checkbox') && 
+                        question.options && (
+                        <div className="space-y-3">
+                          {question.options.map((opt, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center gap-3 p-3 bg-background/50 dark:bg-background/30 rounded-lg cursor-pointer hover:bg-background/80 dark:hover:bg-background/50 transition-all duration-200"
+                            >
+                              <div className={`w-5 h-5 border-2 ${
+                                question.type === 'checkbox' ? 'rounded' : 'rounded-full'
+                              } border-muted-foreground/50`} />
+                              <span className="text-foreground">{opt.label || `Option ${i + 1}`}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {question.type === 'open_ended' && (
+                        <div className="bg-background/50 dark:bg-background/30 rounded-lg p-4 border border-muted-foreground/10 min-h-[120px]">
+                          <p className="text-muted-foreground">Student response area...</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Navigation */}
@@ -396,12 +469,23 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
                   }`}
                 />
               ))}
+              {/* Final Assessment indicator */}
+              {hasFinalAssessment && (
+                <button
+                  onClick={() => goToItem(courseItems.length)}
+                  className={`h-2.5 rounded-full transition-all duration-200 ${
+                    isViewingFinalAssessment
+                      ? 'w-8 bg-amber-500'
+                      : 'w-2.5 bg-amber-500/40 hover:bg-amber-500/60'
+                  }`}
+                />
+              )}
             </div>
 
             <Button
               variant="outline"
               onClick={() => goToItem(currentItemIndex + 1)}
-              disabled={currentItemIndex === courseItems.length - 1}
+              disabled={currentItemIndex === totalItems - 1}
               className="rounded-xl transition-transform duration-200 hover:scale-105"
             >
               Next
@@ -411,20 +495,24 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
 
           {/* Item Counter */}
           <div className="text-center text-sm text-muted-foreground">
-            {currentItem?.type === 'slide' ? 'Slide' : 'Knowledge Check'} {currentItemIndex + 1} of {courseItems.length}
+            {isViewingFinalAssessment 
+              ? 'Final Assessment' 
+              : currentItem?.type === 'slide' 
+                ? 'Slide' 
+                : 'Knowledge Check'} {currentItemIndex + 1} of {totalItems}
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="bg-card/80 backdrop-blur-xl px-6 py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] transition-all duration-300">
+      <div className="bg-card/80 backdrop-blur-xl px-6 py-4 transition-all duration-300">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <Button variant="outline" onClick={onBack} className="gap-2 rounded-xl transition-transform duration-200 hover:scale-105">
             <ArrowLeft className="h-4 w-4" />
             {isPreviewOnly ? 'Back to Dashboard' : 'Back to Editing'}
           </Button>
           <div className="text-sm text-muted-foreground">
-            {courseItems.filter(i => i.type === 'slide').length} slides • {courseItems.filter(i => i.type === 'assessment').length} knowledge checks
+            {courseItems.filter(i => i.type === 'slide').length} slides • {courseItems.filter(i => i.type === 'assessment').length} knowledge checks{hasFinalAssessment ? ' • 1 final assessment' : ''}
           </div>
         </div>
       </div>
