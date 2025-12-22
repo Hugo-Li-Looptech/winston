@@ -68,7 +68,7 @@ export function WizardStep({ onContinue, onBack }: WizardStepProps) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       {/* Course Title Display */}
       <div className="text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
