@@ -280,7 +280,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
                     <ClipboardList className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground">Assessment</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Knowledge Check</h3>
                     <p className="text-sm text-muted-foreground">
                       {currentAssessment.questions.length} question{currentAssessment.questions.length !== 1 ? 's' : ''}
                     </p>
@@ -375,7 +375,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
 
           {/* Item Counter */}
           <div className="text-center text-sm text-muted-foreground">
-            {currentItem?.type === 'slide' ? 'Slide' : 'Assessment'} {currentItemIndex + 1} of {courseItems.length}
+            {currentItem?.type === 'slide' ? 'Slide' : 'Knowledge Check'} {currentItemIndex + 1} of {courseItems.length}
           </div>
         </div>
       </div>
@@ -388,7 +388,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
             {isPreviewOnly ? 'Back to Dashboard' : 'Back to Editing'}
           </Button>
           <div className="text-sm text-muted-foreground">
-            {courseItems.filter(i => i.type === 'slide').length} slides • {courseItems.filter(i => i.type === 'assessment').length} assessments
+            {courseItems.filter(i => i.type === 'slide').length} slides • {courseItems.filter(i => i.type === 'assessment').length} knowledge checks
           </div>
         </div>
       </div>

@@ -147,25 +147,25 @@ function computeAssessmentDiffs(selectedAssessments: Assessment[], currentAssess
   const selectedMap = new Map(selectedAssessments.map(a => [a.id, a]));
   const currentMap = new Map(currentAssessments.map(a => [a.id, a]));
   
-  // Removed assessments
+  // Removed knowledge checks
   selectedAssessments.forEach(assessment => {
     if (!currentMap.has(assessment.id)) {
       diffs.push({
         assessmentId: assessment.id,
         status: 'removed',
-        title: `Assessment (${assessment.questions.length} questions)`,
+        title: `Knowledge Check (${assessment.questions.length} questions)`,
         changes: [`Removed ${assessment.questions.length} question(s)`],
       });
     }
   });
   
-  // Added assessments
+  // Added knowledge checks
   currentAssessments.forEach(assessment => {
     if (!selectedMap.has(assessment.id)) {
       diffs.push({
         assessmentId: assessment.id,
         status: 'added',
-        title: `Assessment (${assessment.questions.length} questions)`,
+        title: `Knowledge Check (${assessment.questions.length} questions)`,
         changes: [`Added ${assessment.questions.length} question(s)`],
       });
     }
@@ -189,7 +189,7 @@ function computeAssessmentDiffs(selectedAssessments: Assessment[], currentAssess
         diffs.push({
           assessmentId: currentAssessment.id,
           status: 'modified',
-          title: 'Assessment',
+          title: 'Knowledge Check',
           changes,
         });
       }

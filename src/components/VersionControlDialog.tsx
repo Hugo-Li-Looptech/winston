@@ -116,7 +116,7 @@ export function VersionControlDialog({
                       <div className="flex items-center gap-2 text-sm">
                         <span className="font-medium">{selectedVersion.versionName}</span>
                         <span className="text-muted-foreground">•</span>
-                        <span className="text-muted-foreground text-xs">{slides.length} slides • {assessmentCount} assessments</span>
+                        <span className="text-muted-foreground text-xs">{slides.length} slides • {assessmentCount} knowledge checks</span>
                       </div>
                       <span className="text-xs text-muted-foreground">
                         {new Date(selectedVersion.timestamp).toLocaleDateString()} by {selectedVersion.author}
