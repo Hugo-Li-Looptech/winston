@@ -175,7 +175,7 @@ export function QuickEditsPanel({
 
       {/* Suggestion Preview */}
       {suggestedTalkPoints && !isGenerating && (
-        <div className="animate-fade-in mt-4 p-4 bg-primary/5 rounded-2xl">
+        <div className="animate-fade-in mt-4 p-4 bg-primary/5 dark:bg-primary/10 rounded-2xl transition-all duration-300 hover:bg-primary/10 dark:hover:bg-primary/15">
           <p className="text-sm font-medium text-primary mb-2">
             {getSuggestionTitle()}
           </p>
@@ -186,7 +186,7 @@ export function QuickEditsPanel({
             <Button 
               size="sm" 
               onClick={onAcceptSuggestion}
-              className="gap-1 rounded-xl"
+              className="gap-1 rounded-xl transition-transform duration-200 hover:scale-105"
             >
               <Check className="h-3 w-3" />
               Accept
@@ -195,7 +195,7 @@ export function QuickEditsPanel({
               size="sm" 
               variant="outline" 
               onClick={onRejectSuggestion}
-              className="gap-1 rounded-xl"
+              className="gap-1 rounded-xl transition-transform duration-200 hover:scale-105"
             >
               <X className="h-3 w-3" />
               Reject

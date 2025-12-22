@@ -19,7 +19,7 @@ export function RichTextToolbar({
   onLink,
 }: RichTextToolbarProps) {
   return (
-    <div className="flex items-center gap-1 p-1.5 bg-muted/30 rounded-xl w-fit">
+    <div className="flex items-center gap-1 p-1.5 bg-muted/30 dark:bg-muted/20 rounded-xl w-fit transition-all duration-300 hover:bg-muted/40 dark:hover:bg-muted/30">
       <Button 
         variant="ghost" 
         size="icon" 
