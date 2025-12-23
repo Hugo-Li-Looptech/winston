@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Check, Send, MessageSquare, AtSign } from 'lucide-react';
+import { X, Check, Send, MessageSquare, AtSign, Reply, CornerDownRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -10,7 +10,7 @@ interface CommentsPanelProps {
   isOpen: boolean;
   onClose: () => void;
   comments: Comment[];
-  onAddComment: (content: string) => void;
+  onAddComment: (content: string, parentId?: string) => void;
   onResolveComment: (commentId: string) => void;
   currentSlideId?: string;
 }
@@ -35,6 +35,7 @@ export function CommentsPanel({
   const [filter, setFilter] = useState<'all' | 'current' | 'unresolved'>('all');
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
+  const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
 
   const filteredComments = comments.filter((comment) => {
     if (filter === 'current' && currentSlideId) {
@@ -52,8 +53,9 @@ export function CommentsPanel({
 
   const handleSubmit = () => {
     if (newComment.trim()) {
-      onAddComment(newComment.trim());
+      onAddComment(newComment.trim(), replyingTo?.id);
       setNewComment('');
+      setReplyingTo(null);
     }
   };
 
@@ -82,6 +84,16 @@ export function CommentsPanel({
     setNewComment(newValue);
     setShowMentions(false);
     setMentionSearch('');
+  };
+
+  const handleReplyClick = (comment: Comment) => {
+    setReplyingTo(comment);
+    setNewComment(`@${comment.userName} `);
+  };
+
+  const cancelReply = () => {
+    setReplyingTo(null);
+    setNewComment('');
   };
 
   const formatDate = (date: Date) => {
@@ -115,6 +127,87 @@ export function CommentsPanel({
       return part;
     });
   };
+
+  // Render a single comment with its replies
+  const renderComment = (comment: Comment, isReply = false) => (
+    <div
+      key={comment.id}
+      className={`p-4 rounded-xl border transition-all cursor-pointer ${
+        comment.resolved 
+          ? 'bg-muted/20 border-border/50' 
+          : 'bg-background border-border hover:border-primary/30 hover:shadow-sm'
+      } ${isReply ? 'ml-8 mt-2' : ''}`}
+      onClick={() => !isReply && handleReplyClick(comment)}
+    >
+      {isReply && (
+        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+          <CornerDownRight className="h-3 w-3" />
+          <span>Reply</span>
+        </div>
+      )}
+      <div className="flex items-start gap-3">
+        <Avatar className="h-9 w-9">
+          <AvatarFallback 
+            className={`text-xs font-medium ${
+              comment.resolved 
+                ? 'bg-muted text-muted-foreground' 
+                : 'bg-primary/10 text-primary'
+            }`}
+          >
+            {getInitials(comment.userName)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <span className={`text-sm font-medium truncate ${
+              comment.resolved ? 'text-muted-foreground' : 'text-foreground'
+            }`}>
+              {comment.userName}
+            </span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {formatDate(comment.timestamp)}
+            </span>
+          </div>
+          {comment.slideId && (
+            <span className={`text-xs ${comment.resolved ? 'text-muted-foreground' : 'text-primary'}`}>
+              Slide {comment.slideId}
+            </span>
+          )}
+          <p className={`text-sm mt-1.5 leading-relaxed ${
+            comment.resolved ? 'text-muted-foreground' : 'text-foreground'
+          }`}>
+            {renderCommentContent(comment.content)}
+          </p>
+          <div className="flex items-center gap-3 mt-3">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleReplyClick(comment);
+              }}
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Reply className="h-3.5 w-3.5" />
+              Reply
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onResolveComment(comment.id);
+              }}
+              className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
+                comment.resolved
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-primary'
+              }`}
+            >
+              <Check className={`h-3.5 w-3.5 ${comment.resolved ? 'text-primary' : ''}`} />
+              {comment.resolved ? 'Resolved' : 'Resolve'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   if (!isOpen) return null;
 
@@ -161,60 +254,10 @@ export function CommentsPanel({
             </div>
           ) : (
             filteredComments.map((comment) => (
-              <div
-                key={comment.id}
-                className={`p-4 rounded-xl border transition-all ${
-                  comment.resolved 
-                    ? 'bg-muted/20 border-border/50' 
-                    : 'bg-background border-border hover:border-primary/30 hover:shadow-sm'
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <Avatar className="h-9 w-9">
-                    <AvatarFallback 
-                      className={`text-xs font-medium ${
-                        comment.resolved 
-                          ? 'bg-muted text-muted-foreground' 
-                          : 'bg-primary/10 text-primary'
-                      }`}
-                    >
-                      {getInitials(comment.userName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className={`text-sm font-medium truncate ${
-                        comment.resolved ? 'text-muted-foreground' : 'text-foreground'
-                      }`}>
-                        {comment.userName}
-                      </span>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {formatDate(comment.timestamp)}
-                      </span>
-                    </div>
-                    {comment.slideId && (
-                      <span className={`text-xs ${comment.resolved ? 'text-muted-foreground' : 'text-primary'}`}>
-                        Slide {comment.slideId}
-                      </span>
-                    )}
-                    <p className={`text-sm mt-1.5 leading-relaxed ${
-                      comment.resolved ? 'text-muted-foreground' : 'text-foreground'
-                    }`}>
-                      {renderCommentContent(comment.content)}
-                    </p>
-                    <button
-                      onClick={() => onResolveComment(comment.id)}
-                      className={`flex items-center gap-1.5 mt-3 text-xs font-medium transition-colors ${
-                        comment.resolved
-                          ? 'text-primary'
-                          : 'text-muted-foreground hover:text-primary'
-                      }`}
-                    >
-                      <Check className={`h-3.5 w-3.5 ${comment.resolved ? 'text-primary' : ''}`} />
-                      {comment.resolved ? 'Resolved' : 'Mark Resolved'}
-                    </button>
-                  </div>
-                </div>
+              <div key={comment.id}>
+                {renderComment(comment)}
+                {/* Render replies */}
+                {comment.replies?.map((reply) => renderComment(reply, true))}
               </div>
             ))
           )}
@@ -224,6 +267,25 @@ export function CommentsPanel({
       {/* Add Comment Input */}
       <div className="p-4 border-t bg-muted/30">
         <div className="relative">
+          {/* Reply indicator */}
+          {replyingTo && (
+            <div className="flex items-center justify-between mb-2 px-2 py-1.5 bg-primary/10 rounded-lg">
+              <div className="flex items-center gap-2 text-sm">
+                <Reply className="h-4 w-4 text-primary" />
+                <span className="text-muted-foreground">Replying to</span>
+                <span className="font-medium text-foreground">{replyingTo.userName}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={cancelReply}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
+
           {/* Mention suggestions dropdown */}
           {showMentions && filteredUsers.length > 0 && (
             <div className="absolute bottom-full left-0 right-0 mb-2 bg-popover border rounded-lg shadow-lg overflow-hidden z-10">
@@ -257,18 +319,23 @@ export function CommentsPanel({
             >
               <AtSign className="h-4 w-4" />
             </Button>
-            <span className="text-xs text-muted-foreground">Use @ to mention someone</span>
+            <span className="text-xs text-muted-foreground">
+              {replyingTo ? 'Type your reply...' : 'Click a comment to reply or use @ to mention'}
+            </span>
           </div>
           
           <Textarea
             value={newComment}
             onChange={(e) => handleCommentChange(e.target.value)}
-            placeholder="Add a comment..."
+            placeholder={replyingTo ? `Reply to ${replyingTo.userName}...` : "Add a comment..."}
             className="min-h-[80px] pr-12 resize-none rounded-xl"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 handleSubmit();
+              }
+              if (e.key === 'Escape' && replyingTo) {
+                cancelReply();
               }
             }}
           />
