@@ -22,6 +22,7 @@ import {
   FolderPlus,
   GitBranch,
 } from "lucide-react";
+import { InboxPopover } from "@/components/InboxPopover";
 import { useCourse } from "@/contexts/CourseContext";
 import { AIAssistant } from "@/components/AIAssistant";
 import { SettingsPopover } from "@/components/SettingsPopover";
@@ -350,6 +351,7 @@ export default function Dashboard() {
             <span className="font-semibold text-foreground">Winston</span>
           </div>
           <div className="flex items-center gap-1">
+            <InboxPopover />
             <SettingsPopover />
             <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
               <LogOut className="h-5 w-5" />

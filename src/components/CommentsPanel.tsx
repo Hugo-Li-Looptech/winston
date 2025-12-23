@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Check, Send, MessageSquare } from 'lucide-react';
+import { X, Check, Send, MessageSquare, AtSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -15,6 +15,14 @@ interface CommentsPanelProps {
   currentSlideId?: string;
 }
 
+// Sample users for @mention
+const sampleUsers = [
+  { id: 'user-1', name: 'Sarah Chen' },
+  { id: 'user-2', name: 'Mike Johnson' },
+  { id: 'user-3', name: 'Emily Davis' },
+  { id: 'user-4', name: 'Alex Turner' },
+];
+
 export function CommentsPanel({
   isOpen,
   onClose,
@@ -25,6 +33,8 @@ export function CommentsPanel({
 }: CommentsPanelProps) {
   const [newComment, setNewComment] = useState('');
   const [filter, setFilter] = useState<'all' | 'current' | 'unresolved'>('all');
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionSearch, setMentionSearch] = useState('');
 
   const filteredComments = comments.filter((comment) => {
     if (filter === 'current' && currentSlideId) {
@@ -36,11 +46,42 @@ export function CommentsPanel({
     return true;
   });
 
+  const filteredUsers = sampleUsers.filter((user) =>
+    user.name.toLowerCase().includes(mentionSearch.toLowerCase())
+  );
+
   const handleSubmit = () => {
     if (newComment.trim()) {
       onAddComment(newComment.trim());
       setNewComment('');
     }
+  };
+
+  const handleCommentChange = (value: string) => {
+    setNewComment(value);
+    
+    // Check for @ symbol to trigger mentions
+    const lastAtIndex = value.lastIndexOf('@');
+    if (lastAtIndex !== -1) {
+      const textAfterAt = value.slice(lastAtIndex + 1);
+      // Only show mentions if we're actively typing after @
+      if (!textAfterAt.includes(' ') && lastAtIndex === value.length - 1 - textAfterAt.length) {
+        setShowMentions(true);
+        setMentionSearch(textAfterAt);
+      } else {
+        setShowMentions(false);
+      }
+    } else {
+      setShowMentions(false);
+    }
+  };
+
+  const handleMentionSelect = (userName: string) => {
+    const lastAtIndex = newComment.lastIndexOf('@');
+    const newValue = newComment.slice(0, lastAtIndex) + `@${userName} `;
+    setNewComment(newValue);
+    setShowMentions(false);
+    setMentionSearch('');
   };
 
   const formatDate = (date: Date) => {
@@ -58,6 +99,21 @@ export function CommentsPanel({
       .map((n) => n[0])
       .join('')
       .toUpperCase();
+  };
+
+  // Render comment content with highlighted @mentions
+  const renderCommentContent = (content: string) => {
+    const parts = content.split(/(@\w+\s?\w*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('@')) {
+        return (
+          <span key={index} className="text-primary font-medium">
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
   };
 
   if (!isOpen) return null;
@@ -107,19 +163,29 @@ export function CommentsPanel({
             filteredComments.map((comment) => (
               <div
                 key={comment.id}
-                className={`p-3 rounded-xl border transition-colors ${
-                  comment.resolved ? 'bg-muted/30 opacity-60' : 'bg-background'
+                className={`p-4 rounded-xl border transition-all ${
+                  comment.resolved 
+                    ? 'bg-muted/20 border-border/50' 
+                    : 'bg-background border-border hover:border-primary/30 hover:shadow-sm'
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback 
+                      className={`text-xs font-medium ${
+                        comment.resolved 
+                          ? 'bg-muted text-muted-foreground' 
+                          : 'bg-primary/10 text-primary'
+                      }`}
+                    >
                       {getInitials(comment.userName)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium text-foreground truncate">
+                      <span className={`text-sm font-medium truncate ${
+                        comment.resolved ? 'text-muted-foreground' : 'text-foreground'
+                      }`}>
                         {comment.userName}
                       </span>
                       <span className="text-xs text-muted-foreground whitespace-nowrap">
@@ -127,20 +193,26 @@ export function CommentsPanel({
                       </span>
                     </div>
                     {comment.slideId && (
-                      <span className="text-xs text-primary">Slide {comment.slideId}</span>
+                      <span className={`text-xs ${comment.resolved ? 'text-muted-foreground' : 'text-primary'}`}>
+                        Slide {comment.slideId}
+                      </span>
                     )}
-                    <p className="text-sm text-foreground mt-1">{comment.content}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs gap-1"
-                        onClick={() => onResolveComment(comment.id)}
-                      >
-                        <Check className="h-3 w-3" />
-                        {comment.resolved ? 'Resolved' : 'Mark Resolved'}
-                      </Button>
-                    </div>
+                    <p className={`text-sm mt-1.5 leading-relaxed ${
+                      comment.resolved ? 'text-muted-foreground' : 'text-foreground'
+                    }`}>
+                      {renderCommentContent(comment.content)}
+                    </p>
+                    <button
+                      onClick={() => onResolveComment(comment.id)}
+                      className={`flex items-center gap-1.5 mt-3 text-xs font-medium transition-colors ${
+                        comment.resolved
+                          ? 'text-primary'
+                          : 'text-muted-foreground hover:text-primary'
+                      }`}
+                    >
+                      <Check className={`h-3.5 w-3.5 ${comment.resolved ? 'text-primary' : ''}`} />
+                      {comment.resolved ? 'Resolved' : 'Mark Resolved'}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -152,9 +224,45 @@ export function CommentsPanel({
       {/* Add Comment Input */}
       <div className="p-4 border-t bg-muted/30">
         <div className="relative">
+          {/* Mention suggestions dropdown */}
+          {showMentions && filteredUsers.length > 0 && (
+            <div className="absolute bottom-full left-0 right-0 mb-2 bg-popover border rounded-lg shadow-lg overflow-hidden z-10">
+              {filteredUsers.map((user) => (
+                <button
+                  key={user.id}
+                  onClick={() => handleMentionSelect(user.name)}
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 transition-colors"
+                >
+                  <Avatar className="h-6 w-6">
+                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                      {getInitials(user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-foreground">{user.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          
+          <div className="flex items-center gap-2 mb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-muted-foreground hover:text-primary"
+              onClick={() => {
+                setNewComment(newComment + '@');
+                setShowMentions(true);
+                setMentionSearch('');
+              }}
+            >
+              <AtSign className="h-4 w-4" />
+            </Button>
+            <span className="text-xs text-muted-foreground">Use @ to mention someone</span>
+          </div>
+          
           <Textarea
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
+            onChange={(e) => handleCommentChange(e.target.value)}
             placeholder="Add a comment..."
             className="min-h-[80px] pr-12 resize-none rounded-xl"
             onKeyDown={(e) => {
