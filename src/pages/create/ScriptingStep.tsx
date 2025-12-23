@@ -84,6 +84,32 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
     setCurrentQuestionIndex(0);
   }, [currentItemIndex]);
 
+  // Keyboard navigation for slides
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input/textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (currentItemIndex > 0) {
+          goToItem(currentItemIndex - 1);
+        }
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        if (currentItemIndex < courseItems.length - 1) {
+          goToItem(currentItemIndex + 1);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentItemIndex, courseItems.length]);
+
   const updateTalkPoints = (newTalkPoints: string) => {
     if (!currentSlide) return;
     const updatedSlides = slides.map((slide) =>
