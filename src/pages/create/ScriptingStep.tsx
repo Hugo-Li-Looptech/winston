@@ -334,25 +334,27 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
   const totalAssessments = courseItems.filter(i => i.type === 'assessment').length;
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header with Progress Bar */}
-      <CourseEditorHeader
-        currentStep="scripting"
-        courseTitle={courseTitle || 'Untitled Course'}
-        isCollapsed={isHeaderCollapsed}
-        onToggleCollapse={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
-        onClose={() => navigate("/dashboard")}
-        onStepClick={onStepClick}
-        showActions={true}
-        onTitleChange={setCourseTitle}
-        onComment={handleComment}
-        onSave={handleSave}
-        onPublish={handlePublish}
-        hasUnsavedChanges={hasUnsavedChanges}
-      />
+    <div className="h-screen flex flex-col">
+      {/* Fixed Header with Progress Bar */}
+      <div className="fixed top-0 left-0 right-0 z-30">
+        <CourseEditorHeader
+          currentStep="scripting"
+          courseTitle={courseTitle || 'Untitled Course'}
+          isCollapsed={isHeaderCollapsed}
+          onToggleCollapse={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+          onClose={() => navigate("/dashboard")}
+          onStepClick={onStepClick}
+          showActions={true}
+          onTitleChange={setCourseTitle}
+          onComment={handleComment}
+          onSave={handleSave}
+          onPublish={handlePublish}
+          hasUnsavedChanges={hasUnsavedChanges}
+        />
+      </div>
 
-      {/* Main Content Area with Resizable Panels */}
-      <div className="flex-1 overflow-hidden">
+      {/* Main Content Area with Resizable Panels - account for fixed header and footer */}
+      <div className="flex-1 overflow-hidden pt-[72px] pb-[72px]">
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Left Panel - Editor */}
           <ResizablePanel defaultSize={40} minSize={25} maxSize={60}>
@@ -1099,8 +1101,8 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
         </ResizablePanelGroup>
       </div>
 
-      {/* Footer Navigation */}
-      <div className="bg-card/80 backdrop-blur-xl px-6 py-4 flex items-center justify-between shadow-[0_-2px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] dark:bg-card/70 transition-all duration-300">
+      {/* Fixed Footer Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-card/80 backdrop-blur-xl px-6 py-4 flex items-center justify-between shadow-[0_-2px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] dark:bg-card/70 transition-all duration-300 border-t border-border/50">
         <Button variant="outline" onClick={handleBack} className="gap-2 rounded-xl">
           <ArrowLeft className="h-4 w-4" />
           Back

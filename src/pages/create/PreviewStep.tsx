@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCourse } from '@/contexts/CourseContext';
-import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, ArrowLeft, ClipboardList, Edit, Eye, EyeOff, Maximize2, Minimize2, GraduationCap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, ArrowLeft, ClipboardList, Edit, Eye, EyeOff, PanelLeftOpen, GraduationCap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 interface PreviewStepProps {
   onBack: () => void;
@@ -26,7 +27,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(80);
   const [isPublished, setIsPublished] = useState(true);
-  const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
+  const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
@@ -61,11 +62,11 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
 
   // Auto-scroll to highlighted word
   useEffect(() => {
-    if (isTranscriptExpanded && transcriptRef.current) {
+    if (isTranscriptOpen && transcriptRef.current) {
       const highlightedWord = transcriptRef.current.querySelector('[data-highlighted="true"]');
       highlightedWord?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }, [currentWordIndex, isTranscriptExpanded]);
+  }, [currentWordIndex, isTranscriptOpen]);
 
   // Reset word index when slide changes
   useEffect(() => {
@@ -153,9 +154,9 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
   };
 
   return (
-    <div className="h-full flex flex-col bg-muted/20 dark:bg-background">
-      {/* Header */}
-      <div className="bg-card/80 backdrop-blur-xl px-6 py-4 transition-all duration-300">
+    <div className="h-screen flex flex-col bg-muted/20 dark:bg-background">
+      {/* Fixed Header */}
+      <div className="fixed top-0 left-0 right-0 z-30 bg-card/80 backdrop-blur-xl px-6 py-4 transition-all duration-300 border-b border-border/50">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-foreground">Preview Your Course</h1>
@@ -200,9 +201,44 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
         </div>
       </div>
 
-      {/* Main Preview Area */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-5xl mx-auto space-y-6">
+      {/* Transcript Sheet - Left Side */}
+      <Sheet open={isTranscriptOpen} onOpenChange={setIsTranscriptOpen}>
+        <SheetContent side="left" className="w-[400px] sm:w-[450px]" overlayClassName="bg-transparent">
+          <SheetHeader>
+            <SheetTitle className="flex items-center justify-between">
+              <span>Full Transcript</span>
+              <span className="text-xs font-normal text-muted-foreground">
+                Word {currentWordIndex + 1} of {talkPointWords.length}
+              </span>
+            </SheetTitle>
+          </SheetHeader>
+          <div className="mt-6">
+            <ScrollArea className="h-[calc(100vh-150px)] w-full rounded-xl bg-muted/30 dark:bg-muted/20 p-4">
+              <div ref={transcriptRef} className="leading-relaxed">
+                {talkPointWords.map((word, index) => (
+                  <span
+                    key={index}
+                    data-highlighted={index === currentWordIndex}
+                    className={`inline-block mr-1 px-0.5 rounded transition-all ${
+                      index === currentWordIndex
+                        ? 'bg-primary text-primary-foreground font-medium'
+                        : index < currentWordIndex
+                          ? 'text-muted-foreground'
+                          : 'text-foreground'
+                    }`}
+                  >
+                    {word}
+                  </span>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Main Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto pt-[88px] pb-[88px]">
+        <div className="max-w-5xl mx-auto p-6 space-y-6">
           {/* Slide/Assessment Card */}
           <div className="bg-card/80 backdrop-blur-xl rounded-2xl shadow-lg dark:shadow-black/30 overflow-hidden transition-all duration-300 hover:shadow-xl dark:hover:shadow-black/40">
             {currentItem?.type === 'slide' && currentSlide && (
@@ -225,94 +261,21 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
                   </div>
                 </div>
 
-                {/* Audio Player Bar */}
-                <div className="bg-background/50 dark:bg-background/30 backdrop-blur-sm px-6 py-4">
-                  <div className="flex items-center gap-4">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setIsPlaying(!isPlaying)}
-                      className="h-10 w-10 rounded-full transition-transform duration-200 hover:scale-110"
-                    >
-                      {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                    </Button>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium text-foreground">Winston is speaking:</span>
-                        {isPlaying && (
-                          <div className="flex items-center gap-0.5">
-                            <span className="w-1 h-3 bg-primary rounded-full animate-pulse" />
-                            <span className="w-1 h-4 bg-primary rounded-full animate-pulse [animation-delay:0.1s]" />
-                            <span className="w-1 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.2s]" />
-                          </div>
-                        )}
+                {/* Winston Speaking Indicator */}
+                <div className="bg-background/50 dark:bg-background/30 backdrop-blur-sm px-6 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">Winston is speaking:</span>
+                    {isPlaying && (
+                      <div className="flex items-center gap-0.5">
+                        <span className="w-1 h-3 bg-primary rounded-full animate-pulse" />
+                        <span className="w-1 h-4 bg-primary rounded-full animate-pulse [animation-delay:0.1s]" />
+                        <span className="w-1 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.2s]" />
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-1">
-                        {currentSlide.talkPoints}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setIsMuted(!isMuted)}
-                        className="h-8 w-8"
-                      >
-                        {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                      </Button>
-                      <Slider
-                        value={[isMuted ? 0 : volume]}
-                        onValueChange={([val]) => {
-                          setVolume(val);
-                          if (val > 0) setIsMuted(false);
-                        }}
-                        max={100}
-                        className="w-24"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setIsTranscriptExpanded(!isTranscriptExpanded)}
-                        className="h-8 w-8"
-                        title={isTranscriptExpanded ? "Collapse transcript" : "Expand transcript"}
-                      >
-                        {isTranscriptExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                      </Button>
-                    </div>
+                    )}
+                    <p className="text-sm text-muted-foreground line-clamp-1 flex-1">
+                      {currentSlide.talkPoints}
+                    </p>
                   </div>
-
-                  {/* Expanded Transcript Panel */}
-                  {isTranscriptExpanded && (
-                    <div className="mt-4 pt-4 border-t border-border/50">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-medium text-foreground">Full Transcript</span>
-                        <span className="text-xs text-muted-foreground">
-                          Word {currentWordIndex + 1} of {talkPointWords.length}
-                        </span>
-                      </div>
-                      <ScrollArea className="h-40 w-full rounded-xl bg-muted/30 dark:bg-muted/20 p-4">
-                        <div ref={transcriptRef} className="leading-relaxed">
-                          {talkPointWords.map((word, index) => (
-                            <span
-                              key={index}
-                              data-highlighted={index === currentWordIndex}
-                              className={`inline-block mr-1 px-0.5 rounded transition-all ${
-                                index === currentWordIndex
-                                  ? 'bg-primary text-primary-foreground font-medium'
-                                  : index < currentWordIndex
-                                    ? 'text-muted-foreground'
-                                    : 'text-foreground'
-                              }`}
-                            >
-                              {word}
-                            </span>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </div>
-                  )}
                 </div>
               </>
             )}
@@ -442,20 +405,65 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
               </div>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* Navigation */}
-          <div className="flex items-center justify-center gap-4">
-            <Button
-              variant="outline"
-              onClick={() => goToItem(currentItemIndex - 1)}
-              disabled={currentItemIndex === 0}
-              className="rounded-xl transition-transform duration-200 hover:scale-105"
-            >
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Previous
-            </Button>
-            
-            <div className="flex items-center gap-2 px-4">
+      {/* Fixed Bottom Control Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-card/80 backdrop-blur-xl px-6 py-4 transition-all duration-300 border-t border-border/50">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          {/* Left: Back Button */}
+          <Button variant="outline" onClick={onBack} className="gap-2 rounded-xl transition-transform duration-200 hover:scale-105">
+            <ArrowLeft className="h-4 w-4" />
+            {isPreviewOnly ? 'Back to Dashboard' : 'Back to Editing'}
+          </Button>
+
+          {/* Center: Playback Controls + Progress Dots + Navigation */}
+          <div className="flex items-center gap-6">
+            {/* Playback Controls */}
+            {currentSlide && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsTranscriptOpen(true)}
+                  className="h-9 w-9 rounded-full"
+                  title="Open transcript"
+                >
+                  <PanelLeftOpen className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className="h-9 w-9 rounded-full"
+                >
+                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsMuted(!isMuted)}
+                  className="h-8 w-8"
+                >
+                  {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                </Button>
+                <Slider
+                  value={[isMuted ? 0 : volume]}
+                  onValueChange={([val]) => {
+                    setVolume(val);
+                    if (val > 0) setIsMuted(false);
+                  }}
+                  max={100}
+                  className="w-20"
+                />
+              </div>
+            )}
+
+            {/* Divider */}
+            {currentSlide && <div className="h-6 w-px bg-border" />}
+
+            {/* Progress Dots */}
+            <div className="flex items-center gap-2">
               {courseItems.map((item, index) => (
                 <button
                   key={item.id}
@@ -482,37 +490,41 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
               )}
             </div>
 
-            <Button
-              variant="outline"
-              onClick={() => goToItem(currentItemIndex + 1)}
-              disabled={currentItemIndex === totalItems - 1}
-              className="rounded-xl transition-transform duration-200 hover:scale-105"
-            >
-              Next
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </Button>
+            {/* Divider */}
+            <div className="h-6 w-px bg-border" />
+
+            {/* Navigation Buttons */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToItem(currentItemIndex - 1)}
+                disabled={currentItemIndex === 0}
+                className="rounded-xl"
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToItem(currentItemIndex + 1)}
+                disabled={currentItemIndex === totalItems - 1}
+                className="rounded-xl"
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
           </div>
 
-          {/* Item Counter */}
-          <div className="text-center text-sm text-muted-foreground">
+          {/* Right: Item Counter */}
+          <div className="text-sm text-muted-foreground min-w-[120px] text-right">
             {isViewingFinalAssessment 
               ? 'Final Assessment' 
               : currentItem?.type === 'slide' 
                 ? 'Slide' 
                 : 'Knowledge Check'} {currentItemIndex + 1} of {totalItems}
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="bg-card/80 backdrop-blur-xl px-6 py-4 transition-all duration-300">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <Button variant="outline" onClick={onBack} className="gap-2 rounded-xl transition-transform duration-200 hover:scale-105">
-            <ArrowLeft className="h-4 w-4" />
-            {isPreviewOnly ? 'Back to Dashboard' : 'Back to Editing'}
-          </Button>
-          <div className="text-sm text-muted-foreground">
-            {courseItems.filter(i => i.type === 'slide').length} slides • {courseItems.filter(i => i.type === 'assessment').length} knowledge checks{hasFinalAssessment ? ' • 1 final assessment' : ''}
           </div>
         </div>
       </div>
