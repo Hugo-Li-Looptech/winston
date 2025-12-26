@@ -35,7 +35,10 @@ export function CommentsPanel({
   const [filter, setFilter] = useState<'all' | 'current' | 'unresolved'>('all');
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
-  const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [replyShowMentions, setReplyShowMentions] = useState(false);
+  const [replyMentionSearch, setReplyMentionSearch] = useState('');
 
   const filteredComments = comments.filter((comment) => {
     if (filter === 'current' && currentSlideId) {
@@ -51,22 +54,32 @@ export function CommentsPanel({
     user.name.toLowerCase().includes(mentionSearch.toLowerCase())
   );
 
+  const replyFilteredUsers = sampleUsers.filter((user) =>
+    user.name.toLowerCase().includes(replyMentionSearch.toLowerCase())
+  );
+
   const handleSubmit = () => {
     if (newComment.trim()) {
-      onAddComment(newComment.trim(), replyingTo?.id);
+      onAddComment(newComment.trim());
       setNewComment('');
-      setReplyingTo(null);
+    }
+  };
+
+  const handleReplySubmit = (parentId: string) => {
+    if (replyText.trim()) {
+      onAddComment(replyText.trim(), parentId);
+      setReplyText('');
+      setReplyingToId(null);
+      setReplyShowMentions(false);
     }
   };
 
   const handleCommentChange = (value: string) => {
     setNewComment(value);
     
-    // Check for @ symbol to trigger mentions
     const lastAtIndex = value.lastIndexOf('@');
     if (lastAtIndex !== -1) {
       const textAfterAt = value.slice(lastAtIndex + 1);
-      // Only show mentions if we're actively typing after @
       if (!textAfterAt.includes(' ') && lastAtIndex === value.length - 1 - textAfterAt.length) {
         setShowMentions(true);
         setMentionSearch(textAfterAt);
@@ -78,6 +91,23 @@ export function CommentsPanel({
     }
   };
 
+  const handleReplyChange = (value: string) => {
+    setReplyText(value);
+    
+    const lastAtIndex = value.lastIndexOf('@');
+    if (lastAtIndex !== -1) {
+      const textAfterAt = value.slice(lastAtIndex + 1);
+      if (!textAfterAt.includes(' ') && lastAtIndex === value.length - 1 - textAfterAt.length) {
+        setReplyShowMentions(true);
+        setReplyMentionSearch(textAfterAt);
+      } else {
+        setReplyShowMentions(false);
+      }
+    } else {
+      setReplyShowMentions(false);
+    }
+  };
+
   const handleMentionSelect = (userName: string) => {
     const lastAtIndex = newComment.lastIndexOf('@');
     const newValue = newComment.slice(0, lastAtIndex) + `@${userName} `;
@@ -86,14 +116,23 @@ export function CommentsPanel({
     setMentionSearch('');
   };
 
+  const handleReplyMentionSelect = (userName: string) => {
+    const lastAtIndex = replyText.lastIndexOf('@');
+    const newValue = replyText.slice(0, lastAtIndex) + `@${userName} `;
+    setReplyText(newValue);
+    setReplyShowMentions(false);
+    setReplyMentionSearch('');
+  };
+
   const handleReplyClick = (comment: Comment) => {
-    setReplyingTo(comment);
-    setNewComment(`@${comment.userName} `);
+    setReplyingToId(comment.id);
+    setReplyText(`@${comment.userName} `);
   };
 
   const cancelReply = () => {
-    setReplyingTo(null);
-    setNewComment('');
+    setReplyingToId(null);
+    setReplyText('');
+    setReplyShowMentions(false);
   };
 
   const formatDate = (date: Date) => {
@@ -113,7 +152,6 @@ export function CommentsPanel({
       .toUpperCase();
   };
 
-  // Render comment content with highlighted @mentions
   const renderCommentContent = (content: string) => {
     const parts = content.split(/(@\w+\s?\w*)/g);
     return parts.map((part, index) => {
@@ -128,83 +166,175 @@ export function CommentsPanel({
     });
   };
 
-  // Render a single comment with its replies
-  const renderComment = (comment: Comment, isReply = false) => (
-    <div
-      key={comment.id}
-      className={`p-4 rounded-xl border transition-all cursor-pointer ${
-        comment.resolved 
-          ? 'bg-muted/20 border-border/50' 
-          : 'bg-background border-border hover:border-primary/30 hover:shadow-sm'
-      } ${isReply ? 'ml-8 mt-2' : ''}`}
-      onClick={() => !isReply && handleReplyClick(comment)}
-    >
-      {isReply && (
-        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-          <CornerDownRight className="h-3 w-3" />
-          <span>Reply</span>
+  const renderReplyInput = (comment: Comment) => (
+    <div className="mt-3 ml-12 relative">
+      <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+        <Reply className="h-3.5 w-3.5 text-primary" />
+        <span>Replying to <span className="font-medium text-foreground">{comment.userName}</span></span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-5 w-5 ml-auto"
+          onClick={cancelReply}
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      </div>
+      
+      {replyShowMentions && replyFilteredUsers.length > 0 && (
+        <div className="absolute bottom-full left-0 right-0 mb-2 bg-popover border rounded-lg shadow-lg overflow-hidden z-10">
+          {replyFilteredUsers.map((user) => (
+            <button
+              key={user.id}
+              onClick={() => handleReplyMentionSelect(user.name)}
+              className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 transition-colors"
+            >
+              <Avatar className="h-6 w-6">
+                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                  {getInitials(user.name)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-foreground">{user.name}</span>
+            </button>
+          ))}
         </div>
       )}
-      <div className="flex items-start gap-3">
-        <Avatar className="h-9 w-9">
-          <AvatarFallback 
-            className={`text-xs font-medium ${
-              comment.resolved 
-                ? 'bg-muted text-muted-foreground' 
-                : 'bg-primary/10 text-primary'
-            }`}
-          >
-            {getInitials(comment.userName)}
+      
+      <div className="relative">
+        <Textarea
+          value={replyText}
+          onChange={(e) => handleReplyChange(e.target.value)}
+          placeholder={`Reply to ${comment.userName}...`}
+          className="min-h-[60px] pr-10 resize-none rounded-lg text-sm"
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleReplySubmit(comment.id);
+            }
+            if (e.key === 'Escape') {
+              cancelReply();
+            }
+          }}
+        />
+        <Button
+          size="icon"
+          className="absolute bottom-2 right-2 h-6 w-6 rounded-md"
+          onClick={() => handleReplySubmit(comment.id)}
+          disabled={!replyText.trim()}
+        >
+          <Send className="h-3 w-3" />
+        </Button>
+      </div>
+    </div>
+  );
+
+  const renderReply = (reply: Comment) => (
+    <div
+      key={reply.id}
+      className="ml-10 mt-2 pl-4 border-l-2 border-primary/20"
+    >
+      <div className="flex items-start gap-2">
+        <Avatar className="h-7 w-7">
+          <AvatarFallback className="text-xs bg-primary/10 text-primary">
+            {getInitials(reply.userName)}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <span className={`text-sm font-medium truncate ${
-              comment.resolved ? 'text-muted-foreground' : 'text-foreground'
-            }`}>
-              {comment.userName}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground">
+              {reply.userName}
             </span>
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {formatDate(comment.timestamp)}
+            <span className="text-xs text-muted-foreground">
+              {formatDate(reply.timestamp)}
             </span>
           </div>
-          {comment.slideId && (
-            <span className={`text-xs ${comment.resolved ? 'text-muted-foreground' : 'text-primary'}`}>
-              Slide {comment.slideId}
-            </span>
-          )}
-          <p className={`text-sm mt-1.5 leading-relaxed ${
-            comment.resolved ? 'text-muted-foreground' : 'text-foreground'
-          }`}>
-            {renderCommentContent(comment.content)}
+          <p className="text-sm mt-0.5 text-foreground leading-relaxed">
+            {renderCommentContent(reply.content)}
           </p>
-          <div className="flex items-center gap-3 mt-3">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleReplyClick(comment);
-              }}
-              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Reply className="h-3.5 w-3.5" />
-              Reply
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onResolveComment(comment.id);
-              }}
-              className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
-                comment.resolved
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-primary'
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderComment = (comment: Comment) => (
+    <div key={comment.id} className="space-y-1">
+      <div
+        className={`p-4 rounded-xl border transition-all ${
+          comment.resolved 
+            ? 'bg-muted/20 border-border/50' 
+            : 'bg-background border-border'
+        } ${replyingToId === comment.id ? 'ring-2 ring-primary/30' : ''}`}
+      >
+        <div className="flex items-start gap-3">
+          <Avatar className="h-9 w-9">
+            <AvatarFallback 
+              className={`text-xs font-medium ${
+                comment.resolved 
+                  ? 'bg-muted text-muted-foreground' 
+                  : 'bg-primary/10 text-primary'
               }`}
             >
-              <Check className={`h-3.5 w-3.5 ${comment.resolved ? 'text-primary' : ''}`} />
-              {comment.resolved ? 'Resolved' : 'Resolve'}
-            </button>
+              {getInitials(comment.userName)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <span className={`text-sm font-medium truncate ${
+                comment.resolved ? 'text-muted-foreground' : 'text-foreground'
+              }`}>
+                {comment.userName}
+              </span>
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                {formatDate(comment.timestamp)}
+              </span>
+            </div>
+            {comment.slideId && (
+              <span className={`text-xs ${comment.resolved ? 'text-muted-foreground' : 'text-primary'}`}>
+                Slide {comment.slideId}
+              </span>
+            )}
+            <p className={`text-sm mt-1.5 leading-relaxed ${
+              comment.resolved ? 'text-muted-foreground' : 'text-foreground'
+            }`}>
+              {renderCommentContent(comment.content)}
+            </p>
+            <div className="flex items-center gap-3 mt-3">
+              <button
+                onClick={() => handleReplyClick(comment)}
+                className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
+                  replyingToId === comment.id
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-primary'
+                }`}
+              >
+                <Reply className="h-3.5 w-3.5" />
+                Reply
+              </button>
+              <button
+                onClick={() => onResolveComment(comment.id)}
+                className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
+                  comment.resolved
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-primary'
+                }`}
+              >
+                <Check className={`h-3.5 w-3.5 ${comment.resolved ? 'text-primary' : ''}`} />
+                {comment.resolved ? 'Resolved' : 'Resolve'}
+              </button>
+            </div>
           </div>
         </div>
+        
+        {/* Nested replies */}
+        {comment.replies && comment.replies.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {comment.replies.map((reply) => renderReply(reply))}
+          </div>
+        )}
+        
+        {/* Inline reply input */}
+        {replyingToId === comment.id && renderReplyInput(comment)}
       </div>
     </div>
   );
@@ -253,40 +383,14 @@ export function CommentsPanel({
               <p className="text-sm text-muted-foreground">No comments yet</p>
             </div>
           ) : (
-            filteredComments.map((comment) => (
-              <div key={comment.id}>
-                {renderComment(comment)}
-                {/* Render replies */}
-                {comment.replies?.map((reply) => renderComment(reply, true))}
-              </div>
-            ))
+            filteredComments.map((comment) => renderComment(comment))
           )}
         </div>
       </ScrollArea>
 
-      {/* Add Comment Input */}
+      {/* Add New Comment Input */}
       <div className="p-4 border-t bg-muted/30">
         <div className="relative">
-          {/* Reply indicator */}
-          {replyingTo && (
-            <div className="flex items-center justify-between mb-2 px-2 py-1.5 bg-primary/10 rounded-lg">
-              <div className="flex items-center gap-2 text-sm">
-                <Reply className="h-4 w-4 text-primary" />
-                <span className="text-muted-foreground">Replying to</span>
-                <span className="font-medium text-foreground">{replyingTo.userName}</span>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={cancelReply}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          )}
-
-          {/* Mention suggestions dropdown */}
           {showMentions && filteredUsers.length > 0 && (
             <div className="absolute bottom-full left-0 right-0 mb-2 bg-popover border rounded-lg shadow-lg overflow-hidden z-10">
               {filteredUsers.map((user) => (
@@ -320,22 +424,19 @@ export function CommentsPanel({
               <AtSign className="h-4 w-4" />
             </Button>
             <span className="text-xs text-muted-foreground">
-              {replyingTo ? 'Type your reply...' : 'Click a comment to reply or use @ to mention'}
+              Use @ to mention someone
             </span>
           </div>
           
           <Textarea
             value={newComment}
             onChange={(e) => handleCommentChange(e.target.value)}
-            placeholder={replyingTo ? `Reply to ${replyingTo.userName}...` : "Add a comment..."}
+            placeholder="Add a new comment..."
             className="min-h-[80px] pr-12 resize-none rounded-xl"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 handleSubmit();
-              }
-              if (e.key === 'Escape' && replyingTo) {
-                cancelReply();
               }
             }}
           />
