@@ -168,7 +168,8 @@ export default function CreateCourse() {
                 setSubStep('scripting');
               }
             }} 
-            isPreviewOnly={isPreviewOnly} 
+            isPreviewOnly={isPreviewOnly}
+            onStepClick={handleStepClick}
           />
         );
       default:

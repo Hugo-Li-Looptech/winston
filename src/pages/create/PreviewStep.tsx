@@ -10,12 +10,15 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { CourseEditorHeader } from '@/components/CourseEditorHeader';
 import { CommentsPanel } from '@/components/CommentsPanel';
 
+import { WizardStep } from '@/types/course';
+
 interface PreviewStepProps {
   onBack: () => void;
   isPreviewOnly?: boolean;
+  onStepClick?: (step: WizardStep) => void;
 }
 
-export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps) {
+export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: PreviewStepProps) {
   const navigate = useNavigate();
   const { 
     currentCourse, 
@@ -178,6 +181,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
           onPublish={handlePublish}
           hasUnsavedChanges={true}
           isEditMode={false}
+          onStepClick={onStepClick}
         />
       </div>
 
@@ -219,6 +223,9 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
       {/* Main Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto pt-[72px] pb-[120px] flex flex-col items-center justify-center">
         <div className="w-full max-w-6xl mx-auto px-8 flex flex-col items-center gap-4">
+          {/* Preview Heading */}
+          <h2 className="text-2xl font-semibold text-foreground mb-4 self-start">Preview</h2>
+          
           {/* Slide Card */}
           {currentItem?.type === 'slide' && currentSlide && (
             <div className="w-full bg-card/80 backdrop-blur-xl rounded-2xl shadow-lg dark:shadow-black/30 overflow-hidden transition-all duration-300 hover:shadow-xl dark:hover:shadow-black/40">
