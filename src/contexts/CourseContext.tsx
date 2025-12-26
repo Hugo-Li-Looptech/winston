@@ -54,7 +54,7 @@ interface CourseContextType {
   setCourseTitle: (title: string) => void;
   setCourseDescription: (description: string) => void;
   setCompletedSteps: React.Dispatch<React.SetStateAction<CompletedSteps>>;
-  markStepComplete: (step: 'upload' | 'wizard' | 'scripting') => void;
+  markStepComplete: (step: 'upload' | 'wizard' | 'scripting' | 'preview') => void;
   setMetadata: (metadata: Partial<CourseMetadata>) => void;
   addComment: (content: string, slideId?: string) => void;
   resolveComment: (commentId: string) => void;
@@ -476,7 +476,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const markStepComplete = (step: 'upload' | 'wizard' | 'scripting') => {
+  const markStepComplete = (step: 'upload' | 'wizard' | 'scripting' | 'preview') => {
     setCompletedSteps((prev) => ({ ...prev, [step]: true }));
   };
 

@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCourse } from '@/contexts/CourseContext';
-import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, ArrowLeft, ClipboardList, Edit, Eye, EyeOff, PanelLeftOpen, GraduationCap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, ArrowLeft, ClipboardList, PanelLeftOpen, GraduationCap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { CourseEditorHeader } from '@/components/CourseEditorHeader';
+import { CommentsPanel } from '@/components/CommentsPanel';
 
 interface PreviewStepProps {
   onBack: () => void;
@@ -15,8 +17,20 @@ interface PreviewStepProps {
 
 export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps) {
   const navigate = useNavigate();
-  const { currentCourse, setCourses, courses, finalAssessment } = useCourse();
-  const { courseItems } = currentCourse;
+  const { 
+    currentCourse, 
+    setCourses, 
+    courses, 
+    finalAssessment,
+    comments,
+    addComment,
+    resolveComment,
+    setCourseTitle,
+    publishCourse,
+    saveCourseAsDraft,
+    markStepComplete
+  } = useCourse();
+  const { courseItems, courseTitle } = currentCourse;
   
   // Create combined items array with final assessment at the end
   const hasFinalAssessment = finalAssessment && finalAssessment.questions.length > 0;
@@ -26,9 +40,10 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(80);
-  const [isPublished, setIsPublished] = useState(true);
   const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(true);
+  const [isCommentsPanelOpen, setIsCommentsPanelOpen] = useState(false);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   // Determine if we're viewing the final assessment
@@ -115,24 +130,25 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
     }
   };
 
-  const handleEdit = () => {
-    navigate('/create?mode=edit');
+  const handleComment = () => {
+    setIsCommentsPanelOpen(true);
   };
 
-  const handleTogglePublish = () => {
-    setIsPublished(!isPublished);
-    toast({
-      title: isPublished ? 'Course Unpublished' : 'Course Published',
-      description: isPublished 
-        ? 'The course is no longer visible to learners.' 
-        : 'The course is now live and available to learners.',
-    });
+  const handleAddComment = (content: string) => {
+    addComment(content, currentSlide?.id);
+  };
+
+  const handleSave = () => {
+    markStepComplete('preview');
+    saveCourseAsDraft();
   };
 
   const handlePublish = () => {
+    markStepComplete('preview');
+    publishCourse();
     const newCourse = {
       id: Date.now().toString(),
-      title: 'How to Make a PBJ Sand',
+      title: courseTitle || 'How to Make a PBJ Sand',
       date: new Date().toLocaleDateString(),
       status: 'published' as const,
       progress: '100%' as const,
@@ -145,60 +161,24 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
     navigate('/dashboard');
   };
 
-  const handleSaveDraft = () => {
-    toast({
-      title: 'Draft Saved',
-      description: 'Your course has been saved as a draft.',
-    });
-    navigate('/dashboard');
-  };
-
   return (
     <div className="h-screen flex flex-col bg-muted/20 dark:bg-background">
-      {/* Fixed Header */}
-      <div className="fixed top-0 left-0 right-0 z-30 bg-card/80 backdrop-blur-xl px-6 py-4 transition-all duration-300 border-b border-border/50">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">Preview Your Course</h1>
-            <p className="text-sm text-muted-foreground">Experience your course from a student's perspective</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {isPreviewOnly ? (
-              <>
-                <Button variant="outline" onClick={handleEdit} className="rounded-xl gap-2 transition-transform duration-200 hover:scale-105">
-                  <Edit className="h-4 w-4" />
-                  Edit
-                </Button>
-                <Button 
-                  variant={isPublished ? "outline" : "default"} 
-                  onClick={handleTogglePublish} 
-                  className="rounded-xl gap-2 transition-transform duration-200 hover:scale-105"
-                >
-                  {isPublished ? (
-                    <>
-                      <EyeOff className="h-4 w-4" />
-                      Unpublish
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="h-4 w-4" />
-                      Publish
-                    </>
-                  )}
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="outline" onClick={handleSaveDraft} className="rounded-xl transition-transform duration-200 hover:scale-105">
-                  Save as Draft
-                </Button>
-                <Button onClick={handlePublish} className="rounded-xl transition-transform duration-200 hover:scale-105">
-                  Publish Course
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+      {/* Fixed Header - CourseEditorHeader */}
+      <div className="fixed top-0 left-0 right-0 z-30 bg-card/80 backdrop-blur-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.3)]">
+        <CourseEditorHeader
+          currentStep="preview"
+          courseTitle={courseTitle || 'Untitled Course'}
+          isCollapsed={isHeaderCollapsed}
+          onToggleCollapse={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+          onClose={() => navigate("/dashboard")}
+          showActions={true}
+          onTitleChange={setCourseTitle}
+          onComment={handleComment}
+          onSave={handleSave}
+          onPublish={handlePublish}
+          hasUnsavedChanges={true}
+          isEditMode={false}
+        />
       </div>
 
       {/* Transcript Sheet - Left Side */}
@@ -237,7 +217,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
       </Sheet>
 
       {/* Main Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto pt-[88px] pb-[88px]">
+      <div className="flex-1 overflow-y-auto pt-[72px] pb-[80px]">
         <div className="max-w-5xl mx-auto p-6 space-y-6">
           {/* Slide/Assessment Card */}
           <div className="bg-card/80 backdrop-blur-xl rounded-2xl shadow-lg dark:shadow-black/30 overflow-hidden transition-all duration-300 hover:shadow-xl dark:hover:shadow-black/40">
@@ -408,72 +388,71 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
         </div>
       </div>
 
-      {/* Fixed Bottom Control Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-card/80 backdrop-blur-xl px-6 py-4 transition-all duration-300 border-t border-border/50">
+      {/* Fixed Bottom Control Bar - Modern UI with drop shadow */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-card/80 backdrop-blur-xl px-6 py-4 transition-all duration-300 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.4)]">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           {/* Left: Back Button */}
-          <Button variant="outline" onClick={onBack} className="gap-2 rounded-xl transition-transform duration-200 hover:scale-105">
+          <Button variant="outline" onClick={onBack} className="gap-2 rounded-full px-5 transition-transform duration-200 hover:scale-105">
             <ArrowLeft className="h-4 w-4" />
             {isPreviewOnly ? 'Back to Dashboard' : 'Back to Editing'}
           </Button>
 
-          {/* Center: Playback Controls + Progress Dots + Navigation */}
-          <div className="flex items-center gap-6">
-            {/* Playback Controls */}
+          {/* Center: Playback Controls (only for slides) + Progress Dots + Navigation */}
+          <div className="flex items-center gap-4">
+            {/* Playback Controls - Only show for slides */}
             {currentSlide && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setIsTranscriptOpen(true)}
-                  className="h-9 w-9 rounded-full"
-                  title="Open transcript"
-                >
-                  <PanelLeftOpen className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setIsPlaying(!isPlaying)}
-                  className="h-9 w-9 rounded-full"
-                >
-                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsMuted(!isMuted)}
-                  className="h-8 w-8"
-                >
-                  {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                </Button>
-                <Slider
-                  value={[isMuted ? 0 : volume]}
-                  onValueChange={([val]) => {
-                    setVolume(val);
-                    if (val > 0) setIsMuted(false);
-                  }}
-                  max={100}
-                  className="w-20"
-                />
-              </div>
+              <>
+                <div className="flex items-center gap-1.5 bg-muted/50 rounded-full px-2 py-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsTranscriptOpen(true)}
+                    className="h-8 w-8 rounded-full"
+                    title="Open transcript"
+                  >
+                    <PanelLeftOpen className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsPlaying(!isPlaying)}
+                    className="h-8 w-8 rounded-full"
+                  >
+                    {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsMuted(!isMuted)}
+                    className="h-7 w-7 rounded-full"
+                  >
+                    {isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                  </Button>
+                  <Slider
+                    value={[isMuted ? 0 : volume]}
+                    onValueChange={([val]) => {
+                      setVolume(val);
+                      if (val > 0) setIsMuted(false);
+                    }}
+                    max={100}
+                    className="w-16"
+                  />
+                </div>
+              </>
             )}
 
-            {/* Divider */}
-            {currentSlide && <div className="h-6 w-px bg-border" />}
-
             {/* Progress Dots */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {courseItems.map((item, index) => (
                 <button
                   key={item.id}
                   onClick={() => goToItem(index)}
-                  className={`h-2.5 rounded-full transition-all duration-200 ${
+                  className={`h-2 rounded-full transition-all duration-200 ${
                     index === currentItemIndex 
-                      ? 'w-8 bg-primary' 
+                      ? 'w-6 bg-primary' 
                       : item.type === 'assessment'
-                        ? 'w-2.5 bg-primary/40 hover:bg-primary/60'
-                        : 'w-2.5 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                        ? 'w-2 bg-primary/40 hover:bg-primary/60'
+                        : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
                   }`}
                 />
               ))}
@@ -481,36 +460,33 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
               {hasFinalAssessment && (
                 <button
                   onClick={() => goToItem(courseItems.length)}
-                  className={`h-2.5 rounded-full transition-all duration-200 ${
+                  className={`h-2 rounded-full transition-all duration-200 ${
                     isViewingFinalAssessment
-                      ? 'w-8 bg-amber-500'
-                      : 'w-2.5 bg-amber-500/40 hover:bg-amber-500/60'
+                      ? 'w-6 bg-amber-500'
+                      : 'w-2 bg-amber-500/40 hover:bg-amber-500/60'
                   }`}
                 />
               )}
             </div>
 
-            {/* Divider */}
-            <div className="h-6 w-px bg-border" />
-
             {/* Navigation Buttons */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-muted/50 rounded-full p-1">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => goToItem(currentItemIndex - 1)}
                 disabled={currentItemIndex === 0}
-                className="rounded-xl"
+                className="rounded-full px-3 h-8"
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Previous
               </Button>
               <Button
-                variant="outline"
+                variant={currentItemIndex < totalItems - 1 ? "ghost" : "default"}
                 size="sm"
                 onClick={() => goToItem(currentItemIndex + 1)}
                 disabled={currentItemIndex === totalItems - 1}
-                className="rounded-xl"
+                className="rounded-full px-3 h-8"
               >
                 Next
                 <ChevronRight className="h-4 w-4 ml-1" />
@@ -519,7 +495,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
           </div>
 
           {/* Right: Item Counter */}
-          <div className="text-sm text-muted-foreground min-w-[120px] text-right">
+          <div className="text-sm text-muted-foreground min-w-[140px] text-right">
             {isViewingFinalAssessment 
               ? 'Final Assessment' 
               : currentItem?.type === 'slide' 
@@ -528,6 +504,16 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
           </div>
         </div>
       </div>
+
+      {/* Comments Panel */}
+      <CommentsPanel
+        isOpen={isCommentsPanelOpen}
+        onClose={() => setIsCommentsPanelOpen(false)}
+        comments={comments}
+        onAddComment={handleAddComment}
+        onResolveComment={resolveComment}
+        currentSlideId={currentSlide?.id}
+      />
     </div>
   );
 }
