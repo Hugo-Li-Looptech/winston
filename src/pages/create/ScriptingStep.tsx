@@ -335,8 +335,8 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Fixed Header with Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 z-30">
+      {/* Fixed Header with Progress Bar - drop shadow instead of border */}
+      <div className="fixed top-0 left-0 right-0 z-30 shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.3)]">
         <CourseEditorHeader
           currentStep="scripting"
           courseTitle={courseTitle || 'Untitled Course'}
@@ -1101,14 +1101,14 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
         </ResizablePanelGroup>
       </div>
 
-      {/* Fixed Footer Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-card/80 backdrop-blur-xl px-6 py-4 flex items-center justify-between shadow-[0_-2px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] dark:bg-card/70 transition-all duration-300 border-t border-border/50">
-        <Button variant="outline" onClick={handleBack} className="gap-2 rounded-xl">
+      {/* Fixed Footer Navigation - with drop shadow, no border */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-card/80 backdrop-blur-xl px-6 py-4 flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.4)] dark:bg-card/70 transition-all duration-300">
+        <Button variant="outline" onClick={handleBack} className="gap-2 rounded-full px-5">
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
 
-        <Button onClick={handleNext} className="gap-2 rounded-xl">
+        <Button onClick={handleNext} className="gap-2 rounded-full px-5">
           {currentItemIndex === courseItems.length - 1 ? "Preview Course" : "Next"}
           <ArrowRight className="h-4 w-4" />
         </Button>
