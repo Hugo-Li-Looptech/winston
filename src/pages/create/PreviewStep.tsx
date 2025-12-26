@@ -235,11 +235,10 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
       <div className="flex-1 overflow-y-auto pt-[72px] pb-[120px] flex flex-col items-center justify-center">
         <div className="w-full max-w-6xl mx-auto px-8 flex flex-col items-center gap-4">
           {/* Preview Heading */}
-          <h2 className="text-2xl font-semibold text-foreground mb-4 self-start">Preview Page</h2>
-          <h4 className="text-m font-semibold text-foreground mb-4 self-start">
-            {" "}
-            This is what the learner will see on their end once published.
-          </h4>
+          <h2 className="text-2xl font-semibold text-foreground mb-1 self-start">Preview</h2>
+          <p className="text-sm text-muted-foreground mb-6 self-start">
+            This is what the learner will see once published.
+          </p>
 
           {/* Slide Card */}
           {currentItem?.type === "slide" && currentSlide && (
