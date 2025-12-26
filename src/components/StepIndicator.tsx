@@ -62,34 +62,20 @@ export function StepIndicator({
       <button
         onClick={onToggleCollapse}
         className="flex items-center gap-2 bg-card/80 backdrop-blur-sm rounded-full px-4 py-2 transition-all hover:bg-card"
-        aria-label="Expand step navigator"
       >
         {steps.map((step, index) => {
           const accessible = isStepAccessible(step.key);
-          const isActive = index <= currentIndex;
-
           return (
             <div
               key={step.key}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (accessible) onStepClick?.(step.key);
-              }}
-              title={step.label}
-              className={accessible ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}
-              aria-label={accessible ? `Go to ${step.label}` : `${step.label} locked`}
-              role="button"
-            >
-              <div
-                className={`h-2.5 w-2.5 rounded-full transition-colors ${
-                  isActive
-                    ? 'bg-primary'
-                    : accessible
-                      ? 'bg-muted-foreground/30'
-                      : 'bg-muted-foreground/10'
-                }`}
-              />
-            </div>
+              className={`h-2.5 w-2.5 rounded-full transition-colors ${
+                index <= currentIndex 
+                  ? 'bg-primary' 
+                  : accessible 
+                    ? 'bg-muted-foreground/30' 
+                    : 'bg-muted-foreground/10'
+              }`}
+            />
           );
         })}
         <ChevronDown className="h-4 w-4 text-muted-foreground ml-1" />

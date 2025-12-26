@@ -9,7 +9,6 @@ import { toast } from '@/hooks/use-toast';
 interface CourseEditorHeaderProps {
   currentStep: WizardStep;
   courseTitle?: string;
-  subtitle?: string;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onClose: () => void;
@@ -26,7 +25,6 @@ interface CourseEditorHeaderProps {
 export function CourseEditorHeader({
   currentStep,
   courseTitle = 'Untitled Course',
-  subtitle,
   isCollapsed,
   onToggleCollapse,
   onClose,
@@ -105,22 +103,17 @@ export function CourseEditorHeader({
             autoFocus
           />
         ) : (
-          <div className="flex flex-col items-center">
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-foreground">{courseTitle}</span>
-              {onTitleChange && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={handleStartEdit}
-                >
-                  <Pencil className="h-3 w-3 text-muted-foreground" />
-                </Button>
-              )}
-            </div>
-            {subtitle && (
-              <span className="text-xs text-muted-foreground">{subtitle}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-foreground">{courseTitle}</span>
+            {onTitleChange && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={handleStartEdit}
+              >
+                <Pencil className="h-3 w-3 text-muted-foreground" />
+              </Button>
             )}
           </div>
         )}
