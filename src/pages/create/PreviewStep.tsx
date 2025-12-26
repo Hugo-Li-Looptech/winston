@@ -261,7 +261,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
 
           {/* Floating Control Pill - Below slide, above bottom bar */}
           {currentItem?.type === 'slide' && currentSlide && (
-            <div className="flex items-center gap-1.5 bg-muted/90 backdrop-blur-xl rounded-full px-3 py-2 shadow-lg dark:shadow-black/40">
+            <div className="mt-6 flex items-center gap-1.5 bg-muted/90 backdrop-blur-xl rounded-full px-3 py-2 shadow-lg dark:shadow-black/40">
               <Button
                 variant="ghost"
                 size="icon"
