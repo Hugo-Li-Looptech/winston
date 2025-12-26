@@ -1,16 +1,27 @@
-import { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { useCourse } from '@/contexts/CourseContext';
-import { ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, ArrowLeft, ClipboardList, PanelLeftOpen, GraduationCap } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from '@/hooks/use-toast';
-import { Slider } from '@/components/ui/slider';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { CourseEditorHeader } from '@/components/CourseEditorHeader';
-import { CommentsPanel } from '@/components/CommentsPanel';
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { useCourse } from "@/contexts/CourseContext";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  ArrowLeft,
+  ClipboardList,
+  PanelLeftOpen,
+  GraduationCap,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+import { Slider } from "@/components/ui/slider";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { CourseEditorHeader } from "@/components/CourseEditorHeader";
+import { CommentsPanel } from "@/components/CommentsPanel";
 
-import { WizardStep } from '@/types/course';
+import { WizardStep } from "@/types/course";
 
 interface PreviewStepProps {
   onBack: () => void;
@@ -20,10 +31,10 @@ interface PreviewStepProps {
 
 export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: PreviewStepProps) {
   const navigate = useNavigate();
-  const { 
-    currentCourse, 
-    setCourses, 
-    courses, 
+  const {
+    currentCourse,
+    setCourses,
+    courses,
     finalAssessment,
     comments,
     addComment,
@@ -31,14 +42,14 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
     setCourseTitle,
     publishCourse,
     saveCourseAsDraft,
-    markStepComplete
+    markStepComplete,
   } = useCourse();
   const { courseItems, courseTitle } = currentCourse;
-  
+
   // Create combined items array with final assessment at the end
   const hasFinalAssessment = finalAssessment && finalAssessment.questions.length > 0;
   const totalItems = hasFinalAssessment ? courseItems.length + 1 : courseItems.length;
-  
+
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -51,10 +62,10 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
 
   // Determine if we're viewing the final assessment
   const isViewingFinalAssessment = hasFinalAssessment && currentItemIndex === courseItems.length;
-  
+
   const currentItem = isViewingFinalAssessment ? null : courseItems[currentItemIndex];
-  const currentSlide = currentItem?.type === 'slide' ? currentItem.slideData : null;
-  const currentAssessment = currentItem?.type === 'assessment' ? currentItem.assessmentData : null;
+  const currentSlide = currentItem?.type === "slide" ? currentItem.slideData : null;
+  const currentAssessment = currentItem?.type === "assessment" ? currentItem.assessmentData : null;
 
   // Split talk points into words for highlighting
   const talkPointWords = currentSlide?.talkPoints?.split(/\s+/) || [];
@@ -82,7 +93,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
   useEffect(() => {
     if (isTranscriptOpen && transcriptRef.current) {
       const highlightedWord = transcriptRef.current.querySelector('[data-highlighted="true"]');
-      highlightedWord?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      highlightedWord?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [currentWordIndex, isTranscriptOpen]);
 
@@ -100,31 +111,31 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
       }
 
       switch (e.key) {
-        case 'ArrowLeft':
+        case "ArrowLeft":
           e.preventDefault();
           if (currentItemIndex > 0) {
             setCurrentItemIndex(currentItemIndex - 1);
           }
           break;
-        case 'ArrowRight':
+        case "ArrowRight":
           e.preventDefault();
           if (currentItemIndex < totalItems - 1) {
             setCurrentItemIndex(currentItemIndex + 1);
           }
           break;
-        case ' ':
+        case " ":
           e.preventDefault();
           setIsPlaying(!isPlaying);
           break;
-        case 'm':
-        case 'M':
+        case "m":
+        case "M":
           setIsMuted(!isMuted);
           break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentItemIndex, totalItems, isPlaying, isMuted]);
 
   const goToItem = (index: number) => {
@@ -142,26 +153,26 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
   };
 
   const handleSave = () => {
-    markStepComplete('preview');
+    markStepComplete("preview");
     saveCourseAsDraft();
   };
 
   const handlePublish = () => {
-    markStepComplete('preview');
+    markStepComplete("preview");
     publishCourse();
     const newCourse = {
       id: Date.now().toString(),
-      title: courseTitle || 'How to Make a PBJ Sand',
+      title: courseTitle || "How to Make a PBJ Sand",
       date: new Date().toLocaleDateString(),
-      status: 'published' as const,
-      progress: '100%' as const,
+      status: "published" as const,
+      progress: "100%" as const,
     };
     setCourses([newCourse, ...courses]);
     toast({
-      title: 'Course Published!',
-      description: 'Your course is now live and available to learners.',
+      title: "Course Published!",
+      description: "Your course is now live and available to learners.",
     });
-    navigate('/dashboard');
+    navigate("/dashboard");
   };
 
   return (
@@ -170,7 +181,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
       <div className="fixed top-0 left-0 right-0 z-30 bg-card/80 backdrop-blur-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.3)]">
         <CourseEditorHeader
           currentStep="preview"
-          courseTitle={courseTitle || 'Untitled Course'}
+          courseTitle={courseTitle || "Untitled Course"}
           isCollapsed={isHeaderCollapsed}
           onToggleCollapse={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
           onClose={() => navigate("/dashboard")}
@@ -205,10 +216,10 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
                     data-highlighted={index === currentWordIndex}
                     className={`inline-block mr-1 px-0.5 rounded transition-all ${
                       index === currentWordIndex
-                        ? 'bg-primary text-primary-foreground font-medium'
+                        ? "bg-primary text-primary-foreground font-medium"
                         : index < currentWordIndex
-                          ? 'text-muted-foreground'
-                          : 'text-foreground'
+                          ? "text-muted-foreground"
+                          : "text-foreground"
                     }`}
                   >
                     {word}
@@ -224,10 +235,11 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
       <div className="flex-1 overflow-y-auto pt-[72px] pb-[120px] flex flex-col items-center justify-center">
         <div className="w-full max-w-6xl mx-auto px-8 flex flex-col items-center gap-4">
           {/* Preview Heading */}
-          <h2 className="text-2xl font-semibold text-foreground mb-4 self-start">Preview</h2>
-          
+          <h2 className="text-2xl font-semibold text-foreground mb-4 self-start">Preview Page</h2>
+          <h4> This is what the learner will see on their end once published.</h4>
+
           {/* Slide Card */}
-          {currentItem?.type === 'slide' && currentSlide && (
+          {currentItem?.type === "slide" && currentSlide && (
             <div className="w-full bg-card/80 backdrop-blur-xl rounded-2xl shadow-lg dark:shadow-black/30 overflow-hidden transition-all duration-300 hover:shadow-xl dark:hover:shadow-black/40">
               {/* Slide Content */}
               <div className="aspect-video bg-gradient-to-br from-muted/30 to-muted/50 dark:from-muted/10 dark:to-muted/20 p-10 flex">
@@ -258,16 +270,14 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
                       <span className="w-1 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.2s]" />
                     </div>
                   )}
-                  <p className="text-sm text-muted-foreground line-clamp-1 flex-1">
-                    {currentSlide.talkPoints}
-                  </p>
+                  <p className="text-sm text-muted-foreground line-clamp-1 flex-1">{currentSlide.talkPoints}</p>
                 </div>
               </div>
             </div>
           )}
 
           {/* Floating Control Pill - Below slide, above bottom bar */}
-          {currentItem?.type === 'slide' && currentSlide && (
+          {currentItem?.type === "slide" && currentSlide && (
             <div className="mt-6 flex items-center gap-1.5 bg-muted/90 backdrop-blur-xl rounded-full px-3 py-2 shadow-lg dark:shadow-black/40">
               <Button
                 variant="ghost"
@@ -307,7 +317,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
           )}
 
           {/* Assessment Card */}
-          {currentItem?.type === 'assessment' && currentAssessment && (
+          {currentItem?.type === "assessment" && currentAssessment && (
             <div className="bg-card/80 backdrop-blur-xl rounded-2xl shadow-lg dark:shadow-black/30 overflow-hidden transition-all duration-300 hover:shadow-xl dark:hover:shadow-black/40">
               <div className="p-8">
                 <div className="flex items-center gap-3 mb-6">
@@ -317,47 +327,51 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
                   <div>
                     <h3 className="text-lg font-semibold text-foreground">Knowledge Check</h3>
                     <p className="text-sm text-muted-foreground">
-                      {currentAssessment.questions.length} question{currentAssessment.questions.length !== 1 ? 's' : ''}
+                      {currentAssessment.questions.length} question{currentAssessment.questions.length !== 1 ? "s" : ""}
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-6">
                   {currentAssessment.questions.map((question, qIndex) => (
-                    <div key={question.id} className="bg-muted/30 dark:bg-muted/20 rounded-xl p-6 transition-all duration-300 hover:bg-muted/40 dark:hover:bg-muted/30">
+                    <div
+                      key={question.id}
+                      className="bg-muted/30 dark:bg-muted/20 rounded-xl p-6 transition-all duration-300 hover:bg-muted/40 dark:hover:bg-muted/30"
+                    >
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                           Q{qIndex + 1}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {question.type === 'multi_selection' && 'Select one'}
-                          {question.type === 'checkbox' && 'Select all that apply'}
-                          {question.type === 'open_ended' && 'Open response'}
+                          {question.type === "multi_selection" && "Select one"}
+                          {question.type === "checkbox" && "Select all that apply"}
+                          {question.type === "open_ended" && "Open response"}
                         </span>
                       </div>
-                      
+
                       <p className="text-lg font-medium text-foreground mb-4">
-                        {question.question || 'No question text configured'}
+                        {question.question || "No question text configured"}
                       </p>
-                      
-                      {(question.type === 'multi_selection' || question.type === 'checkbox') && 
-                        question.options && (
+
+                      {(question.type === "multi_selection" || question.type === "checkbox") && question.options && (
                         <div className="space-y-3">
                           {question.options.map((opt, i) => (
                             <div
                               key={i}
                               className="flex items-center gap-3 p-3 bg-background/50 dark:bg-background/30 rounded-lg cursor-pointer hover:bg-background/80 dark:hover:bg-background/50 transition-all duration-200"
                             >
-                              <div className={`w-5 h-5 border-2 ${
-                                question.type === 'checkbox' ? 'rounded' : 'rounded-full'
-                              } border-muted-foreground/50`} />
+                              <div
+                                className={`w-5 h-5 border-2 ${
+                                  question.type === "checkbox" ? "rounded" : "rounded-full"
+                                } border-muted-foreground/50`}
+                              />
                               <span className="text-foreground">{opt.label || `Option ${i + 1}`}</span>
                             </div>
                           ))}
                         </div>
                       )}
-                      
-                      {question.type === 'open_ended' && (
+
+                      {question.type === "open_ended" && (
                         <div className="bg-background/50 dark:bg-background/30 rounded-lg p-4 border border-muted-foreground/10 min-h-[120px]">
                           <p className="text-muted-foreground">Student response area...</p>
                         </div>
@@ -378,9 +392,12 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
                     <GraduationCap className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground">{finalAssessment.title || 'Final Assessment'}</h3>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {finalAssessment.title || "Final Assessment"}
+                    </h3>
                     <p className="text-sm text-muted-foreground">
-                      {finalAssessment.questions.length} question{finalAssessment.questions.length !== 1 ? 's' : ''} • {finalAssessment.timeLimit} minutes • Passing: {finalAssessment.passingThreshold}%
+                      {finalAssessment.questions.length} question{finalAssessment.questions.length !== 1 ? "s" : ""} •{" "}
+                      {finalAssessment.timeLimit} minutes • Passing: {finalAssessment.passingThreshold}%
                     </p>
                   </div>
                 </div>
@@ -391,40 +408,44 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
 
                 <div className="space-y-6">
                   {finalAssessment.questions.map((question, qIndex) => (
-                    <div key={question.id} className="bg-amber-500/5 dark:bg-amber-500/10 rounded-xl p-6 transition-all duration-300 hover:bg-amber-500/10 dark:hover:bg-amber-500/15">
+                    <div
+                      key={question.id}
+                      className="bg-amber-500/5 dark:bg-amber-500/10 rounded-xl p-6 transition-all duration-300 hover:bg-amber-500/10 dark:hover:bg-amber-500/15"
+                    >
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-xs font-medium bg-amber-500/20 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
                           Q{qIndex + 1}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {question.type === 'multi_selection' && 'Select one'}
-                          {question.type === 'checkbox' && 'Select all that apply'}
-                          {question.type === 'open_ended' && 'Open response'}
+                          {question.type === "multi_selection" && "Select one"}
+                          {question.type === "checkbox" && "Select all that apply"}
+                          {question.type === "open_ended" && "Open response"}
                         </span>
                       </div>
-                      
+
                       <p className="text-lg font-medium text-foreground mb-4">
-                        {question.question || 'No question text configured'}
+                        {question.question || "No question text configured"}
                       </p>
-                      
-                      {(question.type === 'multi_selection' || question.type === 'checkbox') && 
-                        question.options && (
+
+                      {(question.type === "multi_selection" || question.type === "checkbox") && question.options && (
                         <div className="space-y-3">
                           {question.options.map((opt, i) => (
                             <div
                               key={i}
                               className="flex items-center gap-3 p-3 bg-background/50 dark:bg-background/30 rounded-lg cursor-pointer hover:bg-background/80 dark:hover:bg-background/50 transition-all duration-200"
                             >
-                              <div className={`w-5 h-5 border-2 ${
-                                question.type === 'checkbox' ? 'rounded' : 'rounded-full'
-                              } border-muted-foreground/50`} />
+                              <div
+                                className={`w-5 h-5 border-2 ${
+                                  question.type === "checkbox" ? "rounded" : "rounded-full"
+                                } border-muted-foreground/50`}
+                              />
                               <span className="text-foreground">{opt.label || `Option ${i + 1}`}</span>
                             </div>
                           ))}
                         </div>
                       )}
-                      
-                      {question.type === 'open_ended' && (
+
+                      {question.type === "open_ended" && (
                         <div className="bg-background/50 dark:bg-background/30 rounded-lg p-4 border border-muted-foreground/10 min-h-[120px]">
                           <p className="text-muted-foreground">Student response area...</p>
                         </div>
@@ -442,9 +463,13 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
       <div className="fixed bottom-0 left-0 right-0 z-30 bg-card/80 backdrop-blur-xl px-6 py-4 transition-all duration-300 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.4)]">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           {/* Left: Back Button */}
-          <Button variant="outline" onClick={onBack} className="gap-2 rounded-full px-5 transition-transform duration-200 hover:scale-105">
+          <Button
+            variant="outline"
+            onClick={onBack}
+            className="gap-2 rounded-full px-5 transition-transform duration-200 hover:scale-105"
+          >
             <ArrowLeft className="h-4 w-4" />
-            {isPreviewOnly ? 'Back to Dashboard' : 'Back to Editing'}
+            {isPreviewOnly ? "Back to Dashboard" : "Back to Editing"}
           </Button>
 
           {/* Center: Previous + Progress Dots + Slide Counter + Next */}
@@ -466,11 +491,11 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
                   key={item.id}
                   onClick={() => goToItem(index)}
                   className={`h-2 rounded-full transition-all duration-200 ${
-                    index === currentItemIndex 
-                      ? 'w-6 bg-primary' 
-                      : item.type === 'assessment'
-                        ? 'w-2 bg-primary/40 hover:bg-primary/60'
-                        : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    index === currentItemIndex
+                      ? "w-6 bg-primary"
+                      : item.type === "assessment"
+                        ? "w-2 bg-primary/40 hover:bg-primary/60"
+                        : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
                   }`}
                 />
               ))}
@@ -479,9 +504,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
                 <button
                   onClick={() => goToItem(courseItems.length)}
                   className={`h-2 rounded-full transition-all duration-200 ${
-                    isViewingFinalAssessment
-                      ? 'w-6 bg-amber-500'
-                      : 'w-2 bg-amber-500/40 hover:bg-amber-500/60'
+                    isViewingFinalAssessment ? "w-6 bg-amber-500" : "w-2 bg-amber-500/40 hover:bg-amber-500/60"
                   }`}
                 />
               )}
@@ -489,11 +512,12 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
 
             {/* Slide Counter */}
             <span className="text-sm text-muted-foreground whitespace-nowrap">
-              {isViewingFinalAssessment 
-                ? 'Final Assessment' 
-                : currentItem?.type === 'slide' 
-                  ? 'Slide' 
-                  : 'Knowledge Check'} {currentItemIndex + 1} of {totalItems}
+              {isViewingFinalAssessment
+                ? "Final Assessment"
+                : currentItem?.type === "slide"
+                  ? "Slide"
+                  : "Knowledge Check"}{" "}
+              {currentItemIndex + 1} of {totalItems}
             </span>
 
             <Button
