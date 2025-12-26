@@ -217,8 +217,8 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
       </Sheet>
 
       {/* Main Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto pt-[72px] pb-[120px] flex flex-col items-center justify-center">
-        <div className="w-full max-w-6xl mx-auto px-8 flex flex-col items-center gap-4">
+      <div className="flex-1 overflow-y-auto pt-[72px] pb-[120px] flex flex-col items-center justify-between">
+        <div className="w-full max-w-6xl mx-auto px-8 flex flex-col items-center gap-4 flex-1 justify-center">
           {/* Slide Card */}
           {currentItem?.type === 'slide' && currentSlide && (
             <div className="w-full bg-card/80 backdrop-blur-xl rounded-2xl shadow-lg dark:shadow-black/30 overflow-hidden transition-all duration-300 hover:shadow-xl dark:hover:shadow-black/40">
@@ -258,49 +258,51 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
               </div>
             </div>
           )}
+        </div>
 
-          {/* Floating Control Pill - Below slide, above bottom bar */}
-          {currentItem?.type === 'slide' && currentSlide && (
-            <div className="mt-6 flex items-center gap-1.5 bg-muted/90 backdrop-blur-xl rounded-full px-3 py-2 shadow-lg dark:shadow-black/40">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsTranscriptOpen(true)}
-                className="h-9 w-9 rounded-full hover:bg-background/50"
-                title="Open transcript"
-              >
-                <PanelLeftOpen className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsPlaying(!isPlaying)}
-                className="h-9 w-9 rounded-full bg-background/50 hover:bg-background/80"
-              >
-                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsMuted(!isMuted)}
-                className="h-8 w-8 rounded-full hover:bg-background/50"
-              >
-                {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              </Button>
-              <Slider
-                value={[isMuted ? 0 : volume]}
-                onValueChange={([val]) => {
-                  setVolume(val);
-                  if (val > 0) setIsMuted(false);
-                }}
-                max={100}
-                className="w-20"
-              />
-            </div>
-          )}
+        {/* Floating Control Pill - Just above bottom bar */}
+        {currentItem?.type === 'slide' && currentSlide && (
+          <div className="mb-4 flex items-center gap-1.5 bg-muted/90 backdrop-blur-xl rounded-full px-3 py-2 shadow-lg dark:shadow-black/40">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsTranscriptOpen(true)}
+              className="h-9 w-9 rounded-full hover:bg-background/50"
+              title="Open transcript"
+            >
+              <PanelLeftOpen className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsPlaying(!isPlaying)}
+              className="h-9 w-9 rounded-full bg-background/50 hover:bg-background/80"
+            >
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMuted(!isMuted)}
+              className="h-8 w-8 rounded-full hover:bg-background/50"
+            >
+              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </Button>
+            <Slider
+              value={[isMuted ? 0 : volume]}
+              onValueChange={([val]) => {
+                setVolume(val);
+                if (val > 0) setIsMuted(false);
+              }}
+              max={100}
+              className="w-20"
+            />
+          </div>
+        )}
 
-          {/* Assessment Card */}
-          {currentItem?.type === 'assessment' && currentAssessment && (
+        {/* Assessment Card */}
+        {currentItem?.type === 'assessment' && currentAssessment && (
+          <div className="w-full max-w-6xl mx-auto px-8">
             <div className="bg-card/80 backdrop-blur-xl rounded-2xl shadow-lg dark:shadow-black/30 overflow-hidden transition-all duration-300 hover:shadow-xl dark:hover:shadow-black/40">
               <div className="p-8">
                 <div className="flex items-center gap-3 mb-6">
@@ -360,10 +362,12 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Final Assessment Preview */}
-          {isViewingFinalAssessment && finalAssessment && (
+        {/* Final Assessment Preview */}
+        {isViewingFinalAssessment && finalAssessment && (
+          <div className="w-full max-w-6xl mx-auto px-8">
             <div className="bg-card/80 backdrop-blur-xl rounded-2xl shadow-lg dark:shadow-black/30 overflow-hidden transition-all duration-300 hover:shadow-xl dark:hover:shadow-black/40">
               <div className="p-8">
                 <div className="flex items-center gap-3 mb-6">
@@ -427,8 +431,8 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Fixed Bottom Control Bar - Simplified */}
