@@ -217,87 +217,85 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
       </Sheet>
 
       {/* Main Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto pt-[72px] pb-[88px] flex items-center justify-center">
-        <div className="w-full max-w-6xl mx-auto px-8">
-          {/* Slide Card with Floating Controls */}
+      <div className="flex-1 overflow-y-auto pt-[72px] pb-[120px] flex flex-col items-center justify-center">
+        <div className="w-full max-w-6xl mx-auto px-8 flex flex-col items-center gap-4">
+          {/* Slide Card */}
           {currentItem?.type === 'slide' && currentSlide && (
-            <div className="relative">
-              <div className="bg-card/80 backdrop-blur-xl rounded-2xl shadow-lg dark:shadow-black/30 overflow-hidden transition-all duration-300 hover:shadow-xl dark:hover:shadow-black/40">
-                {/* Slide Content */}
-                <div className="aspect-video bg-gradient-to-br from-muted/30 to-muted/50 dark:from-muted/10 dark:to-muted/20 p-10 flex">
-                  <div className="flex-1 flex flex-col justify-center">
-                    <h2 className="text-4xl font-bold text-foreground mb-8">{currentSlide.title}</h2>
-                    <div className="space-y-4">
-                      {currentSlide.content.map((point, i) => (
-                        <p key={i} className="text-xl text-foreground/80 flex items-start gap-3">
-                          <span className="w-2.5 h-2.5 rounded-full bg-primary mt-2.5 shrink-0" />
-                          {point}
-                        </p>
-                      ))}
+            <div className="w-full bg-card/80 backdrop-blur-xl rounded-2xl shadow-lg dark:shadow-black/30 overflow-hidden transition-all duration-300 hover:shadow-xl dark:hover:shadow-black/40">
+              {/* Slide Content */}
+              <div className="aspect-video bg-gradient-to-br from-muted/30 to-muted/50 dark:from-muted/10 dark:to-muted/20 p-10 flex">
+                <div className="flex-1 flex flex-col justify-center">
+                  <h2 className="text-4xl font-bold text-foreground mb-8">{currentSlide.title}</h2>
+                  <div className="space-y-4">
+                    {currentSlide.content.map((point, i) => (
+                      <p key={i} className="text-xl text-foreground/80 flex items-start gap-3">
+                        <span className="w-2.5 h-2.5 rounded-full bg-primary mt-2.5 shrink-0" />
+                        {point}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+                <div className="w-1/3 ml-8 bg-muted/50 dark:bg-muted/30 rounded-xl flex items-center justify-center border border-muted-foreground/10">
+                  <span className="text-muted-foreground">Slide Image</span>
+                </div>
+              </div>
+
+              {/* Winston Speaking Indicator */}
+              <div className="bg-background/50 dark:bg-background/30 backdrop-blur-sm px-6 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-foreground">Winston is speaking:</span>
+                  {isPlaying && (
+                    <div className="flex items-center gap-0.5">
+                      <span className="w-1 h-3 bg-primary rounded-full animate-pulse" />
+                      <span className="w-1 h-4 bg-primary rounded-full animate-pulse [animation-delay:0.1s]" />
+                      <span className="w-1 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.2s]" />
                     </div>
-                  </div>
-                  <div className="w-1/3 ml-8 bg-muted/50 dark:bg-muted/30 rounded-xl flex items-center justify-center border border-muted-foreground/10">
-                    <span className="text-muted-foreground">Slide Image</span>
-                  </div>
-                </div>
-
-                {/* Winston Speaking Indicator */}
-                <div className="bg-background/50 dark:bg-background/30 backdrop-blur-sm px-6 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">Winston is speaking:</span>
-                    {isPlaying && (
-                      <div className="flex items-center gap-0.5">
-                        <span className="w-1 h-3 bg-primary rounded-full animate-pulse" />
-                        <span className="w-1 h-4 bg-primary rounded-full animate-pulse [animation-delay:0.1s]" />
-                        <span className="w-1 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.2s]" />
-                      </div>
-                    )}
-                    <p className="text-sm text-muted-foreground line-clamp-1 flex-1">
-                      {currentSlide.talkPoints}
-                    </p>
-                  </div>
+                  )}
+                  <p className="text-sm text-muted-foreground line-clamp-1 flex-1">
+                    {currentSlide.talkPoints}
+                  </p>
                 </div>
               </div>
+            </div>
+          )}
 
-              {/* Floating Control Pill - Positioned at bottom of slide */}
-              <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 z-10">
-                <div className="flex items-center gap-1.5 bg-muted/90 backdrop-blur-xl rounded-full px-3 py-2 shadow-lg dark:shadow-black/40">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsTranscriptOpen(true)}
-                    className="h-9 w-9 rounded-full hover:bg-background/50"
-                    title="Open transcript"
-                  >
-                    <PanelLeftOpen className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsPlaying(!isPlaying)}
-                    className="h-9 w-9 rounded-full bg-background/50 hover:bg-background/80"
-                  >
-                    {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsMuted(!isMuted)}
-                    className="h-8 w-8 rounded-full hover:bg-background/50"
-                  >
-                    {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                  </Button>
-                  <Slider
-                    value={[isMuted ? 0 : volume]}
-                    onValueChange={([val]) => {
-                      setVolume(val);
-                      if (val > 0) setIsMuted(false);
-                    }}
-                    max={100}
-                    className="w-20"
-                  />
-                </div>
-              </div>
+          {/* Floating Control Pill - Below slide, above bottom bar */}
+          {currentItem?.type === 'slide' && currentSlide && (
+            <div className="flex items-center gap-1.5 bg-muted/90 backdrop-blur-xl rounded-full px-3 py-2 shadow-lg dark:shadow-black/40">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsTranscriptOpen(true)}
+                className="h-9 w-9 rounded-full hover:bg-background/50"
+                title="Open transcript"
+              >
+                <PanelLeftOpen className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsPlaying(!isPlaying)}
+                className="h-9 w-9 rounded-full bg-background/50 hover:bg-background/80"
+              >
+                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsMuted(!isMuted)}
+                className="h-8 w-8 rounded-full hover:bg-background/50"
+              >
+                {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              </Button>
+              <Slider
+                value={[isMuted ? 0 : volume]}
+                onValueChange={([val]) => {
+                  setVolume(val);
+                  if (val > 0) setIsMuted(false);
+                }}
+                max={100}
+                className="w-20"
+              />
             </div>
           )}
 
