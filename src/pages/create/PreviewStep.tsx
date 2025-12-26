@@ -168,6 +168,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
         <CourseEditorHeader
           currentStep="preview"
           courseTitle={courseTitle || 'Untitled Course'}
+          subtitle="Preview Page"
           isCollapsed={isHeaderCollapsed}
           onToggleCollapse={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
           onClose={() => navigate("/dashboard")}
@@ -462,7 +463,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
                 <button
                   key={item.id}
                   onClick={() => goToItem(index)}
-                  className={`h-2 rounded-full transition-all duration-200 ${
+                  className={`h-2 rounded-full transition-all duration-200 cursor-pointer ${
                     index === currentItemIndex 
                       ? 'w-6 bg-primary' 
                       : item.type === 'assessment'
@@ -475,7 +476,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
               {hasFinalAssessment && (
                 <button
                   onClick={() => goToItem(courseItems.length)}
-                  className={`h-2 rounded-full transition-all duration-200 ${
+                  className={`h-2 rounded-full transition-all duration-200 cursor-pointer ${
                     isViewingFinalAssessment
                       ? 'w-6 bg-amber-500'
                       : 'w-2 bg-amber-500/40 hover:bg-amber-500/60'
