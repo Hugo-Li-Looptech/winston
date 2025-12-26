@@ -168,7 +168,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
         <CourseEditorHeader
           currentStep="preview"
           courseTitle={courseTitle || 'Untitled Course'}
-          subtitle="Preview Page"
+          subtitle="Preview"
           isCollapsed={isHeaderCollapsed}
           onToggleCollapse={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
           onClose={() => navigate("/dashboard")}
@@ -218,8 +218,8 @@ export function PreviewStep({ onBack, isPreviewOnly = false }: PreviewStepProps)
       </Sheet>
 
       {/* Main Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto pt-[72px] pb-[120px] flex flex-col items-center justify-between">
-        <div className="w-full max-w-6xl mx-auto px-8 flex flex-col items-center gap-4 flex-1 justify-center">
+      <div className="flex-1 overflow-y-auto pt-[60px] pb-[120px] flex flex-col items-center justify-between">
+        <div className="w-full max-w-6xl mx-auto px-8 flex flex-col items-center gap-4 flex-1 justify-start pt-6">
           {/* Slide Card */}
           {currentItem?.type === 'slide' && currentSlide && (
             <div className="w-full bg-card/80 backdrop-blur-xl rounded-2xl shadow-lg dark:shadow-black/30 overflow-hidden transition-all duration-300 hover:shadow-xl dark:hover:shadow-black/40">
