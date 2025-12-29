@@ -11,6 +11,8 @@ import { CommentsPanel } from "@/components/CommentsPanel";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { CourseEditorHeader } from "@/components/CourseEditorHeader";
 import { useNavigate } from "react-router-dom";
+import { useGenerateScript, useRefineScript, useUpdateScript } from "@/hooks/api";
+import { toast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,7 +73,14 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
   // AI Suggestion states
   const [suggestedTalkPoints, setSuggestedTalkPoints] = useState<string | null>(null);
   const [suggestionType, setSuggestionType] = useState<'verbose' | 'streamlined' | 'custom' | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+
+  // API hooks for script generation
+  const generateScriptMutation = useGenerateScript();
+  const refineScriptMutation = useRefineScript();
+  const updateScriptMutation = useUpdateScript();
+
+  // Combined loading state
+  const isGenerating = generateScriptMutation.isPending || refineScriptMutation.isPending;
 
   // Get current item (slide or assessment)
   const currentItem = courseItems[currentItemIndex];
@@ -132,31 +141,60 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
     }
   };
 
-  // Mock AI generation for suggestions
-  const generateSuggestion = (type: 'verbose' | 'streamlined' | 'custom', prompt?: string) => {
+  // AI generation using real API
+  const generateSuggestion = async (type: 'verbose' | 'streamlined' | 'custom', prompt?: string) => {
     if (!currentSlide) return;
-    
-    setIsGenerating(true);
+
     setSuggestionType(type);
-    
-    // Simulate AI generation delay
-    setTimeout(() => {
-      let suggestion = '';
+
+    try {
+      if (type === 'custom' && prompt) {
+        // Use refine API with custom feedback
+        const result = await refineScriptMutation.mutateAsync({
+          slideId: currentSlide.id,
+          feedback: prompt,
+          currentScript: currentSlide.talkPoints,
+        });
+        setSuggestedTalkPoints(result.script);
+      } else if (type === 'verbose' || type === 'streamlined') {
+        // Use refine API with style feedback
+        const stylePrompt = type === 'verbose'
+          ? 'Make this more detailed and comprehensive with additional explanations and examples'
+          : 'Make this more concise and streamlined, keeping only the essential points';
+
+        const result = await refineScriptMutation.mutateAsync({
+          slideId: currentSlide.id,
+          feedback: stylePrompt,
+          currentScript: currentSlide.talkPoints,
+        });
+        setSuggestedTalkPoints(result.script);
+      } else {
+        // Generate fresh script
+        const result = await generateScriptMutation.mutateAsync(currentSlide.id);
+        setSuggestedTalkPoints(result.script);
+      }
+    } catch (error) {
+      // Fall back to mock generation if API fails
       const currentText = currentSlide.talkPoints;
-      
+      let suggestion = '';
+
       if (type === 'verbose') {
-        suggestion = `${currentText}\n\nLet me elaborate further on this topic. This is an important concept that deserves more detailed explanation. We should consider multiple perspectives and provide concrete examples to help learners fully grasp the material. Additionally, it's worth noting the historical context and practical applications of these ideas.`;
+        suggestion = `${currentText}\n\nLet me elaborate further on this topic. This is an important concept that deserves more detailed explanation.`;
       } else if (type === 'streamlined') {
-        // Create a shortened version
         const sentences = currentText.split('. ');
         suggestion = sentences.slice(0, Math.ceil(sentences.length / 2)).join('. ') + '.';
       } else if (type === 'custom' && prompt) {
-        suggestion = `Based on your request "${prompt}": ${currentText}\n\n[Winston's customized modification based on your instructions would appear here.]`;
+        suggestion = `Based on your request "${prompt}": ${currentText}`;
       }
-      
+
       setSuggestedTalkPoints(suggestion);
-      setIsGenerating(false);
-    }, 1500);
+
+      toast({
+        title: "Using local preview",
+        description: "AI service unavailable. Showing local suggestion.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAskWinston = (prompt: string) => {
@@ -167,13 +205,31 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
     generateSuggestion(type);
   };
 
-  const handleAcceptSuggestion = () => {
+  const handleAcceptSuggestion = async () => {
     if (suggestedTalkPoints && currentSlide) {
+      // Update local state first (optimistic)
       updateTalkPoints(suggestedTalkPoints);
       setSuggestedTalkPoints(null);
       setSuggestionType(null);
       setIsVerbose(false);
       setIsStreamlined(false);
+
+      // Save to API
+      try {
+        await updateScriptMutation.mutateAsync({
+          slideId: currentSlide.id,
+          content: suggestedTalkPoints,
+        });
+        toast({
+          title: "Script saved",
+          description: "Your changes have been saved.",
+        });
+      } catch (error) {
+        toast({
+          title: "Save pending",
+          description: "Changes saved locally. Will sync when connected.",
+        });
+      }
     }
   };
 
@@ -192,10 +248,29 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
     addComment(content, currentSlide?.id);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     markStepComplete('scripting');
     saveCourseAsDraft();
-    // Don't navigate - just save in place
+
+    // Save current slide script to API if available
+    if (currentSlide?.talkPoints) {
+      try {
+        await updateScriptMutation.mutateAsync({
+          slideId: currentSlide.id,
+          content: currentSlide.talkPoints,
+        });
+        setHasUnsavedChanges(false);
+        toast({
+          title: "Course saved",
+          description: "All changes have been saved.",
+        });
+      } catch (error) {
+        toast({
+          title: "Saved locally",
+          description: "Changes saved locally. Will sync when connected.",
+        });
+      }
+    }
   };
 
   const handlePublish = () => {

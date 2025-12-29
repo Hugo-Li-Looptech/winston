@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,9 @@ import {
   Filter,
   FolderPlus,
   GitBranch,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { InboxPopover } from "@/components/InboxPopover";
 import { useCourse } from "@/contexts/CourseContext";
@@ -33,6 +36,9 @@ import { CourseGroupCard } from "@/components/CourseGroupCard";
 import { GroupDetailPanel } from "@/components/GroupDetailPanel";
 import { CreateGroupDialog } from "@/components/CreateGroupDialog";
 import { VersionControlDialog } from "@/components/VersionControlDialog";
+// API hooks for real data
+import { useCourses, useDeleteCourse, usePublishCourse } from "@/hooks/api";
+import { apiCoursesToLocal } from "@/lib/course-mapper";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,11 +64,29 @@ type StatusTab = "all" | "pending" | "in_progress" | "published";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { 
-    courses, 
-    resetCurrentCourse, 
-    deleteCourse, 
-    updateCourseStatus, 
+
+  // API hooks for real data
+  const {
+    data: apiCourses,
+    isLoading: isLoadingCourses,
+    error: coursesError,
+    refetch: refetchCourses,
+  } = useCourses();
+  const deleteCourseMutation = useDeleteCourse();
+  const publishCourseMutation = usePublishCourse();
+
+  // Transform API courses to local format
+  const courses = useMemo(() => {
+    if (!apiCourses) return [];
+    return apiCoursesToLocal(apiCourses);
+  }, [apiCourses]);
+
+  // Local context for course editing state
+  const {
+    courses: localCourses,
+    resetCurrentCourse,
+    deleteCourse: deleteLocalCourse,
+    updateCourseStatus: updateLocalCourseStatus,
     duplicateCourse,
     getVersions,
     getCurrentVersionId,
@@ -70,6 +94,15 @@ export default function Dashboard() {
     branchFromVersion,
     saveVersion,
   } = useCourse();
+
+  // Merge API courses with local courses (local overrides for offline/draft support)
+  const mergedCourses = useMemo(() => {
+    // For now, prefer API courses, fall back to local for any not in API
+    const apiIds = new Set(courses.map(c => c.id));
+    const localOnly = localCourses.filter(c => !apiIds.has(c.id));
+    return [...courses, ...localOnly];
+  }, [courses, localCourses]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
@@ -88,7 +121,7 @@ export default function Dashboard() {
   const [versionControlCourseId, setVersionControlCourseId] = useState<string | null>(null);
   const [versionControlOpen, setVersionControlOpen] = useState(false);
 
-  const hasNoCourses = courses.length === 0;
+  const hasNoCourses = mergedCourses.length === 0 && !isLoadingCourses;
 
   const handleCreateCourse = () => {
     resetCurrentCourse();
@@ -132,23 +165,35 @@ export default function Dashboard() {
     });
   };
 
-  const handleTogglePublish = (course: Course) => {
+  const handleTogglePublish = async (course: Course) => {
     const newStatus = course.status === "published" ? "pending" : "published";
-    updateCourseStatus(course.id, newStatus);
-    
-    // Save a published version when publishing (not when unpublishing)
+
     if (newStatus === "published") {
-      const versionName = `Published - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-      saveVersion(course.id, versionName, true);
+      try {
+        // Use API to publish
+        await publishCourseMutation.mutateAsync({ courseId: course.id });
+        const versionName = `Published - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        saveVersion(course.id, versionName, true);
+        toast({
+          title: "Course published",
+          description: "The course is now visible to learners.",
+        });
+      } catch (error) {
+        // Fall back to local
+        updateLocalCourseStatus(course.id, newStatus);
+        toast({
+          title: "Course published locally",
+          description: "Publishing synced locally. API sync may be pending.",
+        });
+      }
+    } else {
+      // Unpublishing - use local for now (API doesn't have unpublish endpoint)
+      updateLocalCourseStatus(course.id, newStatus);
+      toast({
+        title: "Course unpublished",
+        description: "The course is no longer visible to learners.",
+      });
     }
-    
-    toast({
-      title: newStatus === "published" ? "Course published" : "Course unpublished",
-      description:
-        newStatus === "published"
-          ? "The course is now visible to learners."
-          : "The course is no longer visible to learners.",
-    });
   };
 
   const handleDeleteClick = (courseId: string) => {
@@ -156,9 +201,23 @@ export default function Dashboard() {
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (courseToDelete) {
-      deleteCourse(courseToDelete);
+      try {
+        // Try API delete first
+        await deleteCourseMutation.mutateAsync(courseToDelete);
+        toast({
+          title: "Course deleted",
+          description: "The course has been permanently deleted.",
+        });
+      } catch (error) {
+        // Fall back to local delete if API fails
+        deleteLocalCourse(courseToDelete);
+        toast({
+          title: "Course deleted locally",
+          description: "The course was removed. Sync may be pending.",
+        });
+      }
       // Also remove from any groups
       setGroups((prev) =>
         prev.map((g) => ({
@@ -166,10 +225,6 @@ export default function Dashboard() {
           courseIds: g.courseIds.filter((id) => id !== courseToDelete),
         }))
       );
-      toast({
-        title: "Course deleted",
-        description: "The course has been permanently deleted.",
-      });
     }
     setDeleteDialogOpen(false);
     setCourseToDelete(null);
@@ -305,7 +360,7 @@ export default function Dashboard() {
     setDraggedCourseId(null);
   };
 
-  const filteredCourses = courses.filter((course) => {
+  const filteredCourses = mergedCourses.filter((course) => {
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesTab = activeTab === "all" || course.status === activeTab;
     return matchesSearch && matchesTab;
@@ -433,8 +488,33 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Groups Section */}
-        {filteredGroups.length > 0 && (
+        {/* Loading State */}
+        {isLoadingCourses && (
+          <div className="flex flex-col items-center justify-center py-16 animate-fade-in">
+            <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
+            <p className="text-muted-foreground">Loading courses...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {coursesError && !isLoadingCourses && (
+          <div className="flex flex-col items-center justify-center py-16 animate-fade-in">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-destructive/10 mb-4">
+              <AlertCircle className="h-8 w-8 text-destructive" />
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-2">Failed to load courses</h3>
+            <p className="text-muted-foreground mb-6 text-center max-w-md">
+              {coursesError instanceof Error ? coursesError.message : "An unexpected error occurred"}
+            </p>
+            <Button onClick={() => refetchCourses()} className="rounded-xl gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Try Again
+            </Button>
+          </div>
+        )}
+
+        {/* Groups Section - only show when not loading and no error */}
+        {!isLoadingCourses && !coursesError && filteredGroups.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
               <FolderOpen className="h-5 w-5" />
@@ -445,7 +525,7 @@ export default function Dashboard() {
                 <CourseGroupCard
                   key={group.id}
                   group={group}
-                  courses={courses}
+                  courses={mergedCourses}
                   onOpen={handleOpenGroup}
                   onEdit={handleEditGroup}
                   onDelete={handleDeleteGroup}
@@ -457,8 +537,8 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Courses Section */}
-        {filteredCourses.length === 0 && filteredGroups.length === 0 ? (
+        {/* Courses Section - only show when not loading and no error */}
+        {!isLoadingCourses && !coursesError && filteredCourses.length === 0 && filteredGroups.length === 0 ? (
           <div className="text-center py-16 animate-fade-in">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted mb-4">
               <FolderOpen className="h-8 w-8 text-muted-foreground" />
@@ -478,7 +558,7 @@ export default function Dashboard() {
               </Button>
             )}
           </div>
-        ) : filteredCourses.length > 0 && (
+        ) : !isLoadingCourses && !coursesError && filteredCourses.length > 0 && (
           <>
             {filteredGroups.length > 0 && (
               <h2 className="text-lg font-semibold text-foreground mb-4">All Courses</h2>
@@ -636,7 +716,7 @@ export default function Dashboard() {
 
       <GroupDetailPanel
         group={selectedGroup}
-        courses={courses}
+        courses={mergedCourses}
         open={groupDetailOpen}
         onOpenChange={setGroupDetailOpen}
         onUpdateGroup={handleUpdateGroup}

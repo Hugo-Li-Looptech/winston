@@ -20,6 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { CourseEditorHeader } from "@/components/CourseEditorHeader";
 import { CommentsPanel } from "@/components/CommentsPanel";
+import { usePublishCourse } from "@/hooks/api";
 
 import { WizardStep } from "@/types/course";
 
@@ -40,11 +41,14 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
     addComment,
     resolveComment,
     setCourseTitle,
-    publishCourse,
+    publishCourse: publishCourseLocal,
     saveCourseAsDraft,
     markStepComplete,
   } = useCourse();
   const { courseItems, courseTitle } = currentCourse;
+
+  // API hook for publishing
+  const publishCourseMutation = usePublishCourse();
 
   // Create combined items array with final assessment at the end
   const hasFinalAssessment = finalAssessment && finalAssessment.questions.length > 0;
@@ -157,21 +161,52 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
     saveCourseAsDraft();
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     markStepComplete("preview");
-    publishCourse();
-    const newCourse = {
-      id: Date.now().toString(),
-      title: courseTitle || "How to Make a PBJ Sand",
-      date: new Date().toLocaleDateString(),
-      status: "published" as const,
-      progress: "100%" as const,
-    };
-    setCourses([newCourse, ...courses]);
-    toast({
-      title: "Course Published!",
-      description: "Your course is now live and available to learners.",
-    });
+    publishCourseLocal();
+
+    // Get course ID from current course (if available)
+    const courseId = currentCourse.id;
+
+    if (courseId) {
+      try {
+        // Try API publish
+        await publishCourseMutation.mutateAsync({ courseId });
+        toast({
+          title: "Course Published!",
+          description: "Your course is now live and available to learners.",
+        });
+      } catch (error) {
+        // Fall back to local publish
+        const newCourse = {
+          id: Date.now().toString(),
+          title: courseTitle || "Untitled Course",
+          date: new Date().toLocaleDateString(),
+          status: "published" as const,
+          progress: "100%" as const,
+        };
+        setCourses([newCourse, ...courses]);
+        toast({
+          title: "Published locally",
+          description: "Course saved. API sync may be pending.",
+        });
+      }
+    } else {
+      // No course ID, use local
+      const newCourse = {
+        id: Date.now().toString(),
+        title: courseTitle || "Untitled Course",
+        date: new Date().toLocaleDateString(),
+        status: "published" as const,
+        progress: "100%" as const,
+      };
+      setCourses([newCourse, ...courses]);
+      toast({
+        title: "Course Published!",
+        description: "Your course is now live and available to learners.",
+      });
+    }
+
     navigate("/dashboard");
   };
 

@@ -1,11 +1,13 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, FileText, Trash2, CheckCircle, Plus } from "lucide-react";
+import { Upload, FileText, Trash2, CheckCircle, Plus, Loader2, AlertCircle } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
 import { SlideFile } from "@/types/course";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useUploadDocument, usePollJobStatus } from "@/hooks/api";
+import { toast } from "@/hooks/use-toast";
 
 interface UploadStepProps {
   onContinue: () => void;
@@ -13,6 +15,14 @@ interface UploadStepProps {
 
 export function UploadStep({ onContinue }: UploadStepProps) {
   const { currentCourse, setSlideFiles, setSupplementFiles, setCourseTitle, setCourseDescription, markStepComplete } = useCourse();
+
+  // API hooks for real upload
+  const uploadDocument = useUploadDocument();
+  const [uploadingFileId, setUploadingFileId] = useState<string | null>(null);
+  const [processingJobId, setProcessingJobId] = useState<string | null>(null);
+
+  // Store actual File objects for upload
+  const pendingFilesRef = useRef<Map<string, File>>(new Map());
 
   const handleContinue = () => {
     markStepComplete('upload');
@@ -22,24 +32,99 @@ export function UploadStep({ onContinue }: UploadStepProps) {
   const [isDraggingSupp, setIsDraggingSupp] = useState(false);
 
   const handleFileDrop = useCallback(
-    (files: FileList, isSlide: boolean) => {
-      const newFiles: SlideFile[] = Array.from(files).map((file, index) => ({
-        id: Date.now().toString() + index,
-        name: file.name,
-        type: file.type || "application/pdf",
-        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-        uploadedDate: new Date().toLocaleDateString(),
-        status: "indexed" as const,
-        chunks: Math.floor(Math.random() * 50) + 20,
-      }));
+    async (files: FileList, isSlide: boolean) => {
+      const fileArray = Array.from(files);
 
       if (isSlide) {
-        setSlideFiles([...currentCourse.slideFiles, ...newFiles]);
+        // For slide files, upload to API
+        for (const file of fileArray) {
+          const fileId = Date.now().toString();
+
+          // Create optimistic local entry with processing status
+          const newFile: SlideFile = {
+            id: fileId,
+            name: file.name,
+            type: file.type || "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+            uploadedDate: new Date().toLocaleDateString(),
+            status: "processing" as const,
+            chunks: 0,
+          };
+
+          // Store the actual file for potential retry
+          pendingFilesRef.current.set(fileId, file);
+          setSlideFiles([...currentCourse.slideFiles, newFile]);
+          setUploadingFileId(fileId);
+
+          try {
+            // Upload to API
+            const result = await uploadDocument.mutateAsync({
+              file,
+              title: currentCourse.courseTitle || file.name.replace(/\.[^/.]+$/, ""),
+              description: currentCourse.courseDescription,
+            });
+
+            // Update with successful status
+            setSlideFiles((prev) =>
+              prev.map((f) =>
+                f.id === fileId
+                  ? {
+                      ...f,
+                      status: "indexed" as const,
+                      chunks: result.slideCount || 0,
+                    }
+                  : f
+              )
+            );
+
+            setProcessingJobId(result.jobId);
+
+            toast({
+              title: "Upload successful",
+              description: `${file.name} uploaded and processing started.`,
+            });
+          } catch (error) {
+            // Update with error status
+            setSlideFiles((prev) =>
+              prev.map((f) =>
+                f.id === fileId ? { ...f, status: "error" as const } : f
+              )
+            );
+
+            toast({
+              title: "Upload failed",
+              description: error instanceof Error ? error.message : "Failed to upload file",
+              variant: "destructive",
+            });
+          } finally {
+            setUploadingFileId(null);
+            pendingFilesRef.current.delete(fileId);
+          }
+        }
       } else {
+        // For supplement files, keep local-only for now (no API endpoint)
+        const newFiles: SlideFile[] = fileArray.map((file, index) => ({
+          id: Date.now().toString() + index,
+          name: file.name,
+          type: file.type || "application/pdf",
+          size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+          uploadedDate: new Date().toLocaleDateString(),
+          status: "indexed" as const,
+          chunks: Math.floor(Math.random() * 50) + 20,
+        }));
+
         setSupplementFiles([...currentCourse.supplementFiles, ...newFiles]);
       }
     },
-    [currentCourse.slideFiles, currentCourse.supplementFiles, setSlideFiles, setSupplementFiles],
+    [
+      currentCourse.slideFiles,
+      currentCourse.supplementFiles,
+      currentCourse.courseTitle,
+      currentCourse.courseDescription,
+      setSlideFiles,
+      setSupplementFiles,
+      uploadDocument,
+    ],
   );
 
   const handleDrop = (e: React.DragEvent, isSlide: boolean) => {
@@ -75,6 +160,7 @@ export function UploadStep({ onContinue }: UploadStepProps) {
   const hasSlideFile = currentCourse.slideFiles.length > 0;
   const hasSupplementFiles = currentCourse.supplementFiles.length > 0;
   const hasTitle = currentCourse.courseTitle.trim().length > 0;
+  const hasProcessingFile = currentCourse.slideFiles.some((f) => f.status === "processing");
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
@@ -167,10 +253,22 @@ export function UploadStep({ onContinue }: UploadStepProps) {
                     <TableCell className="text-muted-foreground text-sm">{file.size}</TableCell>
                     <TableCell className="text-muted-foreground text-sm">{file.uploadedDate}</TableCell>
                     <TableCell>
-                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">
-                        <CheckCircle className="h-3 w-3" />
-                        Indexed
-                      </span>
+                      {file.status === "processing" ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 bg-amber-100 px-2.5 py-1 rounded-full">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Processing
+                        </span>
+                      ) : file.status === "error" ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-destructive bg-destructive/10 px-2.5 py-1 rounded-full">
+                          <AlertCircle className="h-3 w-3" />
+                          Error
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                          <CheckCircle className="h-3 w-3" />
+                          Indexed
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">{file.chunks}</TableCell>
                     <TableCell>
@@ -178,7 +276,8 @@ export function UploadStep({ onContinue }: UploadStepProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => removeFile(file.id, true)}
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        disabled={file.status === "processing"}
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive disabled:opacity-50"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -286,8 +385,20 @@ export function UploadStep({ onContinue }: UploadStepProps) {
 
       {/* Continue Button */}
       <div className="flex justify-center pt-4">
-        <Button onClick={onContinue} disabled={!hasSlideFile || !hasTitle} size="lg" className="rounded-xl px-12">
-          Continue
+        <Button
+          onClick={handleContinue}
+          disabled={!hasSlideFile || !hasTitle || uploadDocument.isPending || hasProcessingFile}
+          size="lg"
+          className="rounded-xl px-12"
+        >
+          {uploadDocument.isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Uploading...
+            </>
+          ) : (
+            "Continue"
+          )}
         </Button>
       </div>
     </div>
