@@ -33,11 +33,22 @@ const stepParamToSubStep = (stepParam: string | null): SubStep | null => {
 export default function CreateCourse() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { currentCourse, completedSteps } = useCourse();
+  const { currentCourse, completedSteps, restoreVersion, getCurrentVersionId } = useCourse();
   const mode = searchParams.get('mode');
   const stepParam = searchParams.get('step');
+  const courseId = searchParams.get('courseId');
   const isPreviewOnly = mode === 'preview';
   const isEditMode = mode === 'edit';
+
+  // Load course data when editing an existing course
+  useEffect(() => {
+    if (courseId && (isEditMode || isPreviewOnly)) {
+      const versionId = getCurrentVersionId(courseId);
+      if (versionId) {
+        restoreVersion(courseId, versionId);
+      }
+    }
+  }, [courseId, isEditMode, isPreviewOnly, getCurrentVersionId, restoreVersion]);
   
   // Determine initial subStep based on URL params
   const getInitialSubStep = (): SubStep => {
