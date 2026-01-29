@@ -47,11 +47,11 @@ const App = () => (
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              {/* Demo Mode UI Components - must be inside BrowserRouter for useNavigate */}
+              <DemoIntroModal />
+              <DemoCompleteModal />
+              <DemoGuidancePanel />
             </BrowserRouter>
-            {/* Demo Mode UI Components */}
-            <DemoIntroModal />
-            <DemoCompleteModal />
-            <DemoGuidancePanel />
           </ErrorBoundary>
         </DemoModeProvider>
       </CourseProvider>
