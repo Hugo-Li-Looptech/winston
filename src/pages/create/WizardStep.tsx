@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCourse } from '@/contexts/CourseContext';
+import { useDemoError } from '@/hooks/use-demo-error';
 import { Pencil } from 'lucide-react';
 
 interface WizardStepProps {
@@ -39,15 +40,23 @@ const learningGoals = [
 
 export function WizardStep({ onContinue, onBack }: WizardStepProps) {
   const { currentCourse, setWizardSettings, setCourseTitle, markStepComplete } = useCourse();
+  const { isActive: isDemoMode, triggerPrefSaveError } = useDemoError();
   const [settings, setSettings] = useState(currentCourse.wizardSettings);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(currentCourse.courseTitle);
+  const [demoAudienceToggleCount, setDemoAudienceToggleCount] = useState(0);
 
-  const toggleAudience = (type: string) => {
+  const toggleAudience = async (type: string) => {
     const updated = settings.audienceTypes.includes(type)
       ? settings.audienceTypes.filter((t) => t !== type)
       : [...settings.audienceTypes, type];
     setSettings({ ...settings, audienceTypes: updated });
+
+    // Demo mode: trigger pref save error on first toggle
+    if (isDemoMode && demoAudienceToggleCount === 0) {
+      setDemoAudienceToggleCount(1);
+      await triggerPrefSaveError();
+    }
   };
 
   const toggleGoal = (goal: string) => {

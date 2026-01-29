@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { InboxPopover } from "@/components/InboxPopover";
 import { useCourse } from "@/contexts/CourseContext";
+import { useDemoMode } from "@/contexts/DemoModeContext";
 import { AIAssistant } from "@/components/AIAssistant";
 import { SettingsPopover } from "@/components/SettingsPopover";
 import { Course } from "@/types/course";
@@ -70,6 +71,7 @@ export default function Dashboard() {
     branchFromVersion,
     saveVersion,
   } = useCourse();
+  const { startDemo } = useDemoMode();
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
@@ -93,6 +95,13 @@ export default function Dashboard() {
   const handleCreateCourse = () => {
     resetCurrentCourse();
     navigate("/create");
+  };
+
+  // Handle clicking the Error Handling demo course
+  const handleDemoCourse = () => {
+    resetCurrentCourse();
+    startDemo();
+    navigate("/create?mode=demo");
   };
 
   const handleEditCourse = (course: Course) => {
@@ -501,6 +510,7 @@ export default function Dashboard() {
                       onTogglePublish={handleTogglePublish}
                       onDelete={handleDeleteClick}
                       onVersionControl={handleVersionControl}
+                      onDemoClick={handleDemoCourse}
                     />
                   </div>
                 ))}

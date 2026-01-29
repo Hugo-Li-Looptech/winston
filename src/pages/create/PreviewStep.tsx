@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useCourse } from "@/contexts/CourseContext";
+import { useDemoError } from "@/hooks/use-demo-error";
+import { InlineError } from "@/components/InlineError";
 import {
   ChevronLeft,
   ChevronRight,
@@ -12,6 +14,7 @@ import {
   ClipboardList,
   PanelLeftOpen,
   GraduationCap,
+  Loader2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -44,6 +47,9 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
     saveCourseAsDraft,
     markStepComplete,
   } = useCourse();
+  
+  const { isActive: isDemoMode, triggerAudioPlaybackError, triggerPublishError } = useDemoError();
+  
   const { courseItems, courseTitle } = currentCourse;
 
   // Create combined items array with final assessment at the end
@@ -59,6 +65,12 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(true);
   const [isCommentsPanelOpen, setIsCommentsPanelOpen] = useState(false);
   const transcriptRef = useRef<HTMLDivElement>(null);
+  
+  // Demo mode state
+  const [audioError, setAudioError] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [demoPlayAttempt, setDemoPlayAttempt] = useState(0);
+  const [demoPublishAttempt, setDemoPublishAttempt] = useState(0);
 
   // Determine if we're viewing the final assessment
   const isViewingFinalAssessment = hasFinalAssessment && currentItemIndex === courseItems.length;
@@ -157,7 +169,16 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
     saveCourseAsDraft();
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
+    // Demo mode: trigger publish error on first attempt
+    if (isDemoMode && demoPublishAttempt === 0) {
+      setIsPublishing(true);
+      setDemoPublishAttempt(1);
+      const triggered = await triggerPublishError();
+      setIsPublishing(false);
+      if (triggered) return;
+    }
+    
     markStepComplete("preview");
     publishCourse();
     const newCourse = {
@@ -173,6 +194,18 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
       description: "Your course is now live and available to learners.",
     });
     navigate("/dashboard");
+  };
+  
+  const handlePlayToggle = async () => {
+    // Demo mode: trigger audio error on first play attempt
+    if (isDemoMode && !isPlaying && demoPlayAttempt === 0) {
+      setDemoPlayAttempt(1);
+      const triggered = await triggerAudioPlaybackError(setAudioError);
+      if (triggered) return;
+    }
+    
+    setAudioError(null);
+    setIsPlaying(!isPlaying);
   };
 
   return (
