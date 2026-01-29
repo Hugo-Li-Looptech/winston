@@ -56,11 +56,6 @@ export function useDemoError() {
     }, { delay: 500 });
   }, [checkAndTriggerError]);
 
-  const triggerTitleRequired = useCallback(async (setError: (msg: string) => void) => {
-    return checkAndTriggerError('title-required', () => {
-      setError('Course title is required');
-    });
-  }, [checkAndTriggerError]);
 
   const triggerPrefSaveError = useCallback(async () => {
     return checkAndTriggerError('pref-save', () => {
@@ -133,7 +128,6 @@ export function useDemoError() {
     // Pre-configured triggers
     triggerUploadNetworkError,
     triggerUploadFormatError,
-    triggerTitleRequired,
     triggerPrefSaveError,
     triggerVoicePreviewError,
     triggerAIQuotaError,

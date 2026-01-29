@@ -326,7 +326,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setIsPlaying(!isPlaying)}
+                onClick={handlePlayToggle}
                 className="h-9 w-9 rounded-full bg-background/50 hover:bg-background/80"
               >
                 {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}

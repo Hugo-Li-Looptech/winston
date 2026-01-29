@@ -2,7 +2,7 @@ import { useDemoMode } from '@/contexts/DemoModeContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { X, ChevronRight, Eye, Lightbulb, Zap, SkipForward, GraduationCap } from 'lucide-react';
+import { X, ChevronLeft, Eye, Lightbulb, Zap, SkipForward, GraduationCap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function DemoGuidancePanel() {
@@ -13,6 +13,7 @@ export function DemoGuidancePanel() {
     getCurrentScenario,
     getProgress,
     skipScenario,
+    previousScenario,
     exitDemo,
   } = useDemoMode();
 
@@ -110,6 +111,16 @@ export function DemoGuidancePanel() {
           <Button
             variant="outline"
             size="sm"
+            className="text-xs"
+            onClick={previousScenario}
+            disabled={current === 1}
+          >
+            <ChevronLeft className="h-3 w-3 mr-1" />
+            Back
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             className="flex-1 text-xs"
             onClick={skipScenario}
           >
@@ -122,7 +133,7 @@ export function DemoGuidancePanel() {
             className="text-xs text-muted-foreground"
             onClick={exitDemo}
           >
-            Exit Demo
+            Exit
           </Button>
         </div>
       </CardContent>
