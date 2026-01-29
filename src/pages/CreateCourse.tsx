@@ -39,6 +39,7 @@ export default function CreateCourse() {
   const courseId = searchParams.get('courseId');
   const isPreviewOnly = mode === 'preview';
   const isEditMode = mode === 'edit';
+  const isDemoMode = mode === 'demo';
 
   // Load course data when editing an existing course
   useEffect(() => {

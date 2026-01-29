@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useCourse } from '@/contexts/CourseContext';
-import { Volume2, Check, Play } from 'lucide-react';
+import { useDemoError } from '@/hooks/use-demo-error';
+import { Volume2, Check, Play, Loader2, AlertCircle } from 'lucide-react';
 
 interface WizardConfirmStepProps {
   onContinue: () => void;
@@ -35,14 +36,49 @@ const voices = [
 
 export function WizardConfirmStep({ onContinue, onBack }: WizardConfirmStepProps) {
   const { currentCourse, setWizardSettings } = useCourse();
+  const { isActive: isDemoMode, triggerVoicePreviewError, triggerAIQuotaError } = useDemoError();
+  
   const [deliveryStyle, setDeliveryStyle] = useState(`Recommended tone: Clear & Confident
 Suggested pace: Moderate, with slight pauses after key concepts
 Explanatory depth: Level 2 — Balanced detail without overwhelming beginners
 Vocabulary mode: General Audience, avoiding jargon
 Energy level: Medium, providing clarity without sounding monotonous`);
   const [selectedVoice, setSelectedVoice] = useState(voices[0].id);
+  
+  // Demo mode state
+  const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
+  const [voicePreviewFailed, setVoicePreviewFailed] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [demoGenerateAttempt, setDemoGenerateAttempt] = useState(0);
 
-  const handleContinue = () => {
+  const handlePreviewVoice = async (voiceId: string) => {
+    setPreviewingVoice(voiceId);
+    
+    // Demo mode: trigger voice preview error
+    if (isDemoMode) {
+      const triggered = await triggerVoicePreviewError();
+      if (triggered) {
+        setVoicePreviewFailed(voiceId);
+        setPreviewingVoice(null);
+        return;
+      }
+    }
+    
+    // Normal preview (simulate)
+    await new Promise(r => setTimeout(r, 1000));
+    setPreviewingVoice(null);
+  };
+
+  const handleContinue = async () => {
+    // Demo mode: trigger AI quota error on first attempt
+    if (isDemoMode && demoGenerateAttempt === 0) {
+      setIsGenerating(true);
+      setDemoGenerateAttempt(1);
+      const triggered = await triggerAIQuotaError();
+      setIsGenerating(false);
+      if (triggered) return;
+    }
+    
     setWizardSettings({
       ...currentCourse.wizardSettings,
       deliveryStyle,
@@ -122,9 +158,32 @@ Energy level: Medium, providing clarity without sounding monotonous`);
                 ))}
               </div>
               
-              <Button variant="outline" size="sm" className="w-full rounded-lg gap-2">
-                <Play className="h-3 w-3" />
-                Preview
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={`w-full rounded-lg gap-2 ${voicePreviewFailed === voice.id ? 'border-destructive text-destructive' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePreviewVoice(voice.id);
+                }}
+                disabled={previewingVoice === voice.id}
+              >
+                {previewingVoice === voice.id ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Loading...
+                  </>
+                ) : voicePreviewFailed === voice.id ? (
+                  <>
+                    <AlertCircle className="h-3 w-3" />
+                    Unavailable
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-3 w-3" />
+                    Preview
+                  </>
+                )}
               </Button>
             </div>
           ))}
@@ -135,7 +194,8 @@ Energy level: Medium, providing clarity without sounding monotonous`);
         <Button variant="outline" onClick={onBack} className="rounded-xl">
           Back
         </Button>
-        <Button onClick={handleContinue} size="lg" className="rounded-xl px-8">
+        <Button onClick={handleContinue} disabled={isGenerating} size="lg" className="rounded-xl px-8 gap-2">
+          {isGenerating && <Loader2 className="h-4 w-4 animate-spin" />}
           Generate Talk Points
         </Button>
       </div>

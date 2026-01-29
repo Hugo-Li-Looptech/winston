@@ -1,15 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Plus, Trash2, Clock, User, Tag, BookOpen, LayoutList } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Plus, Trash2, Clock, User, Tag, BookOpen, LayoutList, AlertTriangle } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
+import { useDemoError } from "@/hooks/use-demo-error";
 import { QuickEditsPanel } from "@/components/QuickEditsPanel";
 import { RichTextToolbar } from "@/components/RichTextToolbar";
 import { SlideDetailsPanel } from "@/components/SlideDetailsPanel";
 import { CommentsPanel } from "@/components/CommentsPanel";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { CourseEditorHeader } from "@/components/CourseEditorHeader";
+import { InlineError } from "@/components/InlineError";
 import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
@@ -24,6 +26,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Slider } from "@/components/ui/slider";
 import { ClipboardList } from "lucide-react";
 import { WizardStep, QuestionType, Assessment, AssessmentQuestion } from "@/types/course";
@@ -57,6 +69,16 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
     finalAssessment,
     setFinalAssessment
   } = useCourse();
+  
+  const { 
+    isActive: isDemoMode, 
+    triggerAutoSaveError, 
+    triggerAddTestError, 
+    triggerMaxQuestionsError, 
+    triggerSaveError, 
+    triggerVersionConflict 
+  } = useDemoError();
+  
   const { slides, courseItems, courseTitle, metadata } = currentCourse;
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -72,12 +94,32 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
   const [suggestedTalkPoints, setSuggestedTalkPoints] = useState<string | null>(null);
   const [suggestionType, setSuggestionType] = useState<'verbose' | 'streamlined' | 'custom' | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Demo mode state
+  const [addTestError, setAddTestError] = useState<string | null>(null);
+  const [showVersionConflict, setShowVersionConflict] = useState(false);
+  const [demoAddTestAttempt, setDemoAddTestAttempt] = useState(0);
+  const [demoSaveAttempt, setDemoSaveAttempt] = useState(0);
+  const [demoPublishAttempt, setDemoPublishAttempt] = useState(0);
+  const autoSaveTriggered = useRef(false);
 
   // Get current item (slide or assessment)
   const currentItem = courseItems[currentItemIndex];
   const currentSlide = currentItem?.type === "slide" ? currentItem.slideData : null;
   const currentAssessment = currentItem?.type === "assessment" ? currentItem.assessmentData : null;
   const currentQuestion = currentAssessment?.questions?.[currentQuestionIndex] || null;
+  
+  // Demo mode: trigger auto-save error after 5 seconds
+  useEffect(() => {
+    if (!isDemoMode || autoSaveTriggered.current) return;
+    
+    const timer = setTimeout(async () => {
+      autoSaveTriggered.current = true;
+      await triggerAutoSaveError();
+    }, 5000);
+    
+    return () => clearTimeout(timer);
+  }, [isDemoMode, triggerAutoSaveError]);
 
   // Reset question index when switching assessment items
   useEffect(() => {
@@ -192,19 +234,45 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
     addComment(content, currentSlide?.id);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // Demo mode: trigger save error on first attempt
+    if (isDemoMode && demoSaveAttempt === 0) {
+      setDemoSaveAttempt(1);
+      const triggered = await triggerSaveError();
+      if (triggered) return;
+    }
+    
     markStepComplete('scripting');
     saveCourseAsDraft();
+    setHasUnsavedChanges(false);
     // Don't navigate - just save in place
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
+    // Demo mode: trigger version conflict on first attempt
+    if (isDemoMode && demoPublishAttempt === 0) {
+      setDemoPublishAttempt(1);
+      const triggered = await triggerVersionConflict();
+      if (triggered) {
+        setShowVersionConflict(true);
+        return;
+      }
+    }
+    
     markStepComplete('scripting');
     publishCourse();
     // Don't navigate - let header handle publish state
   };
 
-  const handleAddAssessment = () => {
+  const handleAddAssessment = async () => {
+    // Demo mode: trigger add test error on first attempt
+    if (isDemoMode && demoAddTestAttempt === 0) {
+      setDemoAddTestAttempt(1);
+      const triggered = await triggerAddTestError(setAddTestError);
+      if (triggered) return;
+    }
+    
+    setAddTestError(null);
     insertAssessmentAtIndex(currentItemIndex);
     setCurrentItemIndex(currentItemIndex + 1);
   };
@@ -281,8 +349,15 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
     });
   };
 
-  const handleAddQuestion = () => {
+  const handleAddQuestion = async () => {
     if (!currentAssessment) return;
+    
+    // Demo mode: trigger max questions error if we have 2+ questions
+    if (isDemoMode && currentAssessment.questions.length >= 2) {
+      await triggerMaxQuestionsError();
+      return;
+    }
+    
     addQuestionToAssessment(currentAssessment.id);
     // Navigate to the new question
     setCurrentQuestionIndex(currentAssessment.questions.length);
@@ -1123,6 +1198,37 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
         onResolveComment={resolveComment}
         currentSlideId={currentSlide?.id}
       />
+
+      {/* Version Conflict Dialog (Demo Mode) */}
+      <AlertDialog open={showVersionConflict} onOpenChange={setShowVersionConflict}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Version Conflict Detected
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Another user has made changes to this course since you started editing. 
+              Publishing now would overwrite their changes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-2">
+            <p><strong>Last edited by:</strong> Sarah Chen</p>
+            <p><strong>Changes made:</strong> 5 minutes ago</p>
+            <p className="text-muted-foreground">You can either merge changes or force publish (not recommended).</p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Review Changes</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setShowVersionConflict(false);
+              markStepComplete('scripting');
+              publishCourse();
+            }}>
+              Force Publish
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

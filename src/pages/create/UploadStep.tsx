@@ -1,11 +1,14 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, FileText, Trash2, CheckCircle, Plus } from "lucide-react";
+import { Upload, FileText, Trash2, CheckCircle, Plus, RefreshCw, Loader2 } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
+import { useDemoError } from "@/hooks/use-demo-error";
 import { SlideFile } from "@/types/course";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
+import { InlineError } from "@/components/InlineError";
 
 interface UploadStepProps {
   onContinue: () => void;
@@ -13,16 +16,79 @@ interface UploadStepProps {
 
 export function UploadStep({ onContinue }: UploadStepProps) {
   const { currentCourse, setSlideFiles, setSupplementFiles, setCourseTitle, setCourseDescription, markStepComplete } = useCourse();
+  const { isActive: isDemoMode, triggerUploadNetworkError, triggerUploadFormatError, triggerTitleRequired, simulateDelay } = useDemoError();
 
-  const handleContinue = () => {
+  // Demo mode state
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const [demoUploadAttempt, setDemoUploadAttempt] = useState(0);
+
+  const handleContinue = async () => {
+    // Demo mode: trigger title validation error on first attempt
+    if (isDemoMode && currentCourse.courseTitle.trim().length === 0) {
+      const triggered = await triggerTitleRequired(setTitleError);
+      if (triggered) return;
+    }
+    
+    // Clear any title error
+    setTitleError(null);
     markStepComplete('upload');
     onContinue();
   };
+
   const [isDraggingSlide, setIsDraggingSlide] = useState(false);
   const [isDraggingSupp, setIsDraggingSupp] = useState(false);
 
+  const simulateUploadProgress = useCallback(async (shouldFail: boolean) => {
+    setIsUploading(true);
+    setUploadProgress(0);
+    setUploadError(null);
+
+    // Simulate upload progress
+    for (let i = 0; i <= (shouldFail ? 45 : 100); i += 5) {
+      await new Promise(r => setTimeout(r, 50));
+      setUploadProgress(i);
+    }
+
+    if (shouldFail) {
+      await new Promise(r => setTimeout(r, 300));
+      setIsUploading(false);
+      return false;
+    }
+
+    setIsUploading(false);
+    return true;
+  }, []);
+
   const handleFileDrop = useCallback(
-    (files: FileList, isSlide: boolean) => {
+    async (files: FileList, isSlide: boolean) => {
+      // Demo mode: first upload triggers network error, second triggers format error
+      if (isDemoMode && isSlide) {
+        setDemoUploadAttempt(prev => prev + 1);
+        
+        if (demoUploadAttempt === 0) {
+          // First attempt: network error
+          await simulateUploadProgress(true);
+          const triggered = await triggerUploadNetworkError(setUploadError);
+          if (triggered) return;
+        } else if (demoUploadAttempt === 1) {
+          // Second attempt: format error
+          await simulateUploadProgress(true);
+          const triggered = await triggerUploadFormatError();
+          if (triggered) {
+            setIsUploading(false);
+            return;
+          }
+        }
+      }
+
+      // Normal upload (or demo mode after errors shown)
+      if (isDemoMode && isSlide) {
+        await simulateUploadProgress(false);
+      }
+
       const newFiles: SlideFile[] = Array.from(files).map((file, index) => ({
         id: Date.now().toString() + index,
         name: file.name,
@@ -35,11 +101,12 @@ export function UploadStep({ onContinue }: UploadStepProps) {
 
       if (isSlide) {
         setSlideFiles([...currentCourse.slideFiles, ...newFiles]);
+        setUploadError(null);
       } else {
         setSupplementFiles([...currentCourse.supplementFiles, ...newFiles]);
       }
     },
-    [currentCourse.slideFiles, currentCourse.supplementFiles, setSlideFiles, setSupplementFiles],
+    [currentCourse.slideFiles, currentCourse.supplementFiles, setSlideFiles, setSupplementFiles, isDemoMode, demoUploadAttempt, simulateUploadProgress, triggerUploadNetworkError, triggerUploadFormatError],
   );
 
   const handleDrop = (e: React.DragEvent, isSlide: boolean) => {
@@ -64,12 +131,24 @@ export function UploadStep({ onContinue }: UploadStepProps) {
     input.click();
   };
 
+  const handleRetryUpload = () => {
+    setUploadError(null);
+    setUploadProgress(0);
+    handleBrowse(true);
+  };
+
   const removeFile = (id: string, isSlide: boolean) => {
     if (isSlide) {
       setSlideFiles(currentCourse.slideFiles.filter((f) => f.id !== id));
     } else {
       setSupplementFiles(currentCourse.supplementFiles.filter((f) => f.id !== id));
     }
+  };
+
+  // Clear title error when user types
+  const handleTitleChange = (value: string) => {
+    setCourseTitle(value);
+    if (titleError) setTitleError(null);
   };
 
   const hasSlideFile = currentCourse.slideFiles.length > 0;
@@ -91,10 +170,15 @@ export function UploadStep({ onContinue }: UploadStepProps) {
             </label>
             <Input
               value={currentCourse.courseTitle}
-              onChange={(e) => setCourseTitle(e.target.value)}
+              onChange={(e) => handleTitleChange(e.target.value)}
               placeholder="Enter your course title..."
-              className="rounded-xl"
+              className={`rounded-xl ${titleError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+              aria-invalid={!!titleError}
+              aria-describedby={titleError ? 'title-error' : undefined}
             />
+            {titleError && (
+              <InlineError id="title-error" message={titleError} />
+            )}
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Description</label>
@@ -115,28 +199,52 @@ export function UploadStep({ onContinue }: UploadStepProps) {
         </div>
 
         {!hasSlideFile ? (
-          <div
-            className={`m-6 flex flex-col items-center justify-center h-60 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-              isDraggingSlide
-                ? "border-primary bg-primary/5 border-solid"
-                : "border-border border-solid hover:border-primary hover:bg-muted/30"
-            }`}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setIsDraggingSlide(true);
-            }}
-            onDragLeave={() => setIsDraggingSlide(false)}
-            onDrop={(e) => handleDrop(e, true)}
-            onClick={() => handleBrowse(true)}
-          >
-            <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-              <Upload className="h-7 w-7 text-primary" />
+          <div className="m-6 space-y-4">
+            <div
+              className={`flex flex-col items-center justify-center h-60 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                isDraggingSlide
+                  ? "border-primary bg-primary/5 border-solid"
+                  : uploadError 
+                    ? "border-destructive/50 bg-destructive/5"
+                    : "border-border border-solid hover:border-primary hover:bg-muted/30"
+              }`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDraggingSlide(true);
+              }}
+              onDragLeave={() => setIsDraggingSlide(false)}
+              onDrop={(e) => handleDrop(e, true)}
+              onClick={() => !isUploading && handleBrowse(true)}
+            >
+              {isUploading ? (
+                <div className="flex flex-col items-center gap-4 w-full max-w-xs">
+                  <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                  <div className="w-full space-y-2">
+                    <Progress value={uploadProgress} className="h-2" />
+                    <p className="text-sm text-muted-foreground text-center">Uploading... {uploadProgress}%</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                    <Upload className="h-7 w-7 text-primary" />
+                  </div>
+                  <span className="text-base font-medium text-foreground">Drop Slide Files</span>
+                  <span className="text-sm text-muted-foreground mt-1">Drag & Drop or Browse and Select Slide Files*</span>
+                  <Button variant="outline" className="mt-4 rounded-xl">
+                    Browse
+                  </Button>
+                </>
+              )}
             </div>
-            <span className="text-base font-medium text-foreground">Drop Slide Files</span>
-            <span className="text-sm text-muted-foreground mt-1">Drag & Drop or Browse and Select Slide Files*</span>
-            <Button variant="outline" className="mt-4 rounded-xl">
-              Browse
-            </Button>
+            
+            {/* Upload Error */}
+            {uploadError && (
+              <InlineError 
+                message={uploadError} 
+                onRetry={handleRetryUpload}
+              />
+            )}
           </div>
         ) : (
           <div className="p-6">
@@ -286,7 +394,7 @@ export function UploadStep({ onContinue }: UploadStepProps) {
 
       {/* Continue Button */}
       <div className="flex justify-center pt-4">
-        <Button onClick={onContinue} disabled={!hasSlideFile || !hasTitle} size="lg" className="rounded-xl px-12">
+        <Button onClick={handleContinue} disabled={!hasSlideFile || !hasTitle || isUploading} size="lg" className="rounded-xl px-12">
           Continue
         </Button>
       </div>

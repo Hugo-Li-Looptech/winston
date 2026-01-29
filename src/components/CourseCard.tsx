@@ -17,6 +17,7 @@ interface CourseCardProps {
   onTogglePublish: (course: Course) => void;
   onDelete: (courseId: string) => void;
   onVersionControl?: (courseId: string) => void;
+  onDemoClick?: () => void; // For error handling demo course
 }
 
 const getProgressPercent = (progress: Course["progress"]) => {
@@ -46,8 +47,18 @@ export function CourseCard({
   onTogglePublish,
   onDelete,
   onVersionControl,
+  onDemoClick,
 }: CourseCardProps) {
   const progressPercent = getProgressPercent(course.progress);
+  const isDemoCourse = course.id === 'proxy-error-handling';
+  
+  const handleEditClick = () => {
+    if (isDemoCourse && onDemoClick) {
+      onDemoClick();
+    } else {
+      onEdit(course);
+    }
+  };
   
   return (
     <div className="group relative rounded-2xl overflow-hidden flex flex-col backdrop-blur-xl bg-card/60 border border-border/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-accent/30">
@@ -75,9 +86,9 @@ export function CourseCard({
                 <Play className="h-4 w-4 mr-2" />
                 Preview
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(course)}>
+              <DropdownMenuItem onClick={handleEditClick}>
                 <Edit className="h-4 w-4 mr-2" />
-                Edit
+                {isDemoCourse ? 'Start Demo' : 'Edit'}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onDuplicate(course.id)}>
                 <Copy className="h-4 w-4 mr-2" />
@@ -122,10 +133,10 @@ export function CourseCard({
           variant="outline" 
           size="sm"
           className="w-full rounded-xl text-xs h-7 bg-primary/10 border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 font-medium"
-          onClick={() => onEdit(course)}
+          onClick={handleEditClick}
         >
           <Edit className="h-3 w-3 mr-1.5" />
-          Edit
+          {isDemoCourse ? 'Start Demo' : 'Edit'}
         </Button>
       </div>
       
