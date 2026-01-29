@@ -5,15 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ErrorFallback } from '@/components/ErrorFallback';
 import { InlineError } from '@/components/InlineError';
-import {
-  showErrorToast,
-  showWarningToast,
-  showNetworkError,
-  showValidationError,
-  showServerError,
-} from '@/components/ErrorToast';
+import { showValidationError } from '@/components/ErrorToast';
 import { useErrorLogger } from '@/hooks/use-error-logger';
-import { AlertTriangle, Bomb, RefreshCw, Send, Wifi, WifiOff } from 'lucide-react';
+import { AlertTriangle, Bomb, RefreshCw, Send, Wifi } from 'lucide-react';
+
+// Import specialized demo components
+import { UploadErrorDemo } from './UploadErrorDemo';
+import { AssessmentErrorDemo } from './AssessmentErrorDemo';
+import { SavePublishErrorDemo } from './SavePublishErrorDemo';
+import { NetworkErrorDemo } from './NetworkErrorDemo';
 
 // Component that intentionally throws an error
 function BuggyComponent(): JSX.Element {
@@ -41,49 +41,6 @@ function BoundaryDemo() {
         <Bomb className="h-4 w-4" />
         Trigger Error
       </Button>
-    </div>
-  );
-}
-
-// Toast Demo Component
-function ToastDemo() {
-  return (
-    <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted-foreground">
-        Click buttons to see different toast notifications:
-      </p>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={() => showErrorToast('This is an error toast message!')}
-        >
-          Error Toast
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => showWarningToast('This is a warning message')}
-        >
-          Warning Toast
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => showNetworkError()}
-          className="gap-2"
-        >
-          <WifiOff className="h-4 w-4" />
-          Network Error
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => showServerError(500)}
-        >
-          Server Error
-        </Button>
-      </div>
     </div>
   );
 }
@@ -125,6 +82,29 @@ function InlineErrorDemo() {
           onRetry={() => setShowError(false)}
         />
       )}
+    </div>
+  );
+}
+
+// Validation Error Toast Demo
+function ValidationToastDemo() {
+  const handleShowValidationErrors = () => {
+    showValidationError({
+      email: 'Invalid email format',
+      password: 'Password must be at least 8 characters',
+      username: 'Username is already taken',
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm text-muted-foreground">
+        Shows multiple validation errors in a toast:
+      </p>
+      <Button onClick={handleShowValidationErrors} variant="outline" className="gap-2 w-fit">
+        <AlertTriangle className="h-4 w-4" />
+        Show Validation Errors
+      </Button>
     </div>
   );
 }
@@ -195,29 +175,6 @@ function RetryDemo() {
   );
 }
 
-// Validation Error Toast Demo
-function ValidationToastDemo() {
-  const handleShowValidationErrors = () => {
-    showValidationError({
-      email: 'Invalid email format',
-      password: 'Password must be at least 8 characters',
-      username: 'Username is already taken',
-    });
-  };
-
-  return (
-    <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted-foreground">
-        Shows multiple validation errors in a toast:
-      </p>
-      <Button onClick={handleShowValidationErrors} variant="outline" className="gap-2 w-fit">
-        <AlertTriangle className="h-4 w-4" />
-        Show Validation Errors
-      </Button>
-    </div>
-  );
-}
-
 // Main Demo Component for the Error Handling Course
 export function ErrorHandlingDemo({ slideId }: { slideId: string }) {
   switch (slideId) {
@@ -234,10 +191,12 @@ export function ErrorHandlingDemo({ slideId }: { slideId: string }) {
             <p>In this course, you'll learn about:</p>
             <ul className="list-disc list-inside space-y-1">
               <li>React Error Boundaries</li>
-              <li>Toast notifications for errors</li>
-              <li>Inline error messages</li>
+              <li>File upload error handling</li>
+              <li>Assessment & test creation errors</li>
+              <li>Save & publish failure patterns</li>
+              <li>Network error recovery</li>
+              <li>Inline form validation</li>
               <li>Retry mechanisms</li>
-              <li>Error logging</li>
             </ul>
           </CardContent>
         </Card>
@@ -271,21 +230,18 @@ export function ErrorHandlingDemo({ slideId }: { slideId: string }) {
       );
 
     case 'error-3':
-      return (
-        <Card className="bg-card/60 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Toast Notifications</CardTitle>
-            <CardDescription>
-              Different toast types for various error scenarios
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ToastDemo />
-          </CardContent>
-        </Card>
-      );
+      return <UploadErrorDemo />;
 
     case 'error-4':
+      return <AssessmentErrorDemo />;
+
+    case 'error-5':
+      return <SavePublishErrorDemo />;
+
+    case 'error-6':
+      return <NetworkErrorDemo />;
+
+    case 'error-7':
       return (
         <Card className="bg-card/60 backdrop-blur-sm">
           <CardHeader>
@@ -303,7 +259,7 @@ export function ErrorHandlingDemo({ slideId }: { slideId: string }) {
         </Card>
       );
 
-    case 'error-5':
+    case 'error-8':
       return (
         <Card className="bg-card/60 backdrop-blur-sm">
           <CardHeader>
