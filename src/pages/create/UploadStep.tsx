@@ -16,7 +16,7 @@ interface UploadStepProps {
 
 export function UploadStep({ onContinue }: UploadStepProps) {
   const { currentCourse, setSlideFiles, setSupplementFiles, setCourseTitle, setCourseDescription, markStepComplete } = useCourse();
-  const { isActive: isDemoMode, triggerUploadNetworkError, triggerUploadFormatError, triggerTitleRequired, simulateDelay } = useDemoError();
+  const { isActive: isDemoMode, triggerUploadNetworkError, triggerUploadFormatError, simulateDelay } = useDemoError();
 
   // Demo mode state
   const [isUploading, setIsUploading] = useState(false);
@@ -26,12 +26,6 @@ export function UploadStep({ onContinue }: UploadStepProps) {
   const [demoUploadAttempt, setDemoUploadAttempt] = useState(0);
 
   const handleContinue = async () => {
-    // Demo mode: trigger title validation error on first attempt
-    if (isDemoMode && currentCourse.courseTitle.trim().length === 0) {
-      const triggered = await triggerTitleRequired(setTitleError);
-      if (triggered) return;
-    }
-    
     // Clear any title error
     setTitleError(null);
     markStepComplete('upload');

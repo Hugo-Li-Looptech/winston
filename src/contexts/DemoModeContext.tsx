@@ -45,15 +45,6 @@ const DEMO_SCENARIOS: DemoScenario[] = [
     completed: false,
   },
   {
-    id: 'title-required',
-    stage: 'upload',
-    title: 'Title Validation',
-    instruction: 'Try clicking Continue without entering a course title.',
-    trigger: 'Click Continue with empty title',
-    pattern: 'Inline error under the input field',
-    completed: false,
-  },
-  {
     id: 'pref-save',
     stage: 'wizard',
     title: 'Preference Save Failed',
@@ -159,6 +150,7 @@ interface DemoModeContextType {
   shouldTriggerError: (scenarioId: DemoScenarioId) => boolean;
   markScenarioComplete: (scenarioId: DemoScenarioId) => void;
   skipScenario: () => void;
+  previousScenario: () => void;
   nextScenario: () => void;
   dismissIntroModal: () => void;
   dismissCompleteModal: () => void;
@@ -252,6 +244,14 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
     });
   }, [scenarios.length]);
 
+  const previousScenario = useCallback(() => {
+    setCurrentCheckpoint(prev => {
+      if (prev <= 0) return prev;
+      setTriggeredScenarios(new Set());
+      return prev - 1;
+    });
+  }, []);
+
   const dismissIntroModal = useCallback(() => {
     setShowIntroModal(false);
   }, []);
@@ -290,6 +290,7 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
         shouldTriggerError,
         markScenarioComplete,
         skipScenario,
+        previousScenario,
         nextScenario,
         dismissIntroModal,
         dismissCompleteModal,
