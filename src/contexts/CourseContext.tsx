@@ -196,6 +196,15 @@ const createUIUXSlidesBranchB = (): Slide[] => [
   { id: 'uiux-2', title: 'SwiftUI Components', content: ['Native components', 'Custom styling', 'Animations'], talkPoints: 'SwiftUI provides beautiful native components. Learn when to use them and when custom designs are appropriate.', keywords: ['SwiftUI', 'components'], summary: 'SwiftUI component guide.' },
 ];
 
+// Error Handling course slides
+const createErrorHandlingSlides = (): Slide[] => [
+  { id: 'error-1', title: 'Introduction to Error Handling', content: ['Why error handling matters', 'Types of errors in React', 'User experience impact'], talkPoints: 'Welcome to this course on error handling patterns in React! Proper error handling is crucial for creating robust applications that gracefully handle unexpected situations.', keywords: ['error handling', 'introduction', 'React'], summary: 'Introduction to error handling concepts and importance.' },
+  { id: 'error-2', title: 'Error Boundaries in Action', content: ['What are Error Boundaries', 'Catching component errors', 'Fallback UI patterns'], talkPoints: 'Error Boundaries are React components that catch JavaScript errors anywhere in their child component tree. They let you display a fallback UI instead of crashing the entire application.', keywords: ['error boundary', 'fallback', 'React'], summary: 'Learn how Error Boundaries catch and handle component errors.' },
+  { id: 'error-3', title: 'Toast Notifications', content: ['Error toasts', 'Warning toasts', 'Network error alerts'], talkPoints: 'Toast notifications provide non-intrusive feedback to users. They are perfect for transient errors that don\'t require immediate action but should be communicated clearly.', keywords: ['toast', 'notifications', 'feedback'], summary: 'Using toast notifications for error communication.' },
+  { id: 'error-4', title: 'Inline Form Validation', content: ['Real-time validation', 'Error message placement', 'Accessibility considerations'], talkPoints: 'Inline errors appear directly next to the form field with the issue. This pattern provides immediate, contextual feedback that helps users correct mistakes quickly.', keywords: ['validation', 'forms', 'inline errors'], summary: 'Implementing inline validation with accessible error messages.' },
+  { id: 'error-5', title: 'Retry Mechanisms', content: ['Handling network failures', 'Retry buttons', 'Exponential backoff'], talkPoints: 'Network failures are inevitable. Implementing retry mechanisms gives users a way to recover from temporary issues without refreshing the entire page.', keywords: ['retry', 'network', 'resilience'], summary: 'Building resilient applications with retry functionality.' },
+];
+
 // Create initial versions for proxy courses with comprehensive dummy data
 const createInitialVersionsMap = (): Map<string, CourseVersion[]> => {
   const map = new Map<string, CourseVersion[]>();
@@ -374,6 +383,25 @@ const createInitialVersionsMap = (): Map<string, CourseVersion[]> => {
       },
     },
   ]);
+
+  // proxy-error-handling (Error Handling Patterns) - Published demo course
+  map.set('proxy-error-handling', [
+    {
+      id: 'version-error-v1',
+      versionName: 'v1.0 Published',
+      timestamp: '2025-01-29T10:00:00.000Z',
+      author: 'Course Creator',
+      isPublished: true,
+      courseSnapshot: {
+        title: 'Error Handling Patterns',
+        description: 'Interactive demonstrations of error handling patterns in React applications',
+        slides: createErrorHandlingSlides(),
+        assessments: [],
+        courseItems: createErrorHandlingSlides().map(s => ({ id: s.id, type: 'slide' as const, slideData: s })),
+        wizardSettings: defaultWizardSettings,
+      },
+    },
+  ]);
   
   return map;
 };
@@ -383,6 +411,7 @@ const createInitialVersionIdsMap = (): Map<string, string> => {
   map.set('proxy-1', 'version-proxy-1-v3');
   map.set('proxy-2', 'version-proxy-2-v2');
   map.set('proxy-3', 'version-proxy-3-v3');
+  map.set('proxy-error-handling', 'version-error-v1');
   return map;
 };
 
@@ -408,6 +437,13 @@ const proxyCourses: Course[] = [
     date: 'Nov 25, 2024',
     status: 'pending',
     progress: 'slides_uploaded',
+  },
+  {
+    id: 'proxy-error-handling',
+    title: 'Error Handling Patterns',
+    date: 'Jan 29, 2025',
+    status: 'published',
+    progress: '100%',
   },
 ];
 
