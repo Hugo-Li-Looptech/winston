@@ -1,201 +1,245 @@
 
+# Error Handling Demo Course - Experiential Redesign
 
-# Enhanced Error Handling Demo Course
+## Vision
 
-## Problem Statement
-
-The current "Error Handling Patterns" demo course lacks:
-1. **Interactive trigger elements** - Buttons and actions to simulate real failures
-2. **Real-world error scenarios** - Specific errors like "upload failed", "unable to add tests", "save failed"
-3. **Context-specific demos** - Errors that mirror actual app operations
-
-## Solution Overview
-
-Expand the error handling demo to include 8 slides with specific, real-world error scenarios that users would encounter in the course creation workflow.
+Create an **immersive guided experience** where users walk through the actual course creation workflow and encounter scripted error scenarios at each stage. Instead of clicking isolated "trigger error" buttons, users perform real actions (upload, add test, save) that intentionally fail, teaching them error handling patterns in context.
 
 ---
 
-## New Slide Structure
-
-| Slide | Title | Error Scenarios |
-|-------|-------|-----------------|
-| 1 | Introduction | Overview of all error types |
-| 2 | Error Boundaries | Component crash demo |
-| 3 | File Upload Errors | Upload failed, unsupported format, file too large |
-| 4 | Assessment Errors | Unable to add test, question save failed |
-| 5 | Save & Publish Errors | Auto-save failed, publish failed, draft save failed |
-| 6 | Network Errors | Connection lost, timeout, server unavailable |
-| 7 | Validation Errors | Form validation, missing fields, invalid data |
-| 8 | Retry Mechanisms | Recovery patterns with exponential backoff |
-
----
-
-## New Interactive Components
-
-### 1. Upload Error Demo
-Simulates file upload failures with different error types:
-- **"Upload Failed"** - Simulates network failure during upload
-- **"Unsupported Format"** - Shows error for wrong file type
-- **"File Too Large"** - Exceeds size limit error
-- **"Upload Timeout"** - Connection timeout
-
-Each button shows progress bar that fails, with inline error and retry option.
-
-### 2. Assessment Error Demo
-Simulates course assessment/test errors:
-- **"Unable to Add Test"** - Server rejection when adding assessment
-- **"Question Save Failed"** - Error saving individual question
-- **"Maximum Questions Reached"** - Limit exceeded warning
-- **"Invalid Question Format"** - Validation error on question data
-
-### 3. Save & Publish Error Demo
-Simulates course persistence failures:
-- **"Auto-Save Failed"** - Background save interruption
-- **"Publish Failed"** - Server error during publish
-- **"Draft Save Failed"** - Unable to save progress
-- **"Version Conflict"** - Concurrent edit warning
-
-### 4. Comprehensive Network Error Demo
-Enhanced network failure simulations:
-- **"Connection Lost"** - Complete network failure
-- **"Request Timeout"** - Slow server response
-- **"Server Unavailable (503)"** - Service temporarily down
-- **"Rate Limited (429)"** - Too many requests
-
----
-
-## Implementation Details
-
-### File: `src/components/demo/ErrorHandlingDemo.tsx`
-
-Add new demo components:
+## User Journey Flow
 
 ```text
-UploadErrorDemo
-├── simulateUploadError(type: 'network' | 'format' | 'size' | 'timeout')
-├── Progress bar with failure animation
-├── InlineError with specific message
-└── Retry button
-
-AssessmentErrorDemo
-├── simulateAddTestError()
-├── simulateQuestionSaveError()
-├── Toast notifications for each error type
-└── InlineError with contextual messages
-
-SavePublishErrorDemo
-├── simulateAutoSaveError()
-├── simulatePublishError()
-├── Warning toasts for recoverable errors
-└── Destructive toasts for failures
-
-NetworkErrorDemo (enhanced)
-├── simulateConnectionLost()
-├── simulateTimeout()
-├── simulateServerError(status: number)
-└── Error toast with specific status codes
-```
-
-### File: `src/contexts/CourseContext.tsx`
-
-Update `createErrorHandlingSlides()` to include 8 slides with new content.
-
----
-
-## UI Design for Each Demo
-
-### Upload Error Demo
-
-```text
-┌─────────────────────────────────────────────┐
-│  📁 File Upload Error Simulation            │
-├─────────────────────────────────────────────┤
-│                                             │
-│  [🔴 Upload Failed]  [📄 Wrong Format]      │
-│                                             │
-│  [📏 File Too Large] [⏱️ Upload Timeout]    │
-│                                             │
-│  ┌─────────────────────────────────────┐    │
-│  │ ████████░░░░░░░░░░░░░  45%         │    │
-│  └─────────────────────────────────────┘    │
-│                                             │
-│  ⚠️ Upload failed: Network error            │
-│     [Retry Upload]                          │
-│                                             │
-└─────────────────────────────────────────────┘
-```
-
-### Assessment Error Demo
-
-```text
-┌─────────────────────────────────────────────┐
-│  📝 Assessment Error Simulation             │
-├─────────────────────────────────────────────┤
-│                                             │
-│  [➕ Add Test (Fails)]                      │
-│  [💾 Save Question (Fails)]                 │
-│  [🔢 Max Questions (Warning)]               │
-│  [❌ Invalid Question (Validation)]         │
-│                                             │
-│  Toast: "Unable to add test. Please try     │
-│          again or contact support."         │
-│                                             │
-└─────────────────────────────────────────────┘
-```
-
-### Save/Publish Error Demo
-
-```text
-┌─────────────────────────────────────────────┐
-│  💾 Save & Publish Error Simulation         │
-├─────────────────────────────────────────────┤
-│                                             │
-│  [⚡ Auto-Save Failed]  [🚀 Publish Failed] │
-│                                             │
-│  [📝 Draft Save Failed] [⚠️ Version Conflict]│
-│                                             │
-│  Simulates saving state with loading        │
-│  spinner, then shows failure toast          │
-│                                             │
-└─────────────────────────────────────────────┘
+Dashboard
+    │
+    ├── Click "Error Handling Demo" course card
+    │
+    ▼
+Demo Intro Modal
+    │  "Welcome! You'll experience error handling
+    │   patterns by creating a demo course.
+    │   Errors are intentional - observe how the
+    │   app handles each failure."
+    │
+    ▼
+Stage 1: UPLOAD (3 error scenarios)
+    │
+    ├─→ [Error 1] Upload slide file → "Network Error"
+    │   Shows: Progress bar fails, inline error, retry button
+    │
+    ├─→ [Error 2] Upload wrong format → "Unsupported Format"
+    │   Shows: Toast notification with file requirements
+    │
+    ├─→ [Success] Upload valid file
+    │
+    ├─→ [Error 3] Title validation → "Title is required"
+    │   Shows: Inline red error under input
+    │
+    ├─→ [Success] Enter title and continue
+    │
+    ▼
+Stage 2: WIZARD (2 error scenarios)
+    │
+    ├─→ [Error 4] Toggle audience → "Preference save failed"
+    │   Shows: Warning toast, preferences still toggle locally
+    │
+    ├─→ Continue to voice settings
+    │
+    ▼
+Stage 3: VOICE SETTINGS (2 error scenarios)
+    │
+    ├─→ [Error 5] Preview voice → "Voice unavailable"
+    │   Shows: Toast, button shows "Unavailable" state
+    │
+    ├─→ [Error 6] Generate talk points → "AI quota exceeded"
+    │   Shows: Destructive toast, suggestion to retry later
+    │
+    ├─→ [Success] Retry and proceed
+    │
+    ▼
+Stage 4: SCRIPTING (5 error scenarios)
+    │
+    ├─→ [Error 7] Auto-save triggers → "Auto-save interrupted"
+    │   Shows: Warning toast, "unsaved" badge pulses
+    │
+    ├─→ [Error 8] Add assessment → "Unable to add test"
+    │   Shows: Toast + inline error at insertion point
+    │
+    ├─→ [Error 9] Add question → "Maximum questions reached"
+    │   Shows: Warning toast (limit simulation)
+    │
+    ├─→ [Error 10] Save manually → "Save failed"
+    │   Shows: Destructive toast with retry
+    │
+    ├─→ [Error 11] Publish → "Version conflict (409)"
+    │   Shows: Warning dialog about concurrent edit
+    │
+    ▼
+Stage 5: PREVIEW (2 error scenarios)
+    │
+    ├─→ [Error 12] Play audio → "Audio playback failed"
+    │   Shows: Inline error with retry
+    │
+    ├─→ [Error 13] Final publish → "Server error (500)"
+    │   Shows: Full-page error fallback demo
+    │
+    ▼
+Demo Complete Modal
+    │  "You've experienced 13 error handling patterns!
+    │   Summary of what you learned..."
+    │
+    ▼
+Return to Dashboard
 ```
 
 ---
 
-## Error Messages (User-Friendly)
+## Implementation Approach
 
-| Scenario | Message |
-|----------|---------|
-| Upload Failed | "Unable to upload file. Please check your connection and try again." |
-| Unsupported Format | "This file type is not supported. Please use PDF, PPTX, or DOCX." |
-| File Too Large | "File exceeds the 50MB limit. Please compress or split your file." |
-| Unable to Add Test | "Couldn't add the assessment. Please try again in a moment." |
-| Question Save Failed | "Unable to save this question. Your changes may not be preserved." |
-| Auto-Save Failed | "Auto-save interrupted. Click 'Save' manually to preserve your work." |
-| Publish Failed | "Publishing failed due to a server error. Please try again." |
-| Connection Lost | "You appear to be offline. Reconnect to continue." |
-| Timeout | "The request took too long. Please try again." |
+### 1. Demo Mode Context
+
+Create a `DemoModeContext` that tracks:
+- Whether demo mode is active
+- Current demo step/checkpoint
+- Which errors should trigger next
+- Guidance messages for each step
+
+```typescript
+interface DemoModeState {
+  isActive: boolean;
+  currentCheckpoint: number;
+  errorQueue: DemoError[];
+  guidanceMessage: string | null;
+  completedScenarios: string[];
+}
+```
+
+### 2. Error Injection Points
+
+Wrap existing action handlers to check if demo mode is active and inject failures:
+
+**UploadStep.tsx**
+```typescript
+const handleFileDrop = async (files: FileList) => {
+  if (demoMode.shouldTriggerError('upload-network')) {
+    await simulateDelay(1500);
+    showNetworkError();
+    setUploadError("Network error during upload");
+    return;
+  }
+  // Normal upload logic...
+};
+```
+
+**ScriptingStep.tsx**
+```typescript
+const handleAddAssessment = () => {
+  if (demoMode.shouldTriggerError('add-test')) {
+    showErrorToast("Unable to add test");
+    setInlineError("Server rejected the request");
+    return;
+  }
+  // Normal add logic...
+};
+```
+
+### 3. Guidance Overlay Component
+
+A floating panel that appears during demo mode showing:
+- Current scenario name
+- What error to expect
+- What UI pattern to observe
+- "Next Step" instructions
+
+```text
+┌─────────────────────────────────────┐
+│ 🎓 Demo Step 3/13                   │
+│                                     │
+│ SCENARIO: Upload Network Failure    │
+│                                     │
+│ TRY THIS: Drag a file to the        │
+│ upload area. The upload will fail.  │
+│                                     │
+│ OBSERVE: Progress bar, inline       │
+│ error message, and retry button.    │
+│                                     │
+│ [Skip] [Continue when ready]        │
+└─────────────────────────────────────┘
+```
+
+### 4. Error Scenarios Catalog
+
+| ID | Stage | Trigger | Error Type | UI Pattern |
+|----|-------|---------|------------|------------|
+| upload-network | Upload | Drop file | Network | Progress fail + Inline + Retry |
+| upload-format | Upload | Drop .exe | Validation | Toast |
+| upload-size | Upload | Drop 100MB | Validation | Toast |
+| title-required | Upload | Empty title + Continue | Validation | Inline under input |
+| pref-save | Wizard | Toggle audience | Network | Warning toast |
+| voice-preview | Voice | Click Preview | Network | Toast + disabled state |
+| ai-quota | Voice | Generate talk points | Server | Destructive toast |
+| autosave-fail | Scripting | After 5s | Network | Warning toast |
+| add-test-fail | Scripting | Click + button | Server | Toast + Inline |
+| max-questions | Scripting | Add 11th question | Limit | Warning toast |
+| save-fail | Scripting | Click Save | Server | Destructive toast |
+| version-conflict | Scripting | Click Publish | Conflict | Warning dialog |
+| audio-fail | Preview | Click Play | Network | Inline error |
 
 ---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/contexts/DemoModeContext.tsx` | Demo mode state management |
+| `src/components/demo/DemoGuidancePanel.tsx` | Floating guidance overlay |
+| `src/components/demo/DemoIntroModal.tsx` | Welcome modal explaining the experience |
+| `src/components/demo/DemoCompleteModal.tsx` | Summary modal at the end |
+| `src/hooks/use-demo-error.ts` | Hook for injecting errors based on demo state |
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/demo/ErrorHandlingDemo.tsx` | Add UploadErrorDemo, AssessmentErrorDemo, SavePublishErrorDemo, enhance NetworkErrorDemo |
-| `src/contexts/CourseContext.tsx` | Update createErrorHandlingSlides() with 8 slides |
+| `src/pages/create/UploadStep.tsx` | Add demo error injection points |
+| `src/pages/create/WizardStep.tsx` | Add demo error injection for preferences |
+| `src/pages/create/WizardConfirmStep.tsx` | Add demo errors for voice/AI |
+| `src/pages/create/ScriptingStep.tsx` | Add demo errors for add/save/publish |
+| `src/pages/create/PreviewStep.tsx` | Add demo errors for playback/publish |
+| `src/pages/CreateCourse.tsx` | Wrap with DemoModeProvider |
+| `src/contexts/CourseContext.tsx` | Update demo course to trigger demo mode |
 
 ---
 
-## Technical Approach
+## Demo Entry Point
 
-All demo components will:
-1. Use simulated delays (1-2 seconds) to feel realistic
-2. Show loading states before failures
-3. Use existing error components (InlineError, ErrorToast, ErrorBoundary)
-4. Log errors via useErrorLogger hook
-5. Provide retry functionality where appropriate
-6. Be fully accessible with ARIA labels
+The "Error Handling Patterns" course on Dashboard will:
+1. Instead of opening in preview mode, open with `?mode=demo`
+2. Show the intro modal explaining the experience
+3. Start the user at Upload step with demo mode active
+4. Guide them through all 13 error scenarios
+5. Show completion modal with summary
 
-This approach extends the existing demo pattern without disrupting any production functionality - all error scenarios are simulated within the demo course.
+---
 
+## Technical Considerations
+
+1. **Non-Destructive**: Demo mode is entirely separate from normal course creation - no real data is affected
+2. **Skippable**: Users can skip any scenario or exit demo mode at any time
+3. **Progress Tracking**: LocalStorage saves completed scenarios for return visits
+4. **Replayable**: Users can restart the demo from the beginning
+5. **Educational**: Each error shows both the UI and explains the pattern being demonstrated
+
+---
+
+## Summary
+
+This redesign transforms the "Error Handling Patterns" course from a static presentation into an **interactive learning experience** where users encounter real error UIs in the context of the actual course creation workflow. They'll learn:
+
+- How upload failures appear and recover
+- How validation errors display inline vs. toast
+- How save/publish failures are communicated
+- How network errors trigger retry mechanisms
+- How version conflicts are resolved
+
+The demo mode infrastructure can also be reused for onboarding new users to the platform.
