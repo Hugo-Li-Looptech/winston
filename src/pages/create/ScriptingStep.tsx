@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Plus, Trash2, Clock, User, Tag, BookOpen, LayoutList, AlertTriangle } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
 import { useDemoError } from "@/hooks/use-demo-error";
+import { useDemoMode } from "@/contexts/DemoModeContext";
 import { QuickEditsPanel } from "@/components/QuickEditsPanel";
 import { RichTextToolbar } from "@/components/RichTextToolbar";
 import { SlideDetailsPanel } from "@/components/SlideDetailsPanel";
@@ -13,6 +14,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 import { CourseEditorHeader } from "@/components/CourseEditorHeader";
 import { InlineError } from "@/components/InlineError";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,6 +80,9 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
     triggerSaveError, 
     triggerVersionConflict 
   } = useDemoError();
+  
+  const { getHighlightedCTA } = useDemoMode();
+  const highlightTarget = isDemoMode ? getHighlightedCTA() : null;
   
   const { slides, courseItems, courseTitle, metadata } = currentCourse;
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
@@ -901,7 +906,11 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                   {/* Plus Button with Dropdown */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-8 w-8 rounded-full ml-2">
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className={cn("h-8 w-8 rounded-full ml-2", highlightTarget === 'add-test-button' && "demo-highlight")}
+                      >
                         <Plus className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -961,7 +970,7 @@ export function ScriptingStep({ onContinue, onBack, onStepClick }: ScriptingStep
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-7 w-7 rounded-full ml-2"
+                      className={cn("h-7 w-7 rounded-full ml-2", highlightTarget === 'add-question-button' && "demo-highlight")}
                       onClick={handleAddQuestion}
                     >
                       <Plus className="h-4 w-4" />

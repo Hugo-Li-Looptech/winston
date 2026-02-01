@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useCourse } from "@/contexts/CourseContext";
 import { useDemoError } from "@/hooks/use-demo-error";
+import { useDemoMode } from "@/contexts/DemoModeContext";
 import { InlineError } from "@/components/InlineError";
 import {
   ChevronLeft,
@@ -23,6 +24,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { CourseEditorHeader } from "@/components/CourseEditorHeader";
 import { CommentsPanel } from "@/components/CommentsPanel";
+import { cn } from "@/lib/utils";
 
 import { WizardStep } from "@/types/course";
 
@@ -49,6 +51,8 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
   } = useCourse();
   
   const { isActive: isDemoMode, triggerAudioPlaybackError, triggerPublishError } = useDemoError();
+  const { getHighlightedCTA } = useDemoMode();
+  const highlightTarget = isDemoMode ? getHighlightedCTA() : null;
   
   const { courseItems, courseTitle } = currentCourse;
 
@@ -327,7 +331,10 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
                 variant="ghost"
                 size="icon"
                 onClick={handlePlayToggle}
-                className="h-9 w-9 rounded-full bg-background/50 hover:bg-background/80"
+                className={cn(
+                  "h-9 w-9 rounded-full bg-background/50 hover:bg-background/80",
+                  highlightTarget === 'play-button' && "demo-highlight"
+                )}
               >
                 {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               </Button>

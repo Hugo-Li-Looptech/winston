@@ -6,7 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCourse } from '@/contexts/CourseContext';
 import { useDemoError } from '@/hooks/use-demo-error';
+import { useDemoMode } from '@/contexts/DemoModeContext';
 import { Pencil } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface WizardStepProps {
   onContinue: () => void;
@@ -41,6 +43,8 @@ const learningGoals = [
 export function WizardStep({ onContinue, onBack }: WizardStepProps) {
   const { currentCourse, setWizardSettings, setCourseTitle, markStepComplete } = useCourse();
   const { isActive: isDemoMode, triggerPrefSaveError } = useDemoError();
+  const { getHighlightedCTA } = useDemoMode();
+  const highlightTarget = isDemoMode ? getHighlightedCTA() : null;
   const [settings, setSettings] = useState(currentCourse.wizardSettings);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(currentCourse.courseTitle);
@@ -150,15 +154,17 @@ export function WizardStep({ onContinue, onBack }: WizardStepProps) {
           </p>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          {audienceTypes.map((type) => (
+          {audienceTypes.map((type, index) => (
             <div
               key={type}
               onClick={() => toggleAudience(type)}
-              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
+              className={cn(
+                "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all",
                 settings.audienceTypes.includes(type)
                   ? 'bg-primary/10 border-2 border-primary'
-                  : 'bg-card border-2 border-transparent hover:border-muted-foreground/30'
-              }`}
+                  : 'bg-card border-2 border-transparent hover:border-muted-foreground/30',
+                index === 0 && highlightTarget === 'audience-checkbox' && "demo-highlight"
+              )}
             >
               <Checkbox
                 id={`audience-${type}`}
