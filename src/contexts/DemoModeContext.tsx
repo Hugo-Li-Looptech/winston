@@ -3,7 +3,6 @@ import React, { createContext, useContext, useState, useCallback, ReactNode } fr
 export type DemoScenarioId = 
   | 'upload-network'
   | 'upload-format'
-  | 'title-required'
   | 'pref-save'
   | 'voice-preview'
   | 'ai-quota'
@@ -14,6 +13,33 @@ export type DemoScenarioId =
   | 'version-conflict'
   | 'audio-fail'
   | 'publish-fail';
+
+export type DemoCTATarget = 
+  | 'upload-zone'
+  | 'audience-checkbox'
+  | 'voice-preview'
+  | 'generate-button'
+  | 'add-test-button'
+  | 'add-question-button'
+  | 'save-button'
+  | 'publish-button'
+  | 'play-button'
+  | null;
+
+const CTA_MAP: Record<DemoScenarioId, DemoCTATarget> = {
+  'upload-network': 'upload-zone',
+  'upload-format': 'upload-zone',
+  'pref-save': 'audience-checkbox',
+  'voice-preview': 'voice-preview',
+  'ai-quota': 'generate-button',
+  'autosave-fail': null,
+  'add-test-fail': 'add-test-button',
+  'max-questions': 'add-question-button',
+  'save-fail': 'save-button',
+  'version-conflict': 'publish-button',
+  'audio-fail': 'play-button',
+  'publish-fail': 'publish-button',
+};
 
 export interface DemoScenario {
   id: DemoScenarioId;
@@ -157,6 +183,7 @@ interface DemoModeContextType {
   toggleGuidance: () => void;
   getCurrentScenario: () => DemoScenario | null;
   getProgress: () => { current: number; total: number };
+  getHighlightedCTA: () => DemoCTATarget;
 }
 
 const DemoModeContext = createContext<DemoModeContextType | undefined>(undefined);
@@ -276,6 +303,12 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
     };
   }, [currentCheckpoint, scenarios.length]);
 
+  const getHighlightedCTA = useCallback((): DemoCTATarget => {
+    if (!isActive) return null;
+    const scenario = scenarios[currentCheckpoint];
+    return scenario ? CTA_MAP[scenario.id] : null;
+  }, [isActive, scenarios, currentCheckpoint]);
+
   return (
     <DemoModeContext.Provider
       value={{
@@ -297,6 +330,7 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
         toggleGuidance,
         getCurrentScenario,
         getProgress,
+        getHighlightedCTA,
       }}
     >
       {children}

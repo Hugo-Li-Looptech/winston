@@ -5,6 +5,8 @@ import { StepIndicator } from '@/components/StepIndicator';
 import { FileText, MessageSquare, Save, Upload, X, Pencil, Eye, EyeOff } from 'lucide-react';
 import { WizardStep } from '@/types/course';
 import { toast } from '@/hooks/use-toast';
+import { useDemoMode } from '@/contexts/DemoModeContext';
+import { cn } from '@/lib/utils';
 
 interface CourseEditorHeaderProps {
   currentStep: WizardStep;
@@ -41,6 +43,9 @@ export function CourseEditorHeader({
   const [editedTitle, setEditedTitle] = useState(courseTitle);
   const [isSaved, setIsSaved] = useState(!initialUnsavedChanges);
   const [isPublished, setIsPublished] = useState(false);
+  
+  const { isActive: isDemoMode, getHighlightedCTA } = useDemoMode();
+  const highlightTarget = isDemoMode ? getHighlightedCTA() : null;
 
   const handleSaveTitle = () => {
     if (onTitleChange) {
@@ -144,14 +149,19 @@ export function CourseEditorHeader({
               <MessageSquare className="h-4 w-4" />
               Comments
             </Button>
-            <Button variant="ghost" size="sm" className="gap-1" onClick={handleSave}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={cn("gap-1", highlightTarget === 'save-button' && "demo-highlight")} 
+              onClick={handleSave}
+            >
               <Save className="h-4 w-4" />
               Save
             </Button>
             <Button 
               variant={isPublished ? "outline" : "default"} 
               size="sm" 
-              className="gap-1" 
+              className={cn("gap-1", highlightTarget === 'publish-button' && "demo-highlight")} 
               onClick={handlePublishToggle}
             >
               {isPublished ? (

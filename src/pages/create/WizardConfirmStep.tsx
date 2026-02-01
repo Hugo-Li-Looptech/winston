@@ -3,7 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useCourse } from '@/contexts/CourseContext';
 import { useDemoError } from '@/hooks/use-demo-error';
+import { useDemoMode } from '@/contexts/DemoModeContext';
 import { Volume2, Check, Play, Loader2, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface WizardConfirmStepProps {
   onContinue: () => void;
@@ -37,6 +39,8 @@ const voices = [
 export function WizardConfirmStep({ onContinue, onBack }: WizardConfirmStepProps) {
   const { currentCourse, setWizardSettings } = useCourse();
   const { isActive: isDemoMode, triggerVoicePreviewError, triggerAIQuotaError } = useDemoError();
+  const { getHighlightedCTA } = useDemoMode();
+  const highlightTarget = isDemoMode ? getHighlightedCTA() : null;
   
   const [deliveryStyle, setDeliveryStyle] = useState(`Recommended tone: Clear & Confident
 Suggested pace: Moderate, with slight pauses after key concepts
@@ -161,7 +165,11 @@ Energy level: Medium, providing clarity without sounding monotonous`);
               <Button 
                 variant="outline" 
                 size="sm" 
-                className={`w-full rounded-lg gap-2 ${voicePreviewFailed === voice.id ? 'border-destructive text-destructive' : ''}`}
+                className={cn(
+                  "w-full rounded-lg gap-2",
+                  voicePreviewFailed === voice.id && 'border-destructive text-destructive',
+                  highlightTarget === 'voice-preview' && "demo-highlight"
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   handlePreviewVoice(voice.id);
@@ -194,7 +202,15 @@ Energy level: Medium, providing clarity without sounding monotonous`);
         <Button variant="outline" onClick={onBack} className="rounded-xl">
           Back
         </Button>
-        <Button onClick={handleContinue} disabled={isGenerating} size="lg" className="rounded-xl px-8 gap-2">
+        <Button 
+          onClick={handleContinue} 
+          disabled={isGenerating} 
+          size="lg" 
+          className={cn(
+            "rounded-xl px-8 gap-2",
+            highlightTarget === 'generate-button' && "demo-highlight"
+          )}
+        >
           {isGenerating && <Loader2 className="h-4 w-4 animate-spin" />}
           Generate Talk Points
         </Button>

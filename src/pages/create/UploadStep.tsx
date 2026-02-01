@@ -5,10 +5,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Upload, FileText, Trash2, CheckCircle, Plus, RefreshCw, Loader2 } from "lucide-react";
 import { useCourse } from "@/contexts/CourseContext";
 import { useDemoError } from "@/hooks/use-demo-error";
+import { useDemoMode } from "@/contexts/DemoModeContext";
 import { SlideFile } from "@/types/course";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { InlineError } from "@/components/InlineError";
+import { cn } from "@/lib/utils";
 
 interface UploadStepProps {
   onContinue: () => void;
@@ -17,6 +19,8 @@ interface UploadStepProps {
 export function UploadStep({ onContinue }: UploadStepProps) {
   const { currentCourse, setSlideFiles, setSupplementFiles, setCourseTitle, setCourseDescription, markStepComplete } = useCourse();
   const { isActive: isDemoMode, triggerUploadNetworkError, triggerUploadFormatError, simulateDelay } = useDemoError();
+  const { getHighlightedCTA } = useDemoMode();
+  const highlightTarget = isDemoMode ? getHighlightedCTA() : null;
 
   // Demo mode state
   const [isUploading, setIsUploading] = useState(false);
@@ -194,14 +198,16 @@ export function UploadStep({ onContinue }: UploadStepProps) {
 
         {!hasSlideFile ? (
           <div className="m-6 space-y-4">
-            <div
-              className={`flex flex-col items-center justify-center h-60 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+          <div
+              className={cn(
+                "flex flex-col items-center justify-center h-60 border-2 rounded-xl cursor-pointer transition-all duration-200",
                 isDraggingSlide
                   ? "border-primary bg-primary/5 border-solid"
                   : uploadError 
                     ? "border-destructive/50 bg-destructive/5"
-                    : "border-border border-solid hover:border-primary hover:bg-muted/30"
-              }`}
+                    : "border-border border-solid hover:border-primary hover:bg-muted/30",
+                highlightTarget === 'upload-zone' && "demo-highlight"
+              )}
               onDragOver={(e) => {
                 e.preventDefault();
                 setIsDraggingSlide(true);
