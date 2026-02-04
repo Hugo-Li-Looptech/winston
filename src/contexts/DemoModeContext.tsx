@@ -184,6 +184,7 @@ interface DemoModeContextType {
   getCurrentScenario: () => DemoScenario | null;
   getProgress: () => { current: number; total: number };
   getHighlightedCTA: () => DemoCTATarget;
+  registerStageChangeCallback: (callback: ((stage: DemoScenario['stage']) => void) | null) => void;
 }
 
 const DemoModeContext = createContext<DemoModeContextType | undefined>(undefined);
@@ -196,6 +197,7 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [guidanceVisible, setGuidanceVisible] = useState(true);
   const [triggeredScenarios, setTriggeredScenarios] = useState<Set<DemoScenarioId>>(new Set());
+  const [stageChangeCallback, setStageChangeCallback] = useState<((stage: DemoScenario['stage']) => void) | null>(null);
 
   const startDemo = useCallback(() => {
     setIsActive(true);
@@ -244,20 +246,25 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
   }, [scenarios.length]);
 
   const skipScenario = useCallback(() => {
+    const nextIndex = currentCheckpoint + 1;
+    
+    if (nextIndex >= scenarios.length) {
+      setShowCompleteModal(true);
+      return;
+    }
+    
     setScenarios(prev => prev.map((s, i) => 
       i === currentCheckpoint ? { ...s, completed: true } : s
     ));
+    setTriggeredScenarios(new Set());
+    setCurrentCheckpoint(nextIndex);
     
-    setCurrentCheckpoint(prev => {
-      const nextIndex = prev + 1;
-      if (nextIndex >= scenarios.length) {
-        setShowCompleteModal(true);
-        return prev;
-      }
-      setTriggeredScenarios(new Set());
-      return nextIndex;
-    });
-  }, [currentCheckpoint, scenarios.length]);
+    // Navigate to the next scenario's stage
+    const nextScenario = scenarios[nextIndex];
+    if (stageChangeCallback && nextScenario) {
+      stageChangeCallback(nextScenario.stage);
+    }
+  }, [currentCheckpoint, scenarios, stageChangeCallback]);
 
   const nextScenario = useCallback(() => {
     setCurrentCheckpoint(prev => {
@@ -272,11 +279,21 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
   }, [scenarios.length]);
 
   const previousScenario = useCallback(() => {
-    setCurrentCheckpoint(prev => {
-      if (prev <= 0) return prev;
-      setTriggeredScenarios(new Set());
-      return prev - 1;
-    });
+    if (currentCheckpoint <= 0) return;
+    
+    const prevIndex = currentCheckpoint - 1;
+    setTriggeredScenarios(new Set());
+    setCurrentCheckpoint(prevIndex);
+    
+    // Navigate to the previous scenario's stage
+    const prevScenario = scenarios[prevIndex];
+    if (stageChangeCallback && prevScenario) {
+      stageChangeCallback(prevScenario.stage);
+    }
+  }, [currentCheckpoint, scenarios, stageChangeCallback]);
+
+  const registerStageChangeCallback = useCallback((callback: ((stage: DemoScenario['stage']) => void) | null) => {
+    setStageChangeCallback(() => callback);
   }, []);
 
   const dismissIntroModal = useCallback(() => {
@@ -331,6 +348,7 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
         getCurrentScenario,
         getProgress,
         getHighlightedCTA,
+        registerStageChangeCallback,
       }}
     >
       {children}
