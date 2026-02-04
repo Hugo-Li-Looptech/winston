@@ -10,9 +10,21 @@ import { ScriptingStep } from './create/ScriptingStep';
 import { PreviewStep } from './create/PreviewStep';
 import { AIAssistant } from '@/components/AIAssistant';
 import { useCourse } from '@/contexts/CourseContext';
+import { useDemoMode, DemoScenario } from '@/contexts/DemoModeContext';
 import { WizardStep as WizardStepType } from '@/types/course';
 
 type SubStep = 'upload' | 'wizard-input' | 'wizard-confirm' | 'scripting' | 'preview';
+
+// Map demo stage to wizard subStep
+const stageToSubStep = (stage: DemoScenario['stage']): SubStep => {
+  switch (stage) {
+    case 'upload': return 'upload';
+    case 'wizard': return 'wizard-input';
+    case 'voice': return 'wizard-confirm';
+    case 'scripting': return 'scripting';
+    case 'preview': return 'preview';
+  }
+};
 
 // Map URL step param to SubStep
 const stepParamToSubStep = (stepParam: string | null): SubStep | null => {
@@ -40,6 +52,7 @@ export default function CreateCourse() {
   const isPreviewOnly = mode === 'preview';
   const isEditMode = mode === 'edit';
   const isDemoMode = mode === 'demo';
+  const { registerStageChangeCallback } = useDemoMode();
 
   // Load course data when editing an existing course
   useEffect(() => {
@@ -50,6 +63,19 @@ export default function CreateCourse() {
       }
     }
   }, [courseId, isEditMode, isPreviewOnly, getCurrentVersionId, restoreVersion]);
+
+  // Register callback for demo mode navigation
+  useEffect(() => {
+    if (isDemoMode) {
+      registerStageChangeCallback((stage) => {
+        setSubStep(stageToSubStep(stage));
+      });
+      
+      return () => {
+        registerStageChangeCallback(null);
+      };
+    }
+  }, [isDemoMode, registerStageChangeCallback]);
   
   // Determine initial subStep based on URL params
   const getInitialSubStep = (): SubStep => {
