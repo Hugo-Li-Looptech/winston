@@ -1,89 +1,111 @@
 
-# Demo Mode CTA Highlighting
+# Demo Mode Navigation on Skip/Back
 
 ## Overview
 
-Add a visual highlight (animated ring border) to the next CTA button during demo mode. This guides users to the exact action they need to take for each error scenario. The highlighting will **only apply during the Error Handling demo mode**, not during normal course creation.
+When users click "Skip" or "Back" in the Demo Guidance Panel, the main screen should automatically navigate to the correct step corresponding to the next scenario's stage.
 
 ---
 
-## Approach
+## Current Behavior
 
-### 1. Define CTA Targets Per Scenario
+- **Skip**: Advances the scenario checkpoint but stays on the current page
+- **Back**: Goes to previous checkpoint but stays on the current page
 
-Each demo scenario has a specific trigger action. We'll map scenario IDs to CTA identifiers:
+## Desired Behavior
 
-| Scenario ID | Stage | CTA to Highlight |
-|-------------|-------|------------------|
-| `upload-network` | Upload | Upload drop zone / Browse button |
-| `upload-format` | Upload | Upload drop zone / Browse button |
-| `pref-save` | Wizard | Audience checkboxes area |
-| `voice-preview` | Voice | Preview button on voice cards |
-| `ai-quota` | Voice | "Generate Talk Points" button |
-| `autosave-fail` | Scripting | (No CTA - automatic trigger) |
-| `add-test-fail` | Scripting | "+" button between slides |
-| `max-questions` | Scripting | "Add Question" button |
-| `save-fail` | Scripting | "Save" button in header |
-| `version-conflict` | Scripting | "Publish" button in header |
-| `audio-fail` | Preview | "Play" button |
-| `publish-fail` | Preview | "Publish" button in header |
+- **Skip**: Advances checkpoint AND navigates to the page matching the new scenario's stage
+- **Back**: Goes back AND navigates to the page matching that scenario's stage
 
 ---
 
-### 2. Create Helper Hook
+## Stage to SubStep Mapping
 
-Add a `getHighlightedCTA()` function to `DemoModeContext` that returns the current CTA identifier based on the active scenario:
+| Scenario Stage | CreateCourse SubStep |
+|----------------|---------------------|
+| `upload` | `upload` |
+| `wizard` | `wizard-input` |
+| `voice` | `wizard-confirm` |
+| `scripting` | `scripting` |
+| `preview` | `preview` |
+
+---
+
+## Implementation Approach
+
+### Option: Callback Registration Pattern
+
+The cleanest approach is to have `CreateCourse` register a navigation callback with `DemoModeContext`, which gets called whenever the scenario changes.
+
+### Changes to DemoModeContext
+
+1. Add a `onScenarioChange` callback registration
+2. Modify `skipScenario` and `previousScenario` to call this callback with the new scenario's stage
+3. Export a helper to get the stage for a given checkpoint
 
 ```typescript
-type DemoCTATarget = 
-  | 'upload-zone'
-  | 'audience-checkbox'
-  | 'voice-preview'
-  | 'generate-button'
-  | 'add-test-button'
-  | 'add-question-button'
-  | 'save-button'
-  | 'publish-button'
-  | 'play-button'
-  | null;
+// New type and state
+type StageChangeCallback = (stage: DemoScenario['stage']) => void;
+const [onStageChange, setOnStageChange] = useState<StageChangeCallback | null>(null);
 
-getHighlightedCTA: () => DemoCTATarget
+// New function to register callback
+const registerStageChangeCallback = useCallback((callback: StageChangeCallback | null) => {
+  setOnStageChange(() => callback);
+}, []);
+
+// Modify skipScenario to call callback
+const skipScenario = useCallback(() => {
+  const nextIndex = currentCheckpoint + 1;
+  if (nextIndex >= scenarios.length) {
+    setShowCompleteModal(true);
+    return;
+  }
+  
+  const nextScenario = scenarios[nextIndex];
+  setScenarios(prev => prev.map((s, i) => 
+    i === currentCheckpoint ? { ...s, completed: true } : s
+  ));
+  setCurrentCheckpoint(nextIndex);
+  setTriggeredScenarios(new Set());
+  
+  // Navigate to the next scenario's stage
+  if (onStageChange && nextScenario) {
+    onStageChange(nextScenario.stage);
+  }
+}, [currentCheckpoint, scenarios, onStageChange]);
+
+// Similar changes for previousScenario
 ```
 
----
+### Changes to CreateCourse
 
-### 3. CSS Animation Class
+Register the callback on mount to handle stage changes:
 
-Create a reusable highlight style that creates an animated pulsing ring:
-
-```css
-.demo-highlight {
-  @apply ring-2 ring-primary ring-offset-2 ring-offset-background;
-  animation: demo-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes demo-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--primary), 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(var(--primary), 0); }
-}
-```
-
----
-
-### 4. Component Updates
-
-Each component with a CTA will check if demo mode is active and if its CTA is the current target:
-
-**Pattern:**
 ```typescript
-const { isActive: isDemoMode, getHighlightedCTA } = useDemoMode();
-const highlightTarget = isDemoMode ? getHighlightedCTA() : null;
+const { registerStageChangeCallback } = useDemoMode();
 
-// On the button:
-className={cn(
-  "existing-classes",
-  highlightTarget === 'generate-button' && "demo-highlight"
-)}
+// Map stage to subStep
+const stageToSubStep = (stage: DemoScenario['stage']): SubStep => {
+  switch (stage) {
+    case 'upload': return 'upload';
+    case 'wizard': return 'wizard-input';
+    case 'voice': return 'wizard-confirm';
+    case 'scripting': return 'scripting';
+    case 'preview': return 'preview';
+  }
+};
+
+// Register callback when in demo mode
+useEffect(() => {
+  if (isDemoMode) {
+    registerStageChangeCallback((stage) => {
+      setSubStep(stageToSubStep(stage));
+    });
+  }
+  return () => {
+    registerStageChangeCallback(null);
+  };
+}, [isDemoMode, registerStageChangeCallback]);
 ```
 
 ---
@@ -92,121 +114,106 @@ className={cn(
 
 | File | Changes |
 |------|---------|
-| `src/contexts/DemoModeContext.tsx` | Add `DemoCTATarget` type and `getHighlightedCTA()` function |
-| `src/index.css` | Add `.demo-highlight` animation class |
-| `src/pages/create/UploadStep.tsx` | Highlight upload zone for `upload-network`, `upload-format` |
-| `src/pages/create/WizardStep.tsx` | Highlight first audience checkbox for `pref-save` |
-| `src/pages/create/WizardConfirmStep.tsx` | Highlight Preview buttons for `voice-preview`, Generate button for `ai-quota` |
-| `src/pages/create/ScriptingStep.tsx` | Highlight "+" button for `add-test-fail`, Add Question for `max-questions` |
-| `src/components/CourseEditorHeader.tsx` | Highlight Save/Publish buttons when applicable |
-| `src/pages/create/PreviewStep.tsx` | Highlight Play button for `audio-fail`, Publish for `publish-fail` |
+| `src/contexts/DemoModeContext.tsx` | Add callback registration, modify skip/previous to trigger navigation |
+| `src/pages/CreateCourse.tsx` | Register navigation callback when in demo mode |
 
 ---
 
 ## Technical Details
 
-### DemoModeContext Addition
+### DemoModeContext Changes
 
 ```typescript
-// Add to DemoModeContext.tsx
-
-type DemoCTATarget = 
-  | 'upload-zone'
-  | 'audience-checkbox'
-  | 'voice-preview'
-  | 'generate-button'
-  | 'add-test-button'
-  | 'add-question-button'
-  | 'save-button'
-  | 'publish-button'
-  | 'play-button'
-  | null;
-
-const CTA_MAP: Record<DemoScenarioId, DemoCTATarget> = {
-  'upload-network': 'upload-zone',
-  'upload-format': 'upload-zone',
-  'pref-save': 'audience-checkbox',
-  'voice-preview': 'voice-preview',
-  'ai-quota': 'generate-button',
-  'autosave-fail': null, // Auto-triggered, no CTA
-  'add-test-fail': 'add-test-button',
-  'max-questions': 'add-question-button',
-  'save-fail': 'save-button',
-  'version-conflict': 'publish-button',
-  'audio-fail': 'play-button',
-  'publish-fail': 'publish-button',
-};
-
-const getHighlightedCTA = useCallback((): DemoCTATarget => {
-  if (!isActive) return null;
-  const scenario = scenarios[currentCheckpoint];
-  return scenario ? CTA_MAP[scenario.id] : null;
-}, [isActive, scenarios, currentCheckpoint]);
-```
-
-### CSS Animation
-
-```css
-/* src/index.css */
-.demo-highlight {
-  @apply ring-2 ring-primary ring-offset-2 ring-offset-background;
-  animation: demo-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+// Add to interface
+interface DemoModeContextType {
+  // ... existing
+  registerStageChangeCallback: (callback: ((stage: DemoScenario['stage']) => void) | null) => void;
 }
 
-@keyframes demo-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4);
+// Add state
+const [stageChangeCallback, setStageChangeCallback] = useState<((stage: DemoScenario['stage']) => void) | null>(null);
+
+// Add registration function
+const registerStageChangeCallback = useCallback((callback: ((stage: DemoScenario['stage']) => void) | null) => {
+  setStageChangeCallback(() => callback);
+}, []);
+
+// Modify skipScenario
+const skipScenario = useCallback(() => {
+  const nextIndex = currentCheckpoint + 1;
+  
+  if (nextIndex >= scenarios.length) {
+    setShowCompleteModal(true);
+    return;
   }
-  50% {
-    box-shadow: 0 0 0 8px hsl(var(--primary) / 0);
+  
+  setScenarios(prev => prev.map((s, i) => 
+    i === currentCheckpoint ? { ...s, completed: true } : s
+  ));
+  
+  setTriggeredScenarios(new Set());
+  setCurrentCheckpoint(nextIndex);
+  
+  // Call the navigation callback with the new stage
+  const nextScenario = scenarios[nextIndex];
+  if (stageChangeCallback && nextScenario) {
+    stageChangeCallback(nextScenario.stage);
   }
-}
+}, [currentCheckpoint, scenarios, stageChangeCallback]);
+
+// Modify previousScenario similarly
+const previousScenario = useCallback(() => {
+  if (currentCheckpoint <= 0) return;
+  
+  const prevIndex = currentCheckpoint - 1;
+  setTriggeredScenarios(new Set());
+  setCurrentCheckpoint(prevIndex);
+  
+  const prevScenario = scenarios[prevIndex];
+  if (stageChangeCallback && prevScenario) {
+    stageChangeCallback(prevScenario.stage);
+  }
+}, [currentCheckpoint, scenarios, stageChangeCallback]);
 ```
 
-### Example Component Update (WizardConfirmStep.tsx)
+### CreateCourse Changes
 
 ```typescript
-// Import
-import { useDemoMode } from '@/contexts/DemoModeContext';
-import { cn } from '@/lib/utils';
+import { useDemoMode, DemoScenario } from '@/contexts/DemoModeContext';
 
 // Inside component
-const { isActive: isDemoMode, getHighlightedCTA } = useDemoMode();
-const highlightTarget = isDemoMode ? getHighlightedCTA() : null;
+const { registerStageChangeCallback } = useDemoMode();
 
-// On Generate button
-<Button 
-  onClick={handleContinue} 
-  disabled={isGenerating} 
-  size="lg" 
-  className={cn(
-    "rounded-xl px-8 gap-2",
-    highlightTarget === 'generate-button' && "demo-highlight"
-  )}
->
-  Generate Talk Points
-</Button>
+// Stage to SubStep mapping
+const stageToSubStep = (stage: DemoScenario['stage']): SubStep => {
+  switch (stage) {
+    case 'upload': return 'upload';
+    case 'wizard': return 'wizard-input';
+    case 'voice': return 'wizard-confirm';
+    case 'scripting': return 'scripting';
+    case 'preview': return 'preview';
+  }
+};
 
-// On Preview button (voice cards)
-<Button 
-  variant="outline" 
-  size="sm" 
-  className={cn(
-    "w-full rounded-lg gap-2",
-    highlightTarget === 'voice-preview' && "demo-highlight"
-  )}
->
-  Preview
-</Button>
+// Register callback when in demo mode
+useEffect(() => {
+  if (isDemoMode) {
+    registerStageChangeCallback((stage) => {
+      setSubStep(stageToSubStep(stage));
+    });
+    
+    return () => {
+      registerStageChangeCallback(null);
+    };
+  }
+}, [isDemoMode, registerStageChangeCallback]);
 ```
 
 ---
 
-## Visual Result
+## Result
 
-The highlighted CTA will have:
-- A visible ring around the button using the primary color
-- A gentle pulsing animation to draw attention
-- Automatic transition to the next CTA when the scenario advances
-
-This creates a clear visual guide through the demo without affecting normal course creation.
+After implementation:
+- Clicking **Skip** advances to the next error scenario AND navigates to that scenario's corresponding page
+- Clicking **Back** goes to the previous scenario AND navigates to that scenario's page
+- This only affects demo mode - regular course creation is unchanged
