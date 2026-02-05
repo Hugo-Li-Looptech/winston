@@ -1,219 +1,76 @@
 
-# Demo Mode Navigation on Skip/Back
+# Fix Audio Playback Error Display (Step 11)
 
-## Overview
+## Problem
 
-When users click "Skip" or "Back" in the Demo Guidance Panel, the main screen should automatically navigate to the correct step corresponding to the next scenario's stage.
+When the user clicks the Play button during Demo Mode Step 11, the error trigger correctly sets `audioError` state, but **no UI element exists to display this error**. The `InlineError` component is imported but never rendered with the `audioError` message.
 
----
+## Root Cause Analysis
 
-## Current Behavior
+In `src/pages/create/PreviewStep.tsx`:
+- Line 74: `const [audioError, setAudioError] = useState<string | null>(null);`
+- Line 207: `triggerAudioPlaybackError(setAudioError)` correctly sets the error
+- **Missing**: No `{audioError && <InlineError ... />}` anywhere in the JSX
 
-- **Skip**: Advances the scenario checkpoint but stays on the current page
-- **Back**: Goes to previous checkpoint but stays on the current page
+## Solution
 
-## Desired Behavior
-
-- **Skip**: Advances checkpoint AND navigates to the page matching the new scenario's stage
-- **Back**: Goes back AND navigates to the page matching that scenario's stage
-
----
-
-## Stage to SubStep Mapping
-
-| Scenario Stage | CreateCourse SubStep |
-|----------------|---------------------|
-| `upload` | `upload` |
-| `wizard` | `wizard-input` |
-| `voice` | `wizard-confirm` |
-| `scripting` | `scripting` |
-| `preview` | `preview` |
-
----
-
-## Implementation Approach
-
-### Option: Callback Registration Pattern
-
-The cleanest approach is to have `CreateCourse` register a navigation callback with `DemoModeContext`, which gets called whenever the scenario changes.
-
-### Changes to DemoModeContext
-
-1. Add a `onScenarioChange` callback registration
-2. Modify `skipScenario` and `previousScenario` to call this callback with the new scenario's stage
-3. Export a helper to get the stage for a given checkpoint
-
-```typescript
-// New type and state
-type StageChangeCallback = (stage: DemoScenario['stage']) => void;
-const [onStageChange, setOnStageChange] = useState<StageChangeCallback | null>(null);
-
-// New function to register callback
-const registerStageChangeCallback = useCallback((callback: StageChangeCallback | null) => {
-  setOnStageChange(() => callback);
-}, []);
-
-// Modify skipScenario to call callback
-const skipScenario = useCallback(() => {
-  const nextIndex = currentCheckpoint + 1;
-  if (nextIndex >= scenarios.length) {
-    setShowCompleteModal(true);
-    return;
-  }
-  
-  const nextScenario = scenarios[nextIndex];
-  setScenarios(prev => prev.map((s, i) => 
-    i === currentCheckpoint ? { ...s, completed: true } : s
-  ));
-  setCurrentCheckpoint(nextIndex);
-  setTriggeredScenarios(new Set());
-  
-  // Navigate to the next scenario's stage
-  if (onStageChange && nextScenario) {
-    onStageChange(nextScenario.stage);
-  }
-}, [currentCheckpoint, scenarios, onStageChange]);
-
-// Similar changes for previousScenario
-```
-
-### Changes to CreateCourse
-
-Register the callback on mount to handle stage changes:
-
-```typescript
-const { registerStageChangeCallback } = useDemoMode();
-
-// Map stage to subStep
-const stageToSubStep = (stage: DemoScenario['stage']): SubStep => {
-  switch (stage) {
-    case 'upload': return 'upload';
-    case 'wizard': return 'wizard-input';
-    case 'voice': return 'wizard-confirm';
-    case 'scripting': return 'scripting';
-    case 'preview': return 'preview';
-  }
-};
-
-// Register callback when in demo mode
-useEffect(() => {
-  if (isDemoMode) {
-    registerStageChangeCallback((stage) => {
-      setSubStep(stageToSubStep(stage));
-    });
-  }
-  return () => {
-    registerStageChangeCallback(null);
-  };
-}, [isDemoMode, registerStageChangeCallback]);
-```
+Add an `InlineError` component below the floating control pill (lines 318-359) to display the audio error with a retry option.
 
 ---
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/contexts/DemoModeContext.tsx` | Add callback registration, modify skip/previous to trigger navigation |
-| `src/pages/CreateCourse.tsx` | Register navigation callback when in demo mode |
+| File | Change |
+|------|--------|
+| `src/pages/create/PreviewStep.tsx` | Add `InlineError` display for `audioError` below the play controls |
 
 ---
 
-## Technical Details
+## Implementation Details
 
-### DemoModeContext Changes
+### PreviewStep.tsx Changes
 
-```typescript
-// Add to interface
-interface DemoModeContextType {
-  // ... existing
-  registerStageChangeCallback: (callback: ((stage: DemoScenario['stage']) => void) | null) => void;
-}
+After the floating control pill div (around line 358-359), add:
 
-// Add state
-const [stageChangeCallback, setStageChangeCallback] = useState<((stage: DemoScenario['stage']) => void) | null>(null);
-
-// Add registration function
-const registerStageChangeCallback = useCallback((callback: ((stage: DemoScenario['stage']) => void) | null) => {
-  setStageChangeCallback(() => callback);
-}, []);
-
-// Modify skipScenario
-const skipScenario = useCallback(() => {
-  const nextIndex = currentCheckpoint + 1;
-  
-  if (nextIndex >= scenarios.length) {
-    setShowCompleteModal(true);
-    return;
-  }
-  
-  setScenarios(prev => prev.map((s, i) => 
-    i === currentCheckpoint ? { ...s, completed: true } : s
-  ));
-  
-  setTriggeredScenarios(new Set());
-  setCurrentCheckpoint(nextIndex);
-  
-  // Call the navigation callback with the new stage
-  const nextScenario = scenarios[nextIndex];
-  if (stageChangeCallback && nextScenario) {
-    stageChangeCallback(nextScenario.stage);
-  }
-}, [currentCheckpoint, scenarios, stageChangeCallback]);
-
-// Modify previousScenario similarly
-const previousScenario = useCallback(() => {
-  if (currentCheckpoint <= 0) return;
-  
-  const prevIndex = currentCheckpoint - 1;
-  setTriggeredScenarios(new Set());
-  setCurrentCheckpoint(prevIndex);
-  
-  const prevScenario = scenarios[prevIndex];
-  if (stageChangeCallback && prevScenario) {
-    stageChangeCallback(prevScenario.stage);
-  }
-}, [currentCheckpoint, scenarios, stageChangeCallback]);
+```tsx
+{/* Audio Error Display */}
+{audioError && (
+  <div className="mt-2">
+    <InlineError
+      message={audioError}
+      onRetry={() => {
+        setAudioError(null);
+        setDemoPlayAttempt(0);
+      }}
+    />
+  </div>
+)}
 ```
 
-### CreateCourse Changes
-
-```typescript
-import { useDemoMode, DemoScenario } from '@/contexts/DemoModeContext';
-
-// Inside component
-const { registerStageChangeCallback } = useDemoMode();
-
-// Stage to SubStep mapping
-const stageToSubStep = (stage: DemoScenario['stage']): SubStep => {
-  switch (stage) {
-    case 'upload': return 'upload';
-    case 'wizard': return 'wizard-input';
-    case 'voice': return 'wizard-confirm';
-    case 'scripting': return 'scripting';
-    case 'preview': return 'preview';
-  }
-};
-
-// Register callback when in demo mode
-useEffect(() => {
-  if (isDemoMode) {
-    registerStageChangeCallback((stage) => {
-      setSubStep(stageToSubStep(stage));
-    });
-    
-    return () => {
-      registerStageChangeCallback(null);
-    };
-  }
-}, [isDemoMode, registerStageChangeCallback]);
-```
+This will:
+1. Display the error message below the play controls when `audioError` is set
+2. Provide a retry button that clears the error and resets the demo attempt counter
+3. Match the expected pattern described in the demo scenario: "Inline error with retry option"
 
 ---
 
-## Result
+## Existing Scenarios Verification
 
-After implementation:
-- Clicking **Skip** advances to the next error scenario AND navigates to that scenario's corresponding page
-- Clicking **Back** goes to the previous scenario AND navigates to that scenario's page
-- This only affects demo mode - regular course creation is unchanged
+| Scenario | Status | Location |
+|----------|--------|----------|
+| Connection Error (upload-network) | Already exists | Step 1 - UploadStep.tsx |
+| Version Conflict (version-conflict) | Already exists | Step 10 - ScriptingStep.tsx AlertDialog |
+| Audio Playback Error (audio-fail) | **NEEDS FIX** | Step 11 - PreviewStep.tsx |
+
+The connection error and version conflict scenarios are already properly implemented. Only the audio playback error needs the UI fix.
+
+---
+
+## Expected Behavior After Fix
+
+1. User navigates to Step 11 (Preview stage)
+2. The Play button is highlighted with the demo-highlight ring
+3. User clicks the Play button
+4. After 500ms delay, an inline error appears below the controls: "Audio playback failed. Please try again."
+5. User can click the retry button to dismiss the error
+6. Demo advances to Step 12
