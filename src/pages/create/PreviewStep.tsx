@@ -346,7 +346,7 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
               >
                 {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
               </Button>
-              <Slider
+            <Slider
                 value={[isMuted ? 0 : volume]}
                 onValueChange={([val]) => {
                   setVolume(val);
@@ -354,6 +354,19 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
                 }}
                 max={100}
                 className="w-20"
+              />
+            </div>
+          )}
+
+          {/* Audio Error Display */}
+          {audioError && (
+            <div className="mt-2">
+              <InlineError
+                message={audioError}
+                onRetry={() => {
+                  setAudioError(null);
+                  setDemoPlayAttempt(0);
+                }}
               />
             </div>
           )}
