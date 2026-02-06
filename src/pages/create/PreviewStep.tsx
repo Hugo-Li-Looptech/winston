@@ -4,6 +4,7 @@ import { useCourse } from "@/contexts/CourseContext";
 import { useDemoError } from "@/hooks/use-demo-error";
 import { useDemoMode } from "@/contexts/DemoModeContext";
 import { InlineError } from "@/components/InlineError";
+import { showErrorToast } from "@/components/ErrorToast";
 import {
   ChevronLeft,
   ChevronRight,
@@ -205,7 +206,10 @@ export function PreviewStep({ onBack, isPreviewOnly = false, onStepClick }: Prev
     if (isDemoMode && !isPlaying && demoPlayAttempt === 0) {
       setDemoPlayAttempt(1);
       const triggered = await triggerAudioPlaybackError(setAudioError);
-      if (triggered) return;
+      if (triggered) {
+        showErrorToast('Audio playback failed. Please try again.', { title: 'Playback Error' });
+        return;
+      }
     }
     
     setAudioError(null);
